@@ -84,6 +84,12 @@ int main(int argc, char *argv[])
             case TOK_SHR:
                 printf(" >> ");
                 break;
+            case TOK_ROL:
+                printf(" <<< ");
+                break;
+            case TOK_ROR:
+                printf(" >>> ");
+                break;
             case 100:
                 printf("DEFINE");
                 break;

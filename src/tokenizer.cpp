@@ -99,6 +99,15 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 continue;
             }
 
+            // check for a line-spannign comment
+            if (c == '%')
+            {
+                r->accept();
+                state = S_COMMENT;
+                continue;
+            }
+
+            // do everything else..
             if (isAlpha(c))
             {
                 tok.txt += r->accept();
@@ -217,10 +226,21 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             if (c == '>')
             {
                 // we have found a right-shift operator!
-                tok.tokID = TOK_SHR;
+                // but wait ..
+                // it could also be a right rotate operator ..
                 r->accept();
-                result.push_back(tok);
-                state = S_BEGIN;
+
+                if (r->peek() == '>')
+                {
+                    state = S_ROR;
+                }
+                else
+                {
+                    tok.tokID = TOK_SHR;
+
+                    result.push_back(tok);
+                    state = S_BEGIN;
+                }
             }
             else
             {
@@ -236,10 +256,22 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             if (c == '<')
             {
                 // we have found a left-shift operator!
-                tok.tokID = TOK_SHL;
+                // but wait ..
+                // it could also be a left rotate operator ..
                 r->accept();
-                result.push_back(tok);
-                state = S_BEGIN;
+
+                if (r->peek() == '<')
+                {
+                    // indeed, it's a left rotate!
+                    state = S_ROL;
+                }
+                else
+                {
+                    tok.tokID = TOK_SHL;
+
+                    result.push_back(tok);
+                    state = S_BEGIN;
+                }
             }
             else
             {
@@ -249,6 +281,36 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 tok.tokID = TOK_SMALLER;
                 result.push_back(tok);
                 state = S_BEGIN;
+            }
+            break;
+        case S_ROL:
+            if (c == '<')
+            {
+                r->accept();
+                tok.tokID = TOK_ROL;
+                result.push_back(tok);
+                state = S_BEGIN;
+            }
+            else
+            {
+                // error, we should never end up here
+                m_lastError = std::string("S_ROL: Internal error");
+                return false;
+            }
+            break;
+        case S_ROR:
+            if (c == '>')
+            {
+                r->accept();
+                tok.tokID = TOK_ROR;
+                result.push_back(tok);
+                state = S_BEGIN;
+            }
+            else
+            {
+                // error, we should never end up here
+                m_lastError = std::string("S_ROR: Internal error");
+                return false;
             }
             break;
         case S_IDENT:   // read in keywords and identifiers
@@ -356,6 +418,17 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 // end of floating point
                 tok.tokID = TOK_FLOAT;
                 result.push_back(tok);
+                state = S_BEGIN;
+            }
+            break;
+        case S_COMMENT:
+            // only EOF and newline can break a line spanning comment!
+            if ((c != 0) && (c != 10))
+            {
+                r->accept();
+            }
+            else
+            {
                 state = S_BEGIN;
             }
             break;

@@ -34,6 +34,8 @@
 #define TOK_SHL     11
 #define TOK_SHR     12
 #define TOK_COMMA   13
+#define TOK_ROL     14
+#define TOK_ROR     15
 
 #define TOK_INTEGER 30
 #define TOK_FLOAT   31
@@ -86,6 +88,9 @@ protected:
                     S_FLOAT_WITH_NEGEXP,
                     S_LARGER,
                     S_SMALLER,
+                    S_ROL,
+                    S_ROR,
+                    S_COMMENT,
                     S_DONE};
 
   std::string               m_lastError;

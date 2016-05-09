@@ -15,4 +15,10 @@ Built-in functions:
 * saturate(x,n,m) saturates variable 'x' to fit it into a Q(n,m) variable.
 * truncate(x,n,m) removes (or adds) bits to variable 'x' so it becomes Q(n,m).
 
+Operators:
+* regular arithmetic: '+' '-' '*' 
+* shift: '<<', '>>'
+* rotate: '<<<', '>>>'
+* line comment: '%'
+
 License: GPL v2.
