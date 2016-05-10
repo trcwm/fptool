@@ -41,6 +41,13 @@
 #define TOK_FLOAT   31
 #define TOK_IDENT   32
 
+#define TOK_EOF     99
+
+#define TOK_DEFINE  100
+#define TOK_INPUT   101
+#define TOK_CSD     102
+#define TOK_TRUNC   103
+#define TOK_SAT     104
 
 #include <vector>
 #include <string>

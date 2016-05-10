@@ -13,11 +13,12 @@ define c = csd(3.1415927,5);
 
 % do some actual arithmetic
 out1 = c*a + b;
-out2 = c >> 1;
-out3 = c << 2;
-out2 = c >>> 3;
-out3 = c <<< 4;
+%out2 = c >> 1;
+%out3 = c << 2;
+%out2 = c >>> 3;
+%out3 = c <<< 4;
 
-% just some floats to see if they are detected by the tokenizer
-3.14e-3
-3.14e3
+% test the different forms of floats
+x = 3.1415927;
+y = 3.1415927e0;
+

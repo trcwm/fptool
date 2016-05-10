@@ -81,6 +81,12 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
         if (c == 0)
         {
             state = S_DONE;
+
+            tok.txt.clear();
+            tok.pos = r->getPos();
+            tok.tokID = TOK_EOF;
+            result.push_back(tok);
+
             continue;
         }
 

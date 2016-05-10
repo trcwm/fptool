@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include "reader.h"
 #include "tokenizer.h"
+#include "parser.h"
 
 #define __VERSION__ "0.1a"
 
@@ -90,6 +91,9 @@ int main(int argc, char *argv[])
             case TOK_ROR:
                 printf(" >>> ");
                 break;
+            case TOK_EOF:
+                printf("\nEOF\n");
+                break;
             case 100:
                 printf("DEFINE");
                 break;
@@ -101,6 +105,9 @@ int main(int argc, char *argv[])
                 break;
             }
         }
+
+        Parser parse;
+        parse.process(tokens);
     }
 
     return 0;

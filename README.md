@@ -21,4 +21,8 @@ Operators:
 * rotate: '<<<', '>>>'
 * line comment: '%'
 
+Current project state:
+* Lexer is working.
+* Parser can check about 80% of the grammar.
+
 License: GPL v2.
