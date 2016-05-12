@@ -18,392 +18,459 @@ Parser::Parser() : m_tokens(NULL)
 {
 }
 
-void Parser::error(const std::string &txt)
+void Parser::error(const state_t &s, const std::string &txt)
 {
+    m_lastError = txt;
+    m_lastErrorPos = s.tokPos;
     std::cout << txt.c_str() << std::endl;
 }
 
-ParseTreeNode* Parser::process(const std::vector<token_t> &tokens)
+void Parser::error(uint32_t dummy, const std::string &txt)
 {
+    m_lastError = txt;
+    std::cout << txt.c_str() << std::endl;
+}
+
+bool Parser::match(state_t &s, uint32_t tokenID)
+{
+    token_t tok = getToken(s);
+    if (tok.tokID != tokenID)
+    {
+        return false;
+    }
+    next(s);
+    return true;
+}
+
+bool Parser::matchList(state_t &s, const uint32_t *tokenIDlist)
+{
+    while (*tokenIDlist != NULL)
+    {
+        if (!match(s, *tokenIDlist++))
+            return false;
+    }
+    return true;
+}
+
+bool Parser::process(const std::vector<token_t> &tokens, statements_t &result)
+{
+    m_lastError.clear();
+
     if (tokens.size() == 0)
     {
-        m_lastError = std::string("Error: token list is empty");
-        return NULL;
+        error(0,"Internal error: token list is empty");
+        return false;
     }
 
     // prepare for iteration
     m_tokens = &tokens;
 
     state_t state;
-    state.node = 0;
     state.tokIdx = 0;
 
-    if (!acceptProgram(state))
-    {
-        return NULL;
-    }
-
-    return NULL;
+    return acceptProgram(state, result);
 }
 
-bool Parser::acceptProgram(state_t &s)
+bool Parser::acceptProgram(state_t &s, statements_t &statements)
 {
-    // check for a list of statements,
-    // ending with EOF
-    if (!acceptStatementlist(s))
+    // productions: definition | assignment | NEWLINE | EOF
+
+    bool productionAccepted = true;
+    token_t tok = getToken(s);
+
+
+    while(productionAccepted == true)
     {
+        productionAccepted = false;
+        ASTNodePtr newNode(new ASTNode());
+
+        if (acceptDefinition(s, newNode))
+        {
+            productionAccepted = true;
+            statements.push_back(newNode);
+        }
+        else if (acceptAssignment(s, newNode))
+        {
+            productionAccepted = true;
+            statements.push_back(newNode);
+        }
+        else if (match(s, TOK_NEWLINE))
+        {
+            productionAccepted = true;
+            // do nothing..
+        }
+        else if (match(s, TOK_EOF))
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool Parser::acceptDefinition(state_t &s, ASTNodePtr newNode)
+{
+    // production: DEFINE IDENT EQUAL declspec SEMICOL
+
+    state_t savestate = s;
+    if (!match(s, TOK_DEFINE))
+    {
+        s = savestate;
         return false;
     }
 
-    token_t tok = getToken(s);
-    if (tok.tokID != TOK_EOF)
+    if (!match(s, TOK_IDENT))
     {
-        error("End of file expected");
+        error(s,"Identifier expected after DEFINE");
+        s = savestate;
         return false;
     }
+
+    if (!match(s, TOK_EQUAL))
+    {
+        error(s,"'=' expected");
+        s = savestate;
+        return false;
+    }
+
+    newNode->txt  = getToken(s, -2).txt;    // get identifier string
+    newNode->type = ASTNode::NodeDefine;
+
+    ASTNodePtr defspec(new ASTNode());
+
+    // create new RHS specification node:
+    if (!acceptDefspec(s, defspec))
+    {
+        s = savestate;
+        return false;
+    }
+
+    if (!match(s,TOK_SEMICOL))
+    {
+        error(s,"Definitions should end with a semicolon.");
+        s = savestate;
+        return false;
+    }
+
+    newNode->right = defspec;
+    return true;
+}
+
+bool Parser::acceptDefspec(state_t &s, ASTNodePtr newNode)
+{
+    // productions: defspec1 | defspec2
+
+    if (acceptDefspec1(s, newNode))
+    {
+        return true;
+    }
+    else if (acceptDefspec2(s, newNode))
+    {
+        return true;
+    }
+    return false;
+}
+
+bool Parser::acceptDefspec1(state_t &s, ASTNodePtr newNode)
+{
+    // production: INPUT LPAREN INTEGER COMMA INTEGER RPAREN
+
+    const uint32_t tokenList[] =
+        {TOK_INPUT, TOK_LPAREN, TOK_INTEGER, TOK_COMMA, TOK_INTEGER, TOK_RPAREN, 0};
+
+    state_t savestate = s;
+    if (!matchList(s, tokenList))
+    {
+        s=savestate;
+        return false;
+    }
+
+    newNode->type = ASTNode::NodeInput;
+    newNode->intBits = atoi(getToken(s, -4).txt.c_str()); // first integer
+    newNode->fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
 
     return true;
 }
 
-bool Parser::acceptStatementlist(state_t &s)
+
+bool Parser::acceptDefspec2(state_t &s, ASTNodePtr newNode)
 {
+    // production: CSD LPAREN FLOAT COMMA INTEGER RPAREN
+
+    const uint32_t tokenList[] =
+        {TOK_CSD, TOK_LPAREN, TOK_FLOAT, TOK_COMMA, TOK_INTEGER, TOK_RPAREN, 0};
+
     state_t savestate = s;
-    if (acceptStatement(s) && acceptStatementlist(s))
+    if (!matchList(s, tokenList))
+    {
+        s=savestate;
+        return false;
+    }
+
+    newNode->type = ASTNode::NodeInput;
+    newNode->csdFloat = atof(getToken(s, -4).txt.c_str()); // first argument
+    newNode->csdBits = atoi(getToken(s, -2).txt.c_str()); // second argument
+
+    return true;
+}
+
+bool Parser::acceptAssignment(state_t &s, ASTNodePtr newNode)
+{
+    // production: IDENT EQUAL expr SEMICOL
+    state_t savestate = s;
+
+    if (!match(s,TOK_IDENT))
+    {
+        s = savestate;
+        return false;
+    }
+
+    if (!match(s,TOK_EQUAL))
+    {
+        error(s,"Expected '='");
+        s = savestate;
+        return false;
+    }
+
+    std::string identifier = getToken(s, -2).txt;
+
+    ASTNodePtr exprNode(new ASTNode());
+
+    if (!acceptExpr(s, exprNode))
+    {
+        error(s,"Expression expected");
+        s = savestate;
+        return false;
+    }
+
+    if (!match(s, TOK_SEMICOL))
+    {
+        error(s,"Assignments must end with a semicolon.");
+        s = savestate;
+        return false;
+    }
+
+    newNode->type = ASTNode::NodeAssign;
+    newNode->txt  = identifier;
+    newNode->right = exprNode;
+
+    return true;
+}
+
+bool Parser::acceptExpr(state_t &s, ASTNodePtr newNode)
+{
+    // productions: term + expr | term - expr | term
+    state_t savestate = s;
+
+    if (acceptExpr1(s, newNode))
+    {
+         return true;
+    }
+
+    s = savestate;
+    if (acceptExpr2(s, newNode))
     {
         return true;
     }
 
     s = savestate;
-    // empty clause
-    return true;
-}
+    if (acceptTerm(s, newNode))
+    {
+        return true;
+    }
 
-bool Parser::acceptStatement(state_t &s)
-{
-    state_t savestate = s;
-    if (acceptDefinition(s))
-    {
-        token_t tok = getToken(s);
-        if (tok.tokID == TOK_SEMICOL)
-        {
-            next(s);
-            return true;
-        }
-        s = savestate;
-        error("Expected ';'");
-    }
-    else if (acceptAssignment(s))
-    {
-        token_t tok = getToken(s);
-        if (tok.tokID == TOK_SEMICOL)
-        {
-            next(s);
-            return true;
-        }
-        s = savestate;
-        error("Expected ';'");
-    }
-    else
-    {
-        token_t tok = getToken(s);
-        if (tok.tokID == TOK_NEWLINE)
-        {
-            next(s);
-            return true;
-        }
-    }
-    s = savestate;
+    //error("Error parsing expression");
     return false;
 }
 
-bool Parser::acceptDefinition(state_t &s)
+bool Parser::acceptExpr1(state_t &s, ASTNodePtr newNode)
 {
+    // production: term + expr
     state_t savestate = s;
-    token_t tok = getToken(s);
-    if (tok.tokID != TOK_DEFINE)
+
+    ASTNodePtr termNode(new ASTNode());
+    ASTNodePtr exprNode(new ASTNode());
+
+    if (!acceptTerm(s, termNode))
     {
         s = savestate;
         return false;
     }
-    tok = next(s);
-    if (tok.tokID != TOK_IDENT)
-    {
-        error("Identifier expected after DEFINE");
-        s = savestate;
-        return false;
-    }
-    //TODO: store IDENT
-    tok = next(s);
-    if (tok.tokID != TOK_EQUAL)
-    {
-        error("'=' expected");
-        s = savestate;
-        return false;
-    }
-    tok = next(s);
-    if (!acceptDefspec(s))
+    if (!match(s, TOK_PLUS))
     {
         s = savestate;
         return false;
     }
+    if (!acceptExpr(s, exprNode))
+    {
+        s = savestate;
+        return false;
+    }
+    newNode->type = ASTNode::NodeAdd;
+    newNode->left = termNode;
+    newNode->right = exprNode;
     return true;
 }
 
-bool Parser::acceptDefspec(state_t &s)
+bool Parser::acceptExpr2(state_t &s, ASTNodePtr newNode)
 {
+    // production: term - expr
     state_t savestate = s;
-    token_t tok = getToken(s);
 
-    // first check 'INPUT'
-    if (tok.tokID == TOK_INPUT)
+    ASTNodePtr termNode(new ASTNode());
+    ASTNodePtr exprNode(new ASTNode());
+
+    if (!acceptTerm(s, termNode))
     {
-        tok = next(s);
-        if (tok.tokID != TOK_LPAREN)
-        {
-            error("Expected '('");
-            s = savestate;
-            return false;
-        }
-        tok = next(s);
-        if (tok.tokID != TOK_INTEGER)
-        {
-            error("Expected an INTEGER");
-            s = savestate;
-            return false;
-        }
-        tok = next(s);
-        if (tok.tokID != TOK_COMMA)
-        {
-            error("Expected ','");
-            s = savestate;
-            return false;
-        }
-        tok = next(s);
-        if (tok.tokID != TOK_INTEGER)
-        {
-            error("Expected an INTEGER");
-            s = savestate;
-            return false;
-        }
-        tok = next(s);
-        if (tok.tokID != TOK_RPAREN)
-        {
-            error("Expected ')'");
-            s = savestate;
-            return false;
-        }
-        next(s);
-    }
-    // check CSD
-    else if (tok.tokID == TOK_CSD)
-    {
-        tok = next(s);
-        if (tok.tokID != TOK_LPAREN)
-        {
-            error("Expected '('");
-            s = savestate;
-            return false;
-        }
-        tok = next(s);
-        if (tok.tokID != TOK_FLOAT)
-        {
-            error("Expected a FLOAT");
-            s = savestate;
-            return false;
-        }
-        tok = next(s);
-        if (tok.tokID != TOK_COMMA)
-        {
-            error("Expected ','");
-            s = savestate;
-            return false;
-        }
-        tok = next(s);
-        if (tok.tokID != TOK_INTEGER)
-        {
-            error("Expected an INTEGER");
-            s = savestate;
-            return false;
-        }
-        tok = next(s);
-        if (tok.tokID != TOK_RPAREN)
-        {
-            error("Expected ')'");
-            s = savestate;
-            return false;
-        }
-        next(s);
-    }
-    else
-    {
-        error("Expected INPUT or CSD");
         s = savestate;
         return false;
     }
+    if (!match(s, TOK_MINUS))
+    {
+        s = savestate;
+        return false;
+    }
+    if (!acceptExpr(s, exprNode))
+    {
+        s = savestate;
+        return false;
+    }
+    newNode->type = ASTNode::NodeSub;
+    newNode->left = termNode;
+    newNode->right = exprNode;
     return true;
 }
 
-bool Parser::acceptAssignment(state_t &s)
+bool Parser::acceptTerm(state_t &s, ASTNodePtr newNode)
 {
+    // production: term1 | term2 | factor
     state_t savestate = s;
-    token_t tok = getToken(s);
-    if (tok.tokID != TOK_IDENT)
+    if (acceptTerm1(s, newNode))
     {
-        s = savestate;
-        return false;
-    }
-    tok = next(s);
-    if (tok.tokID != TOK_EQUAL)
-    {
-        error("Expected '='");
-        s = savestate;
-        return false;
-    }
-    tok = next(s);
-    if (!acceptExpr(s))
-    {
-        error("Expression expected");
-        s = savestate;
-        return false;
-    }
-    return true;
-}
-
-bool Parser::acceptExpr(state_t &s)
-{
-    state_t savestate = s;
-    token_t tok = getToken(s);
-
-    // TRY: term + expr
-    if (!acceptTerm(s))
-    {
-        s = savestate;
-        return false;
+        return true;
     }
 
-    // term accepted, so we must now check:
-    //   + expr
-    //   - expr
-    //   term
-
-    tok = getToken(s);
-    if (tok.tokID == TOK_PLUS)
-    {
-        tok = next(s);
-        if (!acceptExpr(s))
-        {
-            //TODO: check if we really should be returning to this
-            // state or whether another (later) state is more appropriate.
-            s = savestate;
-            error("Expected an expression");
-            return false;
-        }
-        return true;    // TERM + EXPR
-    }
-    else if (tok.tokID == TOK_MINUS)
-    {
-        tok = next(s);
-        if (!acceptExpr(s))
-        {
-            //TODO: check if we really should be returning to this
-            // state or whether another (later) state is more appropriate.
-            s = savestate;
-            error("Expected an expression");
-            return false;
-        }
-        return true;    // TERM - EXPR
-    }
-
-    // if we end up here, we've already accpted a single term!
-    // and that's ok!
-
-    return true;
-}
-
-bool Parser::acceptTerm(state_t &s)
-{
-    state_t savestate = s;
-    token_t tok = getToken(s);
-
-    // try: '-' factor
-    if (tok.tokID == TOK_MINUS)
-    {
-        tok = next(s);
-        if (!acceptFactor(s))
-        {
-            error("Expected a factor");
-            s = savestate;
-            return false;
-        }
-    }
-    else if (acceptFactor(s))
-    {
-        // factor * term
-        // or just factor.
-
-        tok = getToken(s);
-        if (tok.tokID == TOK_STAR)
-        {
-            state_t savestate2 = s;
-            tok = next(s);
-            if (acceptTerm(s))
-            {
-                return true;    // accepted: factor * term
-            }
-            error("Expected a term");
-            s = savestate2;
-            return false;
-        }
-
-        return true; // just a factor
-    }
     s = savestate;
+    if (acceptTerm2(s, newNode))
+    {
+        return true;
+    }
+
+    s = savestate;
+    if (acceptFactor(s, newNode))
+    {
+        return true;
+    }
     return false;
 }
 
-bool Parser::acceptFactor(state_t &s)
+bool Parser::acceptTerm1(state_t &s, ASTNodePtr newNode)
+{
+    // MINUS factor
+    state_t savestate = s;
+    if (!match(s, TOK_MINUS))
+    {
+        s = savestate;
+        return false;
+    }
+    ASTNodePtr factorNode(new ASTNode());
+    if (!acceptFactor(s, factorNode))
+    {
+        s = savestate;
+        return false;
+    }
+
+    newNode->type = ASTNode::NodeUnaryMinus;
+    newNode->right = factorNode;
+    return true;
+}
+
+bool Parser::acceptTerm2(state_t &s, ASTNodePtr newNode)
+{
+    // production: factor * term
+    ASTNodePtr factorNode(new ASTNode());
+    ASTNodePtr termNode(new ASTNode());
+
+    state_t savestate = s;
+    if (!acceptFactor(s, factorNode))
+    {
+        s = savestate;
+        return false;
+    }
+    if (!match(s, TOK_STAR))
+    {
+        s = savestate;
+        return false;
+    }
+    if (!acceptTerm(s, termNode))
+    {
+        s = savestate;
+        return false;
+    }
+    newNode->type = ASTNode::NodeMul;
+    newNode->left = factorNode;
+    newNode->right = termNode;
+    return true;
+}
+
+bool Parser::acceptFactor(state_t &s, ASTNodePtr newNode)
 {
     state_t savestate = s;
-    token_t tok = getToken(s);
 
-    if (tok.tokID == TOK_INTEGER)
+    if (match(s, TOK_INTEGER))
     {
-        next(s);
+        newNode->type = ASTNode::NodeInteger;
+        newNode->intVal = atoi(getToken(s, -1).txt.c_str());
         return true;    // INTEGER
     }
 
-    if (tok.tokID == TOK_FLOAT)
+    if (match(s, TOK_FLOAT))
     {
-         next(s);
-         return true;   // FLOAT
+        newNode->type = ASTNode::NodeIdent;
+        newNode->txt = getToken(s, -1).txt;
+        return true;    // IDENT
     }
 
-    if (tok.tokID == TOK_IDENT)
+    if (match(s, TOK_IDENT))
     {
-        next(s);
-        return true;    // IDENTIFIER
+        newNode->type = ASTNode::NodeIdent;
+        newNode->txt = getToken(s, -1).txt;
+        return true;    // IDENT
     }
 
-    if (tok.tokID == TOK_LPAREN)
+    if (acceptFactor1(s, newNode))
     {
-        tok = next(s);
-        if (!acceptExpr(s))
-        {
-            error("Expected an expression");
-            s = savestate;
-            return false;
-        }
-        tok = getToken(s);
-        if (tok.tokID != TOK_RPAREN)
-        {
-            error("Expected ')'");
-            s = savestate;
-            return false;
-        }
-        next(s);
-        return true;    // ( expr )
+        return true;
     }
 
-    s = savestate;
+    if (match(s, TOK_IDENT))
+    {
+        newNode->type = ASTNode::NodeIdent;
+        newNode->txt = getToken(s, -1).txt;
+        return true;    // IDENT
+    }
+
+    error(s, "Factor is not an integer, float, identifier or parenthesised expression.");
     return false;
+}
+
+bool Parser::acceptFactor1(state_t &s, ASTNodePtr newNode)
+{
+    state_t savestate = s;
+    if (!match(s, TOK_LPAREN))
+    {
+        s = savestate;
+        return false;
+    }
+    if (!acceptExpr(s, newNode))
+    {
+        s = savestate;
+        return false;
+    }
+    if (!match(s, TOK_RPAREN))
+    {
+        s = savestate;
+        return false;
+    }
+    return true;
 }

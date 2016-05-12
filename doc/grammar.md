@@ -6,16 +6,16 @@ program &rarr; statement-list _EOF_
 statement-list &rarr; statement statement-list  
 statement-list &rarr; _EMPTY_    
 
-statement &rarr; definition ';'  
-statement &rarr; assignment ';'  
+statement &rarr; definition  
+statement &rarr; assignment  
 statement &rarr; NEWLINE
 
-definition &rarr; DEFINE IDENT '=' defspec    
+definition &rarr; DEFINE IDENT '=' defspec ';'    
 
 defspec &rarr; INPUT '(' INTEGER, INTEGER ')'  
 defspec &rarr; CSD '(' FLOAT, INTEGER ')'  
 
-assignment &rarr; IDENT '=' expr  
+assignment &rarr; IDENT '=' expr ';'
 
 expr &rarr; term + expr  
 expr &rarr; term - expr  

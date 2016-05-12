@@ -107,7 +107,16 @@ int main(int argc, char *argv[])
         }
 
         Parser parse;
-        parse.process(tokens);
+        statements_t statements;
+        if (parse.process(tokens, statements))
+        {
+            printf("Parse OK!\n");
+        }
+        else
+        {
+            printf("Parse Failed!\n");
+            printf("Line %d pos %d: %s\n", parse.getLastErrorPos().line+1, parse.getLastErrorPos().pos+1, parse.getLastError().c_str());
+        }
     }
 
     return 0;

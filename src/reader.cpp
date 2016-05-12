@@ -84,6 +84,7 @@ char Reader::accept()
     {
         // read succesful!
         m_curpos.offset++;
+        m_curpos.pos++;
         if (c == 10)
         {
             m_curpos.line++;
