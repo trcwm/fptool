@@ -207,7 +207,7 @@ bool Parser::acceptDefspec2(state_t &s, ASTNodePtr newNode)
         return false;
     }
 
-    newNode->type = ASTNode::NodeInput;
+    newNode->type = ASTNode::NodeCSD;
     newNode->csdFloat = atof(getToken(s, -4).txt.c_str()); // first argument
     newNode->csdBits = atoi(getToken(s, -2).txt.c_str()); // second argument
 

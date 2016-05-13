@@ -34,7 +34,71 @@ struct ASTNode
 
     ASTNode(node_t nodeType = NodeUnknown)
     {
+        left = 0;
+        right = 0;
         type = nodeType;
+    }
+
+    void dump(std::ostream &stream, uint32_t level = 0)
+    {
+        if (left != 0)
+        {
+            left->dump(stream, level+1);
+        }
+
+        if (right != 0)
+        {
+            right->dump(stream, level+1);
+        }
+
+        // indent according to level
+        for(uint32_t i=0; i<level; i++)
+            stream << "  ";
+
+        switch(type)
+        {
+        case NodeUnknown:
+            stream << "Unknown";
+            break;
+        case NodeAssign:
+            stream << txt << " = ";
+            break;
+        case NodeDefine:
+            stream << "DEFINE " << txt << " = ";
+            break;
+        case NodeInput:
+            stream << "INPUT Q(" << intBits << "," << fracBits << ")";
+            break;
+        case NodeCSD:
+            stream << "CSD (" << csdFloat << "," << csdBits << ")";
+            break;
+        case NodeAdd:
+            stream << "+";
+            break;
+        case NodeSub:
+            stream << "-";
+            break;
+        case NodeMul:
+            stream << "*";
+            break;
+        case NodeUnaryMinus:
+            stream << "U-";
+            break;
+        case NodeIdent:
+            stream << txt;
+            break;
+        case NodeInteger:
+            stream << intVal;
+            break;
+        case NodeFloat:
+            stream << "FLOATVAL";
+            //stream << floatVal;
+            break;
+        default:
+            stream << "???";
+            break;
+        }
+        stream << std::endl;
     }
 
     node_t          type;

@@ -5,6 +5,9 @@
 */
 
 #include <stdio.h>
+#include <iostream>
+#include <iomanip>
+
 #include "reader.h"
 #include "tokenizer.h"
 #include "parser.h"
@@ -111,6 +114,12 @@ int main(int argc, char *argv[])
         if (parse.process(tokens, statements))
         {
             printf("Parse OK!\n");
+            std::cout << std::setprecision(9);
+            for(size_t i=0; i<statements.size(); i++)
+            {
+                printf("statement %d:\n", i);
+                statements[i]->dump(std::cout);
+            }
         }
         else
         {
