@@ -133,13 +133,13 @@ bool Parser::acceptDefinition(state_t &s, ASTNodePtr newNode)
         return false;
     }
 
-    newNode->txt  = getToken(s, -2).txt;    // get identifier string
-    newNode->type = ASTNode::NodeDefine;
+    newNode->info.txt  = getToken(s, -2).txt;    // get identifier string
 
-    ASTNodePtr defspec(new ASTNode());
+    //newNode->type = ASTNode::NodeDefine;
+    //ASTNodePtr defspec(new ASTNode());
 
     // create new RHS specification node:
-    if (!acceptDefspec(s, defspec))
+    if (!acceptDefspec(s, newNode))
     {
         s = savestate;
         return false;
@@ -152,7 +152,7 @@ bool Parser::acceptDefinition(state_t &s, ASTNodePtr newNode)
         return false;
     }
 
-    newNode->right = defspec;
+    //newNode->right = defspec;
     return true;
 }
 
@@ -186,8 +186,8 @@ bool Parser::acceptDefspec1(state_t &s, ASTNodePtr newNode)
     }
 
     newNode->type = ASTNode::NodeInput;
-    newNode->intBits = atoi(getToken(s, -4).txt.c_str()); // first integer
-    newNode->fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
+    newNode->info.intBits = atoi(getToken(s, -4).txt.c_str()); // first integer
+    newNode->info.fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
 
     return true;
 }
@@ -208,8 +208,8 @@ bool Parser::acceptDefspec2(state_t &s, ASTNodePtr newNode)
     }
 
     newNode->type = ASTNode::NodeCSD;
-    newNode->csdFloat = atof(getToken(s, -4).txt.c_str()); // first argument
-    newNode->csdBits = atoi(getToken(s, -2).txt.c_str()); // second argument
+    newNode->info.csdFloat = atof(getToken(s, -4).txt.c_str()); // first argument
+    newNode->info.csdBits = atoi(getToken(s, -2).txt.c_str()); // second argument
 
     return true;
 }
@@ -251,7 +251,7 @@ bool Parser::acceptAssignment(state_t &s, ASTNodePtr newNode)
     }
 
     newNode->type = ASTNode::NodeAssign;
-    newNode->txt  = identifier;
+    newNode->info.txt  = identifier;
     newNode->right = exprNode;
 
     return true;
@@ -420,21 +420,21 @@ bool Parser::acceptFactor(state_t &s, ASTNodePtr newNode)
     if (match(s, TOK_INTEGER))
     {
         newNode->type = ASTNode::NodeInteger;
-        newNode->intVal = atoi(getToken(s, -1).txt.c_str());
+        newNode->info.intVal = atoi(getToken(s, -1).txt.c_str());
         return true;    // INTEGER
     }
 
     if (match(s, TOK_FLOAT))
     {
         newNode->type = ASTNode::NodeIdent;
-        newNode->txt = getToken(s, -1).txt;
+        newNode->info.txt = getToken(s, -1).txt;
         return true;    // IDENT
     }
 
     if (match(s, TOK_IDENT))
     {
         newNode->type = ASTNode::NodeIdent;
-        newNode->txt = getToken(s, -1).txt;
+        newNode->info.txt = getToken(s, -1).txt;
         return true;    // IDENT
     }
 
@@ -446,7 +446,7 @@ bool Parser::acceptFactor(state_t &s, ASTNodePtr newNode)
     if (match(s, TOK_IDENT))
     {
         newNode->type = ASTNode::NodeIdent;
-        newNode->txt = getToken(s, -1).txt;
+        newNode->info.txt = getToken(s, -1).txt;
         return true;    // IDENT
     }
 

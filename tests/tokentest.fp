@@ -14,6 +14,7 @@ define c = csd(3.1415927,5);
 % do some actual arithmetic
 out1 = c*a + b;
 out2 = c*(a+b);
+out3 = a - b;
 
 %out2 = c >> 1;
 %out3 = c << 2;

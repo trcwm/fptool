@@ -11,6 +11,7 @@
 #include "reader.h"
 #include "tokenizer.h"
 #include "parser.h"
+#include "ssa.h"
 
 #define __VERSION__ "0.1a"
 
@@ -114,11 +115,79 @@ int main(int argc, char *argv[])
         if (parse.process(tokens, statements))
         {
             printf("Parse OK!\n");
+            /*
             std::cout << std::setprecision(9);
             for(size_t i=0; i<statements.size(); i++)
             {
                 printf("statement %d:\n", i);
                 statements[i]->dump(std::cout);
+            }
+            */
+
+            SSACreator ssa;
+            ssaList_t  ssaList;
+            ssaOperandList_t ssaOperandList;
+            ssa.process(statements, ssaList, ssaOperandList);
+
+            printf("--== SSA statements ==--\n");
+            for(size_t i=0; i<ssaList.size(); i++)
+            {
+                uint32_t idx1 = ssaList[i].var1;
+                uint32_t idx2 = ssaList[i].var2;
+                uint32_t idx3 = ssaList[i].var3;
+                switch(ssaList[i].operation)
+                {
+                case SSANode::OP_Add:
+                    printf("%s := %s + %s\n", ssaOperandList[idx3].info.txt.c_str(),
+                           ssaOperandList[idx2].info.txt.c_str(),
+                           ssaOperandList[idx1].info.txt.c_str());
+                    break;
+                case SSANode::OP_Sub:
+                    printf("%s := %s - %s\n", ssaOperandList[idx3].info.txt.c_str(),
+                           ssaOperandList[idx2].info.txt.c_str(),
+                           ssaOperandList[idx1].info.txt.c_str());
+                    break;
+                case SSANode::OP_Mul:
+                    printf("%s := %s * %s\n", ssaOperandList[idx3].info.txt.c_str(),
+                           ssaOperandList[idx2].info.txt.c_str(),
+                           ssaOperandList[idx1].info.txt.c_str());
+                    break;
+                case SSANode::OP_Negate:
+                    printf("%s := - %s\n", ssaOperandList[idx3].info.txt.c_str(),
+                           ssaOperandList[idx1].info.txt.c_str());
+                    break;
+                case SSANode::OP_Assign:
+                    printf("%s <= %s\n", ssaOperandList[idx3].info.txt.c_str(),
+                           ssaOperandList[idx1].info.txt.c_str());
+                    break;
+                default:
+                    printf("** unknown SSA node **\n");
+                }
+            }
+
+            printf("--== signal information ==--\n");
+            for(size_t i=0; i<ssaOperandList.size(); i++)
+            {
+                switch(ssaOperandList[i].type)
+                {
+                case operand_t::TypeInput:
+                    printf("INPUT: %s Q(%d,%d)\n", ssaOperandList[i].info.txt.c_str(),
+                           ssaOperandList[i].info.intBits,
+                           ssaOperandList[i].info.fracBits);
+                    break;
+                case operand_t::TypeOutput:
+                    printf("OUTPUT: %s Q(%d,%d)\n", ssaOperandList[i].info.txt.c_str(),
+                           ssaOperandList[i].info.intBits,
+                           ssaOperandList[i].info.fracBits);
+                    break;
+                case operand_t::TypeIntermediate:
+                    printf("TEMP: %s Q(%d,%d)\n", ssaOperandList[i].info.txt.c_str(),
+                           ssaOperandList[i].info.intBits,
+                           ssaOperandList[i].info.fracBits);
+                    break;
+                default:
+                    break;
+                }
             }
         }
         else

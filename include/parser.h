@@ -19,13 +19,25 @@
 
 #include "tokenizer.h"
 
+/** variable related information */
+struct varInfo
+{
+    std::string     txt;        // identifier name, integer or float value.
+    int32_t         fracBits;   // number of factional bits in INPUT definition
+    int32_t         intBits;    // number of integer bits in INPUT defintion
+    int32_t         csdBits;    // number of CSD factors/bits
+    double          csdFloat;   // desired value of CSD coefficient
+    int32_t         intVal;     // integer value
+};
+
 /** Abstract Syntax Tree Node */
 struct ASTNode
 {
   enum node_t {NodeUnknown, NodeHead,
                NodeStatement,
-               NodeAssign, NodeDefine,
+               NodeAssign,
                NodeInput, NodeCSD,
+               NodeTemp,
                NodeAdd, NodeSub, NodeMul,
                NodeUnaryMinus,
                NodeIdent,
@@ -61,16 +73,13 @@ struct ASTNode
             stream << "Unknown";
             break;
         case NodeAssign:
-            stream << txt << " = ";
-            break;
-        case NodeDefine:
-            stream << "DEFINE " << txt << " = ";
+            stream << info.txt << " = ";
             break;
         case NodeInput:
-            stream << "INPUT Q(" << intBits << "," << fracBits << ")";
+            stream << "INPUT Q(" << info.intBits << "," << info.fracBits << ")";
             break;
         case NodeCSD:
-            stream << "CSD (" << csdFloat << "," << csdBits << ")";
+            stream << "CSD (" << info.csdFloat << "," << info.csdBits << ")";
             break;
         case NodeAdd:
             stream << "+";
@@ -85,10 +94,10 @@ struct ASTNode
             stream << "U-";
             break;
         case NodeIdent:
-            stream << txt;
+            stream << info.txt;
             break;
         case NodeInteger:
-            stream << intVal;
+            stream << info.intVal;
             break;
         case NodeFloat:
             stream << "FLOATVAL";
@@ -101,13 +110,8 @@ struct ASTNode
         stream << std::endl;
     }
 
-    node_t          type;
-    std::string     txt;      // identifier name, integer or float value.
-    int32_t         fracBits;
-    int32_t         intBits;
-    int32_t         csdBits;
-    double          csdFloat;
-    int32_t         intVal;
+    node_t          type;   // the type of the node
+    varInfo         info;   // variable related information
 
     std::shared_ptr<ASTNode>  left;
     std::shared_ptr<ASTNode>  right;
@@ -123,15 +127,20 @@ class Parser
 public:
     Parser();
 
-    /** Process a list of tokens and produce a operations stack.
-        false is returned when a parse error occurs. */
+    /** Process a list of tokens and list of statements.
+        false is returned when a parse error occurs.
+        When an error occurs, call getLastError() to get
+        a human-readable string of the error.
+    */
     bool process(const std::vector<token_t> &tokens, statements_t &result);
 
+    /** Return a description of the last parse error that occurred. */
     std::string getLastError() const
     {
         return m_lastError;
     }
 
+    /** Get the position in the source code where the last error occurred. */
     Reader::position_info getLastErrorPos() const
     {
         return m_lastErrorPos;
@@ -151,7 +160,7 @@ protected:
        All functions return false when the production was not succesful.
        Each method is responsible for filling in the 'newNode' information
        and creating any subnodes needed for further processing by
-       recusively calling other methods.
+       recusively calling other accpet methods.
     */
 
     bool acceptProgram(state_t &s, statements_t &result);
