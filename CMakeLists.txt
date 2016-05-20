@@ -3,4 +3,4 @@ project(fptool)
 
 include_directories("include")
 
-add_executable (fptool src/reader.cpp src/tokenizer.cpp src/parser.cpp src/ssa.cpp src/main.cpp)
+add_executable (fptool src/reader.cpp src/tokenizer.cpp src/parser.cpp src/ssa.cpp src/csd.cpp src/main.cpp)

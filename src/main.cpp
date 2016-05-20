@@ -12,6 +12,7 @@
 #include "tokenizer.h"
 #include "parser.h"
 #include "ssa.h"
+#include "csd.h"
 
 #define __VERSION__ "0.1a"
 
@@ -198,6 +199,17 @@ int main(int argc, char *argv[])
             printf("Parse Failed!\n");
             printf("Line %d pos %d: %s\n", parse.getLastErrorPos().line+1, parse.getLastErrorPos().pos+1, parse.getLastError().c_str());
         }
+    }
+
+    csd_t d;
+    convertToCSD(3.14159265358979, 5, d);
+    printf("%f\n", d.value);
+    for(uint32_t i=0; i<d.digits.size(); i++)
+    {
+        if (d.digits[i].sign > 0)
+            printf("+2^%d ", d.digits[i].power);
+        else
+            printf("-2^%d ", d.digits[i].power);
     }
 
     return 0;
