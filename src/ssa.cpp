@@ -15,6 +15,7 @@
 
 bool SSACreator::process(const statements_t &statements, ssaList_t &ssaList, ssaOperandList_t &ssaOperandList)
 {
+    m_lastError.clear();
     m_opStack.clear();
     m_ssaList = &ssaList;
     m_operandList = &ssaOperandList;
@@ -29,17 +30,43 @@ bool SSACreator::process(const statements_t &statements, ssaList_t &ssaList, ssa
     // check that the operations stack is empty
     if (!m_opStack.empty())
     {
+        error("SSACreator::process - Operand stack is not empty when it should be");
         // We've missed some operations :(
         return false;
     }
     return true;
 }
 
-bool SSACreator::addItem(operand_t::type_t type, const varInfo &info, uint32_t &index)
+bool SSACreator::addOperand(operand_t::type_t type, const varInfo &info, uint32_t &index)
 {
     operand_t op;
     op.type = type;
     op.info = info;
+
+    /* check if this name is already in the operand list */
+    uint32_t dummy;
+    if (findIdentifier(info.txt,dummy))
+    {
+        //note: do not produce error text here
+        //better reporting can be done at higher
+        //levels.
+        return false;
+    }
+
+    m_operandList->push_back(op);
+    index = m_operandList->size()-1;
+    return true;
+}
+
+bool SSACreator::addIntegerOperand(operand_t::type_t type, const varInfo &info, uint32_t &index)
+{
+    operand_t op;
+    op.type = type;
+    op.info = info;
+    op.info.txt.clear();
+
+    // integer are unnamed: they can always be added onto the operand stack
+
     m_operandList->push_back(op);
     index = m_operandList->size()-1;
     return true;
@@ -87,6 +114,7 @@ void SSACreator::determineWordlength(const operand_t &var, int32_t &intBits, int
         fracBits = var.info.fracBits;
         break;
     case operand_t::TypeInteger:
+        // calculate the number of bits needed to represent the integer
         intBits = static_cast<int32_t>(pow(2.0,ceil(log10((float)var.info.intVal)/log10(2.0))))+1;
         fracBits = 0;
         break;
@@ -116,49 +144,69 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
     case ASTNode::NodeUnknown:
         return false;
 
-    // operations that only push things on the stack
+    // ************************************************
+    //  operations that only push things on the stack
+    // ************************************************
     case ASTNode::NodeCSD:
         // CSD definition, no need to add to the stack
         // it's referenced by name
-        addItem(operand_t::TypeCSD, node->info, index);
+        if (!addOperand(operand_t::TypeCSD, node->info, index))
+        {
+            error("CSD name already in use!");
+            return false;
+        }
         return true;
     case ASTNode::NodeInteger:
         // Literal integer, create an integer on the stack
-        addItem(operand_t::TypeInteger, node->info, index);
+        //
+        addIntegerOperand(operand_t::TypeInteger, node->info, index);
         m_opStack.push_back(index);
         return true;
     case ASTNode::NodeInput:        
         // INPUT definition, no need to add to the stack
         // it's referenced by name
-        addItem(operand_t::TypeInput, node->info, index);
-        return true;
+        if (!addOperand(operand_t::TypeInput, node->info, index))
+        {
+            error("Input name already in use!");
+            return false;
+        }
+        return true;        
     case ASTNode::NodeIdent:
         // resolve the identifier by name
         if (!findIdentifier(node->info.txt, index))
         {
-            // Identifier not found!
+            error("Identifier not found");
             return false;
         }
         m_opStack.push_back(index);
         return true;
+
+    // *************************************************
+    //  operations that pop and push stuff on the stack
+    // *************************************************
     case ASTNode::NodeAssign:
     {
         // assign to an output/register
         // sanity checking
         if (m_opStack.size() < 1)
         {
-            // not enough operands!
+            error("NodeAssign - not enough operands on the stack");
             return false;
         }
 
-        // one items at top of stack:
+        // one item at top of stack:
         //
         uint32_t arg1_idx = m_opStack.back();
         const operand_t &arg1 = m_operandList->at(arg1_idx);
         m_opStack.pop_back();
 
         // create an output variable
-        addItem(operand_t::TypeOutput, node->info, index);
+        if (!addOperand(operand_t::TypeOutput, node->info, index))
+        {
+            error("Output name already in use!");
+            return false;
+        }
+
         operand_t *result = &(m_operandList->operator[](index));
         result->info.intBits = arg1.info.intBits;
         result->info.fracBits = arg1.info.fracBits;
@@ -178,6 +226,7 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
         // sanity checking
         if (m_opStack.size() < 2)
         {
+            error("NodeAdd - not enough operands on the stack");
             // not enough operands!
             return false;
         }
@@ -216,6 +265,7 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
         // sanity checking
         if (m_opStack.size() < 2)
         {
+            error("NodeSub - not enough operands on the stack");
             // not enough operands!
             return false;
         }
@@ -254,6 +304,7 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
         // sanity checking
         if (m_opStack.size() < 2)
         {
+            error("NodeMul - not enough operands on the stack");
             // not enough operands!
             return false;
         }
@@ -291,6 +342,7 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
         // sanity checking
         if (m_opStack.size() < 1)
         {
+            error("NodeUnaryMinus - not enough operands on the stack");
             // not enough operands!
             return false;
         }

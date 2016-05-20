@@ -127,7 +127,10 @@ int main(int argc, char *argv[])
             SSACreator ssa;
             ssaList_t  ssaList;
             ssaOperandList_t ssaOperandList;
-            ssa.process(statements, ssaList, ssaOperandList);
+            if (!ssa.process(statements, ssaList, ssaOperandList))
+            {
+                printf("Error producing SSA: %s\n", ssa.getLastError().c_str());
+            }
 
             printf("--== SSA statements ==--\n");
             for(size_t i=0; i<ssaList.size(); i++)

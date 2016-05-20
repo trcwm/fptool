@@ -14,6 +14,7 @@
 
 #include <string>
 #include <stdint.h>
+#include <iostream>
 #include "parser.h"
 
 
@@ -69,7 +70,18 @@ class SSACreator
 {
 public:
     SSACreator() : m_tempPrefix("tmp") {}
+
+    /** Process a list of AST statements and produce a list of SSA statements,
+        and a list of variables/operands.
+        Returns false if an error occurred.
+    */
     bool process(const statements_t &statements, ssaList_t &ssaList, ssaOperandList_t &ssaOperandList);
+
+    /** Get a human readable version of the error */
+    std::string getLastError() const
+    {
+        return m_lastError;
+    }
 
 protected:
     bool executeASTNode(const ASTNodePtr node);
@@ -78,7 +90,10 @@ protected:
         and return its resulting index into
         the operand list.
     */
-    bool addItem(operand_t::type_t type, const varInfo &var, uint32_t &index);
+    bool addOperand(operand_t::type_t type, const varInfo &var, uint32_t &index);
+
+    /** Add an integer operand to the operand stack */
+    bool addIntegerOperand(operand_t::type_t type, const varInfo &var, uint32_t &index);
 
     /** create a intermediate operand/value of Q(intBits,fracBits) format
         and return the index into the operand list */
@@ -92,10 +107,18 @@ protected:
     /** determine the Q(n,m) wordlength of a variable */
     void determineWordlength(const operand_t &var, int32_t &intBits, int32_t &fracBits);
 
+    /** emit an error in human readable form */
+    void error(const std::string &errorstr)
+    {
+        std::cout << errorstr << std::endl;
+        m_lastError = errorstr;
+    }
+
     const statements_t *m_statements;
     ssaList_t          *m_ssaList;
     ssaOperandList_t   *m_operandList;
 
+    std::string         m_lastError;
     std::string         m_tempPrefix;
     std::vector<uint32_t> m_opStack;
 };
