@@ -22,6 +22,6 @@ out3 = a - b;
 %out3 = c <<< 4;
 
 % test the different forms of floats
-x = 3.1415927;
-y = 3.1415927e0;
+%x = 3.1415927;
+%y = 3.1415927e0;
 

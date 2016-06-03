@@ -135,9 +135,6 @@ bool Parser::acceptDefinition(state_t &s, ASTNodePtr newNode)
 
     newNode->info.txt  = getToken(s, -2).txt;    // get identifier string
 
-    //newNode->type = ASTNode::NodeDefine;
-    //ASTNodePtr defspec(new ASTNode());
-
     // create new RHS specification node:
     if (!acceptDefspec(s, newNode))
     {
@@ -152,7 +149,6 @@ bool Parser::acceptDefinition(state_t &s, ASTNodePtr newNode)
         return false;
     }
 
-    //newNode->right = defspec;
     return true;
 }
 
@@ -426,9 +422,11 @@ bool Parser::acceptFactor(state_t &s, ASTNodePtr newNode)
 
     if (match(s, TOK_FLOAT))
     {
-        newNode->type = ASTNode::NodeIdent;
-        newNode->info.txt = getToken(s, -1).txt;
-        return true;    // IDENT
+        error(s, "literal floats are not supported!");
+        return false;
+        //newNode->type = ASTNode::NodeIdent;
+        //newNode->info.txt = getToken(s, -1).txt;
+        //return true;    // IDENT
     }
 
     if (match(s, TOK_IDENT))

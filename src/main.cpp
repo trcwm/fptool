@@ -13,6 +13,8 @@
 #include "parser.h"
 #include "ssa.h"
 #include "csd.h"
+#include "pass_addsub.h"
+#include "vhdlcodegen.h"
 
 #define __VERSION__ "0.1a"
 
@@ -39,17 +41,25 @@ int main(int argc, char *argv[])
         delete reader;
 
         // show the tokens
+        uint32_t newlineCnt = 0;
         for(size_t i=0; i<tokens.size(); i++)
         {
             token_t token  = tokens[i];
+            if (token.tokID != TOK_NEWLINE)
+            {
+                newlineCnt = 0;
+            }
+
             switch(token.tokID)
             {
             default:
             case TOK_UNKNOWN:
                 printf("Unknown\n");
                 break;
-            case TOK_NEWLINE:
-                printf("\n");
+            case TOK_NEWLINE:   // suppress superfluous newlines
+                if (newlineCnt == 0)
+                    printf("\n");
+                newlineCnt++;
                 break;
             case TOK_IDENT:
                 printf("<ident>%s", token.txt.c_str());
@@ -133,6 +143,7 @@ int main(int argc, char *argv[])
                 printf("Error producing SSA: %s\n", ssa.getLastError().c_str());
             }
 
+#if 0
             printf("--== SSA statements ==--\n");
             for(size_t i=0; i<ssaList.size(); i++)
             {
@@ -168,7 +179,9 @@ int main(int argc, char *argv[])
                     printf("** unknown SSA node **\n");
                 }
             }
+#endif
 
+#if 0
             printf("--== signal information ==--\n");
             for(size_t i=0; i<ssaOperandList.size(); i++)
             {
@@ -193,6 +206,13 @@ int main(int argc, char *argv[])
                     break;
                 }
             }
+#endif
+
+            PassAddSub  addsub;
+            addsub.process(ssaList, ssaOperandList);
+
+            VHDLCodeGen codegen;
+            codegen.process(ssaList, ssaOperandList);
         }
         else
         {
@@ -201,6 +221,7 @@ int main(int argc, char *argv[])
         }
     }
 
+#if 0
     csd_t d;
     convertToCSD(3.14159265358979, 5, d);
     printf("%f\n", d.value);
@@ -211,6 +232,7 @@ int main(int argc, char *argv[])
         else
             printf("-2^%d ", d.digits[i].power);
     }
+#endif
 
     return 0;
 }

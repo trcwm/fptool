@@ -152,10 +152,13 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
         // it's referenced by name
         if (!addOperand(operand_t::TypeCSD, node->info, index))
         {
-            error("CSD name already in use!");
+            error("SSACreator - CSD name already in use!");
             return false;
         }
         return true;
+    case ASTNode::NodeFloat:
+        error("SSACreator - found an unsupported float literal!");
+        return false;
     case ASTNode::NodeInteger:
         // Literal integer, create an integer on the stack
         //
@@ -170,12 +173,12 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
             error("Input name already in use!");
             return false;
         }
-        return true;        
+        return true;
     case ASTNode::NodeIdent:
         // resolve the identifier by name
         if (!findIdentifier(node->info.txt, index))
         {
-            error("Identifier not found");
+            error("ASTNode::NodeIdent - identifier not found");
             return false;
         }
         m_opStack.push_back(index);
@@ -190,7 +193,7 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
         // sanity checking
         if (m_opStack.size() < 1)
         {
-            error("NodeAssign - not enough operands on the stack");
+            error("ASTNode::NodeAssign - not enough operands on the stack");
             return false;
         }
 
@@ -226,7 +229,7 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
         // sanity checking
         if (m_opStack.size() < 2)
         {
-            error("NodeAdd - not enough operands on the stack");
+            error("ASTNode::NodeAdd - not enough operands on the stack");
             // not enough operands!
             return false;
         }
@@ -265,7 +268,7 @@ bool SSACreator::executeASTNode(const ASTNodePtr node)
         // sanity checking
         if (m_opStack.size() < 2)
         {
-            error("NodeSub - not enough operands on the stack");
+            error("ASTNode::NodeSub - not enough operands on the stack");
             // not enough operands!
             return false;
         }

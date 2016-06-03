@@ -24,10 +24,11 @@ struct operand_t
     enum type_t
     {
         TypeInteger,        // integer constant
-        TypeCSD,
-        TypeInput,
-        TypeIntermediate,
-        TypeOutput
+        TypeCSD,            // canonical signed digit type
+        TypeInput,          // pre-defined input variable
+        TypeIntermediate,   // intermediate result var
+        TypeOutput,         // output variable (cannot be read)
+        TypeRemoved         // type has been removed
     };
 
     type_t  type;
@@ -55,7 +56,7 @@ struct SSANode
     operation_t operation;
     size_t      var1;   // Index of operand 1
     size_t      var2;   // Index of operand 2
-    size_t      var3;   // Index of operand 3
+    size_t      var3;   // Index of operand 3 (lhs)
     int32_t     bits;   // remove/extend/saturate (integer) bits
     int32_t     fbits;  // saturate (fractional) bits
 };
