@@ -10,6 +10,7 @@
 */
 
 #include "ssa.h"
+#include "csd.h"
 #include <math.h>
 #include <sstream>
 
@@ -105,6 +106,7 @@ bool SSACreator::findIdentifier(const std::string &name, uint32_t &index)
 
 void SSACreator::determineWordlength(const operand_t &var, int32_t &intBits, int32_t &fracBits)
 {
+    csd_t csd;
     switch(var.type)
     {
     case operand_t::TypeInput:
@@ -118,12 +120,22 @@ void SSACreator::determineWordlength(const operand_t &var, int32_t &intBits, int
         intBits = static_cast<int32_t>(pow(2.0,ceil(log10((float)var.info.intVal)/log10(2.0))))+1;
         fracBits = 0;
         break;
-    default:
     case operand_t::TypeCSD:
-        // fixme:
+        if (convertToCSD(var.info.csdFloat, var.info.csdBits, csd))
+        {
+            intBits = csd.intBits;
+            fracBits = csd.fracBits;
+            std::cout << "CSD: Q(" << intBits << "," << fracBits << ") -> " << csd.value << "\n";
+        }
+        else
+        {
+            throw std::runtime_error("SSACreator: cannot determine word-length of CSD");
+        }
+        break;
+    default:
         intBits = 0;
         fracBits = 0;
-        break;
+        throw std::runtime_error("SSACreator: undetermined operand type");
     }
 }
 

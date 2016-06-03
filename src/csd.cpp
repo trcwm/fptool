@@ -9,6 +9,7 @@
 */
 
 #include "csd.h"
+#include <iostream>
 
 /** convert a floating-point value to a CSD representation
     with a determined number of terms */
@@ -44,7 +45,12 @@ bool convertToCSD(const double v, uint32_t terms, csd_t &result)
             digit.sign = 1;
         }
         result.digits.push_back(digit);
+        std::cout << "2^" << digit.power << " ";
     }
+    std::cout << "\n";
+    result.intBits = result.digits[0].power+1;    // account for sign bit
+    result.fracBits= -result.digits.back().power;
+
     return true;
 }
 

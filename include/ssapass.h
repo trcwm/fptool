@@ -49,7 +49,7 @@ protected:
     */
     uint32_t createIntermediate(int32_t intBits, int32_t fracBits)
     {
-        const std::string m_tempPrefix = "T";
+        const std::string m_tempPrefix = "tmp";
         operand_t op;
         op.type = operand_t::TypeIntermediate;
         op.info.intBits = intBits;

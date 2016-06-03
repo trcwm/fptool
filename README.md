@@ -12,7 +12,7 @@ Assumptions:
 - all intermediate results are scaled to avoid overflow.
 - all shift operators are of the arithmetic type and don't drop bits.
 - division is not supported (for now).
-- you know what you're doing: optimization are not done (for now).
+- you know what you're doing: optimizations are not done (for now).
 - Q(n,m) has 'm' factional bits and 'n' integer bits.
 - the number of bits in a Q(n,m) is n+m.
 - Q(1,7) has a range of [-1/128 .. 1/127], i.e. it can't represent 1.0 exactly.

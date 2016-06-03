@@ -165,7 +165,6 @@ void VHDLCodeGen::genProcessHeader(std::ostream &os, uint32_t indent)
             genIndent(os, indent);
             os << "variable " << op.info.txt << " : SIGNED("<< op.info.intBits + op.info.fracBits-1 << " downto 0);";
             os << "  -- Q(" << op.info.intBits << "," << op.info.fracBits << ");\n";
-            break;
         }
     }
 
