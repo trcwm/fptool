@@ -16,12 +16,12 @@ void PassAddSub::execute()
     auto iter = m_ssaList->begin();
     while(iter != m_ssaList->end())
     {
-        SSANode::operation_t operation = iter->operation;
-        if ((operation == SSANode::OP_Add) || (operation == SSANode::OP_Sub))
+        SSA::SSANode::operation_t operation = iter->operation;
+        if ((operation == SSA::SSANode::OP_Add) || (operation == SSA::SSANode::OP_Sub))
         {
             // get operands
-            operand_t op1 = getOperand(iter->var1);
-            operand_t op2 = getOperand(iter->var2);
+            SSA::operand_t op1 = getOperand(iter->var1);
+            SSA::operand_t op2 = getOperand(iter->var2);
 
             if (op1.info.fracBits > op2.info.fracBits)
             {
@@ -34,8 +34,8 @@ void PassAddSub::execute()
                 iter->var2 = newop;
 
                 // insert extendLSB command before this operation
-                SSANode newnode;
-                newnode.operation = SSANode::OP_ExtendLSBs;
+                SSA::SSANode newnode;
+                newnode.operation = SSA::SSANode::OP_ExtendLSBs;
                 newnode.var3 = newop;
                 newnode.var1 = old_op2;
                 newnode.bits = op2.info.intBits;
@@ -53,8 +53,8 @@ void PassAddSub::execute()
                 iter->var1 = newop;
 
                 // insert extendLSB command before this operation
-                SSANode newnode;
-                newnode.operation = SSANode::OP_ExtendLSBs;
+                SSA::SSANode newnode;
+                newnode.operation = SSA::SSANode::OP_ExtendLSBs;
                 newnode.var3 = newop;
                 newnode.var1 = old_op1;
                 newnode.bits = op1.info.intBits;

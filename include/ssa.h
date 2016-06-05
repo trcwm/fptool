@@ -14,9 +14,13 @@
 
 #include <string>
 #include <stdint.h>
+#include <list>
 #include <iostream>
 #include "parser.h"
 
+namespace SSA {
+
+typedef size_t operandIndex;
 
 /** Operand type for SSA */
 struct operand_t
@@ -36,22 +40,47 @@ struct operand_t
 };
 
 
-/** Single static assignment node */
+/** Single static assignment node
+
+    Note: nodes can be synthesizable or non-synthesizable.
+    For instance, when we have and Add node:
+
+    var3 = var2 + var1
+
+    ,where var1 and var2 have different Q() sizes,
+    the operation is not synthesizable in that
+    a VHDL or Verilog synthesis tool will not compile
+    or produce erroneous result if the fractional
+    parts of var1 and var2 are not equalized in length.
+    Furthermore, to avoid overflow, an additional bit
+    is needed at the MSB end.
+
+    TODO: make a function to returns 'true' if an SSA node is
+    synthesizable.
+
+*/
 struct SSANode
 {
     enum operation_t
     {
+        OP_Undefined,   // Node is undefined
         OP_Add,         // Add two variables var3 = var1 + var2
         OP_Sub,         // Subtract two variables var3 = var1 - var2
         OP_Mul,         // Multiply two variables var3 = var1 * var2
         OP_Negate,      // Sign reverse
         OP_Assign,      // Assign to an output/register variable
+        OP_Reinterpret, // Reinterpret Q(n1,m2) to Q(n2,m2) where n1-m2 = n2-m2
         OP_Saturate,    // Saturate var3 = Saturate(var1, bits, fbits)
         OP_RemoveLSBs,  // Remove bits from the LSB side
         OP_ExtendLSBs,  // Add bits at the LSB side (zero bits)
         OP_RemoveMSBs,  // Remove bits at the MSB side
         OP_ExtendMSBs   // Add bits at the MSB side (sign extend)
     };
+
+    /** constructor to initialize things to safe defaults */
+    SSANode() : operation(OP_Undefined), var1(0),var2(0),var3(0),bits(0),fbits(0)
+    {
+    }
 
     operation_t operation;
     size_t      var1;   // Index of operand 1
@@ -61,8 +90,45 @@ struct SSANode
     int32_t     fbits;  // saturate (fractional) bits
 };
 
-typedef std::vector<SSANode> ssaList_t;
-typedef std::vector<operand_t> ssaOperandList_t;
+typedef std::list<SSANode> ssaList_t;
+typedef std::vector<operand_t> ssaOperands_t;
+typedef std::list<SSANode>::iterator ssa_iterator;
+
+    /** create an Add node tmp = s1 + s2, returning the index
+        of the new temp variable.
+        s1 and s2 must be either TypeInput or TypeIntermediate.
+    */
+    operandIndex createAddNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex s1, operandIndex s2);
+
+    /** create an Sub node tmp = s1 - s2, returning the index
+        of the new temp variable.
+        s1 and s2 must be either TypeInput or TypeIntermediate.
+    */
+    operandIndex createSubNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex s1, operandIndex s2);
+
+    /** create a Mul node tmp = s1*s2, returning the index
+         of the new temp variable.
+         s1 and s2 must either be TypeInput, TypeIntermediate or TypeCSD.
+    */
+    operandIndex createMulNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex s1, operandIndex s2);
+
+    /** create a negate node, returning the index
+        of the new temp variable.
+        s1 and s2 must either be TypeInput, TypeIntermediate.
+    */
+    operandIndex createNegateNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex s1);
+
+    /** create an assignment node.
+        output must be TypeOutput, s1 must either be TypeInput, TypeIntermediate.
+    */
+    void createAssignNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex output, operandIndex s1);
+
+
+    /** create a new temporary operand and return its index */
+    operandIndex createNewTemporary(ssaOperands_t &operands, int32_t intbits, int32_t fracbits);
+
+}  //namespace
+
 
 
 /** Create a SSA intermediate language representation from
@@ -76,7 +142,7 @@ public:
         and a list of variables/operands.
         Returns false if an error occurred.
     */
-    bool process(const statements_t &statements, ssaList_t &ssaList, ssaOperandList_t &ssaOperandList);
+    bool process(const statements_t &statements, SSA::ssaList_t &ssaList, SSA::ssaOperands_t &ssaOperandList);
 
     /** Get a human readable version of the error */
     std::string getLastError() const
@@ -91,10 +157,10 @@ protected:
         and return its resulting index into
         the operand list.
     */
-    bool addOperand(operand_t::type_t type, const varInfo &var, uint32_t &index);
+    bool addOperand(SSA::operand_t::type_t type, const varInfo &var, uint32_t &index);
 
     /** Add an integer operand to the operand stack */
-    bool addIntegerOperand(operand_t::type_t type, const varInfo &var, uint32_t &index);
+    bool addIntegerOperand(SSA::operand_t::type_t type, const varInfo &var, uint32_t &index);
 
     /** create a intermediate operand/value of Q(intBits,fracBits) format
         and return the index into the operand list */
@@ -106,7 +172,7 @@ protected:
     bool findIdentifier(const std::string &name, uint32_t &index);
 
     /** determine the Q(n,m) wordlength of a variable */
-    void determineWordlength(const operand_t &var, int32_t &intBits, int32_t &fracBits);
+    void determineWordlength(const SSA::operand_t &var, int32_t &intBits, int32_t &fracBits);
 
     /** emit an error in human readable form */
     void error(const std::string &errorstr)
@@ -115,9 +181,9 @@ protected:
         m_lastError = errorstr;
     }
 
-    const statements_t *m_statements;
-    ssaList_t          *m_ssaList;
-    ssaOperandList_t   *m_operandList;
+    const statements_t  *m_statements;
+    SSA::ssaList_t      *m_ssaList;
+    SSA::ssaOperands_t  *m_operands;
 
     std::string         m_lastError;
     std::string         m_tempPrefix;

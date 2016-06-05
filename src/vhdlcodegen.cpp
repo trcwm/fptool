@@ -17,80 +17,103 @@ void VHDLCodeGen::execute()
     genProcessHeader(os, indent);
 
     indent+=2;
-    for(size_t i=0; i<m_ssaList->size(); i++)
+    auto iter = m_ssaList->begin();
+    while(iter != m_ssaList->end())
     {
         // get LHS operand as output variable/signal
         // and generate the code
-        operand_t lhs = getOperand(m_ssaList->at(i).var3);
+        SSA::operand_t lhs = getOperand(iter->var3);
         genLHS(os, lhs, indent);
 
-        operand_t op1;
-        operand_t op2;
-        SSANode node = m_ssaList->at(i);
+        SSA::operand_t op1;
+        SSA::operand_t op2;
+        SSA::SSANode node = *iter;
         switch(node.operation)
         {
-        case SSANode::OP_Add:
-            op1 = getOperand(m_ssaList->at(i).var1);
-            op2 = getOperand(m_ssaList->at(i).var2);
+        case SSA::SSANode::OP_Add:
+            op1 = getOperand(iter->var1);
+            op2 = getOperand(iter->var2);
             os << op2.info.txt << " + " << op1.info.txt << ";\n";
+            // check if the fractional bits have been
+            // equalized
+            if (op1.info.fracBits != op2.info.fracBits)
+            {
+                // warning
+                std::cout << "Warning: fractional bits not equalized\n";
+            }
             break;
-        case SSANode::OP_Sub:
-            op1 = getOperand(m_ssaList->at(i).var1);
-            op2 = getOperand(m_ssaList->at(i).var2);
+        case SSA::SSANode::OP_Sub:
+            op1 = getOperand(iter->var1);
+            op2 = getOperand(iter->var2);
             os << op2.info.txt << " - " << op1.info.txt << ";\n";
+            // check if the fractional bits have been
+            // equalized
+            if (op1.info.fracBits != op2.info.fracBits)
+            {
+                // warning
+                std::cout << "Warning: fractional bits not equalized\n";
+            }
             break;
-        case SSANode::OP_Mul:
-            op1 = getOperand(m_ssaList->at(i).var1);
-            op2 = getOperand(m_ssaList->at(i).var2);
+        case SSA::SSANode::OP_Mul:
+            op1 = getOperand(iter->var1);
+            op2 = getOperand(iter->var2);
             os << op2.info.txt << " * " << op1.info.txt << ";\n";
             break;
-        case SSANode::OP_Negate:
-            op1 = getOperand(m_ssaList->at(i).var1);
+        case SSA::SSANode::OP_Negate:
+            op1 = getOperand(iter->var1);
             os << "-" << op1.info.txt << ";\n";
             break;
-        case SSANode::OP_Assign:
-            op1 = getOperand(m_ssaList->at(i).var1);
+        case SSA::SSANode::OP_Assign:
+            op1 = getOperand(iter->var1);
             os << op1.info.txt << ";\n";
+            // check if the bits are equal
+            if ((op1.info.fracBits != lhs.info.fracBits) ||
+                (op1.info.intBits != lhs.info.intBits))
+            {
+                // warning
+                std::cout << "Warning: bit-widths not equalized\n";
+            }
             break;
-        case SSANode::OP_Saturate:
-            op1 = getOperand(m_ssaList->at(i).var1);
+        case SSA::SSANode::OP_Saturate:
+            op1 = getOperand(iter->var1);
             break;
-        case SSANode::OP_RemoveLSBs:
-            op1 = getOperand(m_ssaList->at(i).var1);
+        case SSA::SSANode::OP_RemoveLSBs:
+            op1 = getOperand(iter->var1);
             os << "removeLSBs(" << op1.info.txt << ");\n";
             break;
-        case SSANode::OP_ExtendLSBs:
-            op1 = getOperand(m_ssaList->at(i).var1);
+        case SSA::SSANode::OP_ExtendLSBs:
+            op1 = getOperand(iter->var1);
             os << "extendLSBs(" << op1.info.txt << "," << node.fbits - op1.info.fracBits <<");\n";
             break;
-        case SSANode::OP_RemoveMSBs:
-            op1 = getOperand(m_ssaList->at(i).var1);
+        case SSA::SSANode::OP_RemoveMSBs:
+            op1 = getOperand(iter->var1);
             os << "removeMSBs(" << op1.info.txt << ");\n";
             break;
-        case SSANode::OP_ExtendMSBs:
-            op1 = getOperand(m_ssaList->at(i).var1);
+        case SSA::SSANode::OP_ExtendMSBs:
+            op1 = getOperand(iter->var1);
             os << "extendMSBs(" << op1.info.txt << ");\n";
             break;
         default:
             throw std::runtime_error("VHDLCodeGen: unknown SSA operation node");
         }
+        iter++;
     }
     indent-=2;
     genIndent(os, indent);
     os << "end process;\n";
 }
 
-void VHDLCodeGen::genLHS(std::ostream &os, operand_t op, uint32_t indent)
+void VHDLCodeGen::genLHS(std::ostream &os, SSA::operand_t op, uint32_t indent)
 {
     // generate code for intermediate and output
     // else error.
-    if (op.type == operand_t::TypeIntermediate)
+    if (op.type == SSA::operand_t::TypeIntermediate)
     {
         genIndent(os,indent);
         os << op.info.txt << " := ";
         return;
     }
-    if (op.type == operand_t::TypeOutput)
+    if (op.type == SSA::operand_t::TypeOutput)
     {
         genIndent(os,indent);
         os << op.info.txt << " <= ";
@@ -110,12 +133,12 @@ void VHDLCodeGen::genProcessHeader(std::ostream &os, uint32_t indent)
     //
 
     // generate documentation for output signals
-    for(size_t i=0; i<m_ssaOperandList->size(); i++)
+    for(size_t i=0; i<m_ssaOperands->size(); i++)
     {
-        operand_t op = m_ssaOperandList->at(i);
+        SSA::operand_t op = m_ssaOperands->at(i);
         switch(op.type)
         {
-        case operand_t::TypeOutput:
+        case SSA::operand_t::TypeOutput:
             genIndent(os, indent);
             os << "-- " << op.info.txt << " Q(" << op.info.intBits << "," << op.info.fracBits << ");\n";
             break;
@@ -123,12 +146,12 @@ void VHDLCodeGen::genProcessHeader(std::ostream &os, uint32_t indent)
     }
 
     // generate documentation for input signals
-    for(size_t i=0; i<m_ssaOperandList->size(); i++)
+    for(size_t i=0; i<m_ssaOperands->size(); i++)
     {
-        operand_t op = m_ssaOperandList->at(i);
+        SSA::operand_t op = m_ssaOperands->at(i);
         switch(op.type)
         {
-        case operand_t::TypeInput:
+        case SSA::operand_t::TypeInput:
             genIndent(os, indent);
             os << "-- " << op.info.txt << " Q(" << op.info.intBits << "," << op.info.fracBits << ");\n";
             break;
@@ -139,11 +162,11 @@ void VHDLCodeGen::genProcessHeader(std::ostream &os, uint32_t indent)
     genIndent(os, indent);
     os << "proc_comb: process(";
     bool isFirst = true;
-    for(size_t i=0; i<m_ssaOperandList->size(); i++)
+    for(size_t i=0; i<m_ssaOperands->size(); i++)
     {
-        operand_t op = m_ssaOperandList->at(i);
+        SSA::operand_t op = m_ssaOperands->at(i);
 
-        if (op.type == operand_t::TypeInput)
+        if (op.type == SSA::operand_t::TypeInput)
         {
             // prepend a comma if this is not the first in the sens. list
             if (!isFirst)
@@ -157,10 +180,10 @@ void VHDLCodeGen::genProcessHeader(std::ostream &os, uint32_t indent)
     indent+=2;
 
     // write the variable list
-    for(size_t i=0; i<m_ssaOperandList->size(); i++)
+    for(size_t i=0; i<m_ssaOperands->size(); i++)
     {
-        operand_t op = m_ssaOperandList->at(i);
-        if (op.type == operand_t::TypeIntermediate)
+        SSA::operand_t op = m_ssaOperands->at(i);
+        if (op.type == SSA::operand_t::TypeIntermediate)
         {
             genIndent(os, indent);
             os << "variable " << op.info.txt << " : SIGNED("<< op.info.intBits + op.info.fracBits-1 << " downto 0);";

@@ -20,10 +20,10 @@
 class SSAPass
 {
 public:
-    void process(ssaList_t &ssaList, ssaOperandList_t &ssaOperandList)
+    void process(SSA::ssaList_t &ssaList, SSA::ssaOperands_t &ssaOperands)
     {
         m_ssaList = &ssaList;
-        m_ssaOperandList = &ssaOperandList;
+        m_ssaOperands = &ssaOperands;
         execute();
     }
 
@@ -33,12 +33,12 @@ protected:
     /** lookup a variable in t he operand list.
         if none exists, throw an exception.
     */
-    operand_t getOperand(size_t index)
+    SSA::operand_t getOperand(size_t index)
     {
-        if (index >= m_ssaOperandList->size())
+        if (index >= m_ssaOperands->size())
             throw std::runtime_error("Operand out of bounds");
 
-        return m_ssaOperandList->at(index);
+        return m_ssaOperands->at(index);
     }
 
     /** create a new intermediate variable and return
@@ -50,27 +50,27 @@ protected:
     uint32_t createIntermediate(int32_t intBits, int32_t fracBits)
     {
         const std::string m_tempPrefix = "tmp";
-        operand_t op;
-        op.type = operand_t::TypeIntermediate;
+        SSA::operand_t op;
+        op.type = SSA::operand_t::TypeIntermediate;
         op.info.intBits = intBits;
         op.info.fracBits = fracBits;
 
-        uint32_t index = m_ssaOperandList->size();
+        uint32_t index = m_ssaOperands->size();
 
         std::ostringstream ss;
         ss << m_tempPrefix << index;
         op.info.txt = ss.str();
 
-        m_ssaOperandList->push_back(op);
+        m_ssaOperands->push_back(op);
         return index;
     }
 
     /** mark an operand as removed */
     void removeOperand(uint32_t index)
     {
-        if (index < m_ssaOperandList->size())
+        if (index < m_ssaOperands->size())
         {
-            m_ssaOperandList->operator [](index).type = operand_t::TypeRemoved;
+            m_ssaOperands->operator [](index).type = SSA::operand_t::TypeRemoved;
         }
         else
         {
@@ -78,8 +78,8 @@ protected:
         }
     }
 
-    ssaList_t           *m_ssaList;
-    ssaOperandList_t    *m_ssaOperandList;
+    SSA::ssaList_t      *m_ssaList;
+    SSA::ssaOperands_t  *m_ssaOperands;
 };
 
 #endif

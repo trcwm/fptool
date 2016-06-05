@@ -136,9 +136,9 @@ int main(int argc, char *argv[])
             */
 
             SSACreator ssa;
-            ssaList_t  ssaList;
-            ssaOperandList_t ssaOperandList;
-            if (!ssa.process(statements, ssaList, ssaOperandList))
+            SSA::ssaList_t  ssaList;
+            SSA::ssaOperands_t ssaOperands;
+            if (!ssa.process(statements, ssaList, ssaOperands))
             {
                 printf("Error producing SSA: %s\n", ssa.getLastError().c_str());
             }
@@ -209,10 +209,10 @@ int main(int argc, char *argv[])
 #endif
 
             PassAddSub  addsub;
-            addsub.process(ssaList, ssaOperandList);
+            addsub.process(ssaList, ssaOperands);
 
             VHDLCodeGen codegen;
-            codegen.process(ssaList, ssaOperandList);
+            codegen.process(ssaList, ssaOperands);
         }
         else
         {

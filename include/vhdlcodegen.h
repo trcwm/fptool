@@ -19,7 +19,7 @@ protected:
     virtual void execute();
 
     /** generate left hand side of a statement */
-    void genLHS(std::ostream &os, operand_t op, uint32_t indent);
+    void genLHS(std::ostream &os, SSA::operand_t op, uint32_t indent);
 
     /** generate signals and variables etc. */
     void genProcessHeader(std::ostream &os, uint32_t indent);
