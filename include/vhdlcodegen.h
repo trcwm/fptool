@@ -16,13 +16,13 @@ class VHDLCodeGen : public SSAPass
 {
 
 protected:
-    virtual void execute();
+    virtual void execute(SSAObject &ssa);
 
     /** generate left hand side of a statement */
-    void genLHS(std::ostream &os, SSA::operand_t op, uint32_t indent);
+    void genLHS(std::ostream &os, operand_t op, uint32_t indent);
 
     /** generate signals and variables etc. */
-    void genProcessHeader(std::ostream &os, uint32_t indent);
+    void genProcessHeader(const SSAObject &ssa, std::ostream &os, uint32_t indent);
 
     /** generate indentation */
     void genIndent(std::ostream &os, uint32_t indent);

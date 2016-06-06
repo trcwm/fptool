@@ -135,49 +135,50 @@ int main(int argc, char *argv[])
             }
             */
 
-            SSACreator ssa;
-            SSA::ssaList_t  ssaList;
-            SSA::ssaOperands_t ssaOperands;
-            if (!ssa.process(statements, ssaList, ssaOperands))
+            SSACreator ssaCreator;
+            SSAObject ssa;
+            if (!ssaCreator.process(statements, ssa))
             {
-                printf("Error producing SSA: %s\n", ssa.getLastError().c_str());
+                printf("Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
             }
 
 #if 0
             printf("--== SSA statements ==--\n");
-            for(size_t i=0; i<ssaList.size(); i++)
+            auto iter = ssa.begin();
+            while(iter != ssa.end())
             {
-                uint32_t idx1 = ssaList[i].var1;
-                uint32_t idx2 = ssaList[i].var2;
-                uint32_t idx3 = ssaList[i].var3;
-                switch(ssaList[i].operation)
+                uint32_t idx1 = iter->var1;
+                uint32_t idx2 = iter->var2;
+                uint32_t idx3 = iter->var3;
+                switch(iter->operation)
                 {
                 case SSANode::OP_Add:
-                    printf("%s := %s + %s\n", ssaOperandList[idx3].info.txt.c_str(),
-                           ssaOperandList[idx2].info.txt.c_str(),
-                           ssaOperandList[idx1].info.txt.c_str());
+                    printf("%s := %s + %s\n", ssa.getOperand(idx3).info.txt.c_str(),
+                           ssa.getOperand(idx1).info.txt.c_str(),
+                           ssa.getOperand(idx2).info.txt.c_str());
                     break;
                 case SSANode::OP_Sub:
-                    printf("%s := %s - %s\n", ssaOperandList[idx3].info.txt.c_str(),
-                           ssaOperandList[idx2].info.txt.c_str(),
-                           ssaOperandList[idx1].info.txt.c_str());
+                    printf("%s := %s - %s\n", ssa.getOperand(idx3).info.txt.c_str(),
+                           ssa.getOperand(idx1).info.txt.c_str(),
+                           ssa.getOperand(idx2).info.txt.c_str());
                     break;
                 case SSANode::OP_Mul:
-                    printf("%s := %s * %s\n", ssaOperandList[idx3].info.txt.c_str(),
-                           ssaOperandList[idx2].info.txt.c_str(),
-                           ssaOperandList[idx1].info.txt.c_str());
+                    printf("%s := %s * %s\n", ssa.getOperand(idx3).info.txt.c_str(),
+                           ssa.getOperand(idx1).info.txt.c_str(),
+                           ssa.getOperand(idx2).info.txt.c_str());
                     break;
                 case SSANode::OP_Negate:
-                    printf("%s := - %s\n", ssaOperandList[idx3].info.txt.c_str(),
-                           ssaOperandList[idx1].info.txt.c_str());
+                    printf("%s := - %s\n", ssa.getOperand(idx3).info.txt.c_str(),
+                           ssa.getOperand(idx1).info.txt.c_str());
                     break;
                 case SSANode::OP_Assign:
-                    printf("%s <= %s\n", ssaOperandList[idx3].info.txt.c_str(),
-                           ssaOperandList[idx1].info.txt.c_str());
+                    printf("%s <= %s\n", ssa.getOperand(idx3).info.txt.c_str(),
+                           ssa.getOperand(idx1).info.txt.c_str());
                     break;
                 default:
                     printf("** unknown SSA node **\n");
                 }
+                iter++;
             }
 #endif
 
@@ -209,10 +210,11 @@ int main(int argc, char *argv[])
 #endif
 
             PassAddSub  addsub;
-            addsub.process(ssaList, ssaOperands);
+            addsub.process(ssa);
 
             VHDLCodeGen codegen;
-            codegen.process(ssaList, ssaOperands);
+            codegen.process(ssa);
+
         }
         else
         {

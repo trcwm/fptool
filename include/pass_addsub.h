@@ -19,7 +19,7 @@
 class PassAddSub : public SSAPass
 {
 protected:
-    virtual void execute();
+    virtual void execute(SSAObject &ssa);
 };
 
 #endif

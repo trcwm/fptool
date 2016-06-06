@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include "parser.h"
-
+#include "csd.h"
 
 Parser::Parser() : m_tokens(NULL)
 {
@@ -207,6 +207,15 @@ bool Parser::acceptDefspec2(state_t &s, ASTNodePtr newNode)
     newNode->info.csdFloat = atof(getToken(s, -4).txt.c_str()); // first argument
     newNode->info.csdBits = atoi(getToken(s, -2).txt.c_str()); // second argument
 
+    csd_t csd;
+    if (!convertToCSD(newNode->info.csdFloat, newNode->info.csdBits, csd))
+    {
+        error(s,"acceptDefspec2: cannot convert CSD");
+    }
+
+    float msb = ceil(log10(fabs(static_cast<double>(csd.value)))/log10(2.0));
+    newNode->info.intBits = static_cast<int32_t>(msb+1); // add sign bit
+    newNode->info.fracBits = -csd.digits.back().power;
     return true;
 }
 

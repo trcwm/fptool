@@ -18,7 +18,6 @@
 #include <iostream>
 #include "parser.h"
 
-namespace SSA {
 
 typedef size_t operandIndex;
 
@@ -94,40 +93,118 @@ typedef std::list<SSANode> ssaList_t;
 typedef std::vector<operand_t> ssaOperands_t;
 typedef std::list<SSANode>::iterator ssa_iterator;
 
+
+/** SSA object holds variables and a list of SSA node describing operations */
+class SSAObject
+{
+public:
+    SSAObject() {}
+    virtual ~SSAObject() {}
+
     /** create an Add node tmp = s1 + s2, returning the index
         of the new temp variable.
         s1 and s2 must be either TypeInput or TypeIntermediate.
     */
-    operandIndex createAddNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex s1, operandIndex s2);
+    operandIndex createAddNode(ssa_iterator where, operandIndex s1, operandIndex s2);
 
     /** create an Sub node tmp = s1 - s2, returning the index
         of the new temp variable.
         s1 and s2 must be either TypeInput or TypeIntermediate.
     */
-    operandIndex createSubNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex s1, operandIndex s2);
+    operandIndex createSubNode(ssa_iterator where, operandIndex s1, operandIndex s2);
 
     /** create a Mul node tmp = s1*s2, returning the index
          of the new temp variable.
          s1 and s2 must either be TypeInput, TypeIntermediate or TypeCSD.
     */
-    operandIndex createMulNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex s1, operandIndex s2);
+    operandIndex createMulNode(ssa_iterator where, operandIndex s1, operandIndex s2);
 
     /** create a negate node, returning the index
         of the new temp variable.
         s1 and s2 must either be TypeInput, TypeIntermediate.
     */
-    operandIndex createNegateNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex s1);
+    operandIndex createNegateNode(ssa_iterator where, operandIndex s1);
 
     /** create an assignment node.
         output must be TypeOutput, s1 must either be TypeInput, TypeIntermediate.
     */
-    void createAssignNode(ssaList_t &list, ssa_iterator where, ssaOperands_t &operands, operandIndex output, operandIndex s1);
+    void createAssignNode(ssa_iterator where, operandIndex output, operandIndex s1);
 
+    /** create an extendLSB node.
+        s1 must either be TypeInput, TypeIntermediate.
+    */
+    operandIndex createExtendLSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
 
     /** create a new temporary operand and return its index */
-    operandIndex createNewTemporary(ssaOperands_t &operands, int32_t intbits, int32_t fracbits);
+    operandIndex createNewTemporary(int32_t intbits, int32_t fracbits);
 
-}  //namespace
+    /** add an operand and check if one already exists with the same name */
+    operandIndex addOperand(operand_t::type_t type, const varInfo &info);
+
+    /** get an operand index by its name. returns true if found, false otherwise. */
+    bool getOperandIndexByName(const std::string &name, operandIndex &index);
+
+    /** get a copy of an operand at a certain index */
+    operand_t getOperand(operandIndex index) const
+    {
+        if (index >= m_operands.size())
+        {
+            throw std::runtime_error("SSAObject::getOperands index out of bounds");
+        }
+        return m_operands[index];
+    }
+
+    /** mark an operand as removed */
+    void markRemoved(operandIndex index)
+    {
+        if (index >= m_operands.size())
+        {
+            throw std::runtime_error("SSAObject::markRemoved index out of bounds");
+        }
+        m_operands[index].type = operand_t::TypeRemoved;
+    }
+
+
+
+    ssa_iterator begin()
+    {
+        return m_list.begin();
+    }
+
+    ssa_iterator end()
+    {
+        return m_list.end();
+    }
+
+    std::vector<operand_t>::iterator beginOperands()
+    {
+        return m_operands.begin();
+    }
+
+    std::vector<operand_t>::iterator endOperands()
+    {
+        return m_operands.end();
+    }
+
+    std::vector<operand_t>::const_iterator beginOperands() const
+    {
+        return m_operands.begin();
+    }
+
+    std::vector<operand_t>::const_iterator endOperands() const
+    {
+        return m_operands.end();
+    }
+protected:
+
+    /** check for the existance of an identifier */
+    bool existsIdent(const std::string &name);
+
+    ssaList_t       m_list;
+    ssaOperands_t   m_operands;
+};
+
+
 
 
 
@@ -136,13 +213,13 @@ typedef std::list<SSANode>::iterator ssa_iterator;
 class SSACreator
 {
 public:
-    SSACreator() : m_tempPrefix("tmp") {}
+    SSACreator() {}
 
     /** Process a list of AST statements and produce a list of SSA statements,
         and a list of variables/operands.
         Returns false if an error occurred.
     */
-    bool process(const statements_t &statements, SSA::ssaList_t &ssaList, SSA::ssaOperands_t &ssaOperandList);
+    bool process(const statements_t &statements, SSAObject &ssa);
 
     /** Get a human readable version of the error */
     std::string getLastError() const
@@ -151,28 +228,10 @@ public:
     }
 
 protected:
-    bool executeASTNode(const ASTNodePtr node);
-
-    /** Add a variable or CSD from AST
-        and return its resulting index into
-        the operand list.
-    */
-    bool addOperand(SSA::operand_t::type_t type, const varInfo &var, uint32_t &index);
-
-    /** Add an integer operand to the operand stack */
-    bool addIntegerOperand(SSA::operand_t::type_t type, const varInfo &var, uint32_t &index);
-
-    /** create a intermediate operand/value of Q(intBits,fracBits) format
-        and return the index into the operand list */
-    uint32_t createIntermediate(int32_t intBits, int32_t fracBits);
-
-
-    /** find an identifier by name and return its index,
-        if found. */
-    bool findIdentifier(const std::string &name, uint32_t &index);
+    bool executeASTNode(const ASTNodePtr node, SSAObject &ssa);
 
     /** determine the Q(n,m) wordlength of a variable */
-    void determineWordlength(const SSA::operand_t &var, int32_t &intBits, int32_t &fracBits);
+    void determineWordlength(const operand_t &var, int32_t &intBits, int32_t &fracBits);
 
     /** emit an error in human readable form */
     void error(const std::string &errorstr)
@@ -182,11 +241,8 @@ protected:
     }
 
     const statements_t  *m_statements;
-    SSA::ssaList_t      *m_ssaList;
-    SSA::ssaOperands_t  *m_operands;
 
     std::string         m_lastError;
-    std::string         m_tempPrefix;
     std::vector<uint32_t> m_opStack;
 };
 
