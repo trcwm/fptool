@@ -14,6 +14,7 @@
 #include "ssa.h"
 #include "csd.h"
 #include "pass_addsub.h"
+#include "pass_csdmul.h"
 #include "vhdlcodegen.h"
 
 #define __VERSION__ "0.1a"
@@ -142,7 +143,7 @@ int main(int argc, char *argv[])
                 printf("Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
             }
 
-#if 0
+#if 1
             printf("--== SSA statements ==--\n");
             auto iter = ssa.begin();
             while(iter != ssa.end())
@@ -208,6 +209,9 @@ int main(int argc, char *argv[])
                 }
             }
 #endif
+
+            PassCSDMul csdmul;
+            csdmul.process(ssa);
 
             PassAddSub  addsub;
             addsub.process(ssa);

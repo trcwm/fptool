@@ -9,7 +9,7 @@
 % and define a canonical-signed-digit constant.
 define a = input(2,13);
 define b = input(-3,8);
-define c = csd(3.1415927,5);
+define c = csd(3.1415927,2);
 
 % do some actual arithmetic
 out1 = c*a + b;

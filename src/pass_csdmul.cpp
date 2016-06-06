@@ -9,22 +9,21 @@
 #include "csd.h"
 #include "pass_csdmul.h"
 
-#if 0
 
-void PassCSDMul::execute()
+void PassCSDMul::execute(SSAObject &ssa)
 {
-    auto iter = m_ssaList->begin();
+    auto iter = ssa.begin();
 
     // look for CSD * variable, variable * CSD
     // or CSD * CSD
-    while(iter != m_ssaList->end())
+    while(iter != ssa.end())
     {
         SSANode::operation_t operation = iter->operation;
         if (operation == SSANode::OP_Mul)
         {
             // check both operands for CSD
-            operand_t op1 = getOperand(iter->var1);
-            operand_t op2 = getOperand(iter->var2);
+            operand_t op1 = ssa.getOperand(iter->var1);
+            operand_t op2 = ssa.getOperand(iter->var2);
 
             if ((op1.type == operand_t::TypeCSD) && (op2.type == operand_t::TypeCSD))
             {
@@ -57,7 +56,7 @@ void PassCSDMul::execute()
                     throw std::runtime_error("PassCSDMul: cannot convert number to CSD");
                 }
                 operand_t result;
-                shiftAndAdd(iter, my_csd, iter->var2, result);
+                iter = shiftAndAdd(ssa, iter, my_csd, iter->var2, iter->var3);
             }
 
             // TODO: check if the final result matches the width of the
@@ -69,7 +68,11 @@ void PassCSDMul::execute()
     }
 }
 
-ssa_iterator PassCSDMul::shiftAndAdd(ssa_iterator ssa_iter, const csd_t &csd, uint32_t &x_idx, const operand_t &result)
+ssa_iterator PassCSDMul::shiftAndAdd(SSAObject &ssa,
+                                     ssa_iterator ssa_iter,
+                                     const csd_t &csd,
+                                     uint32_t x_idx,
+                                     uint32_t y_idx)
 {
     // the procedure is as follows:
     //
@@ -100,6 +103,18 @@ ssa_iterator PassCSDMul::shiftAndAdd(ssa_iterator ssa_iter, const csd_t &csd, ui
     // 4) goto 2 while there are still
     //    digits that need processing.
 
+    if (csd.digits.size() < 1)
+    {
+        throw std::runtime_error("PassCSDMul: can't expand a CSD without digits!");
+    }
+
+    // remove the current assigment as we're replacing it
+    // the iterator now points to the next (unrelated)
+    // operation. We must insert new nodes before this
+    // operation, which is exactly what the 'create'
+    // functions do. :)
+    ssa_iter = ssa.removeNode(ssa_iter);
+
     // note: the assumption is
     // that var1 the CSD 'c' and
     // var2 is 'x'.
@@ -112,9 +127,10 @@ ssa_iterator PassCSDMul::shiftAndAdd(ssa_iterator ssa_iter, const csd_t &csd, ui
     // create first shifted version of
     // x and insert it into the operand
     // list. The assign the value to it.
-    operand_t x = getOperand(x_idx);
-    uint32_t t1 = createIntermediate(x.info.intBits+shift, x.info.fracBits+shift);
-    insertReinterpretNode(ssa_iter, x_idx, t1);
+
+    // FIXME: what if the first digit is negative?
+    operand_t x = ssa.getOperand(x_idx);
+    operandIndex t1 = ssa.createReinterpretNode(ssa_iter, x_idx, x.info.intBits+shift, x.info.fracBits-shift);
 
     // while there are digits in CSD
     // keep on adding new terms
@@ -123,70 +139,21 @@ ssa_iterator PassCSDMul::shiftAndAdd(ssa_iterator ssa_iter, const csd_t &csd, ui
     {
         // create new term
         shift = csd.digits[idx].power;
-        uint32_t t2 = createIntermediate(x.info.intBits+shift, x.info.fracBits+shift);
+        uint32_t t2 = ssa.createReinterpretNode(ssa_iter, x_idx, x.info.intBits+shift, x.info.fracBits-shift);
 
-        // extend the new term to have the same
-        // number of fractional bits so we can
-        // add/subtract them
-        operand_t t1_op = getOperand(t1);
-        operand_t t2_op = getOperand(t2);
-        uint32_t t3 = createIntermediate(t2_op.info.intBits, t1_op.info.fracBits);
-        operand_t t3_op = getOperand(t3);
-
-        ssa_iter = insertExtendNode(ssa_iter, t2, t3, t2_op.info.fracBits-t3_op.info.fracBits);
-        uint32_t t4 = createIntermediate(t2_op.info.intBits+1, t1_op.info.fracBits);
-        operand_t t4_op = getOperand(t3);
+        // add the terms
         if (csd.digits[idx].sign > 0)
-        {
-            ssa_iter = insertAddNode(ssa_iter, )
-        }
+            t1 = ssa.createAddNode(ssa_iter, t1, t2);
         else
-        {
+            t1 = ssa.createSubNode(ssa_iter, t1, t2);
 
-        }
-
+        idx--;
     }
+
+    // make the final assignment
+    ssa.createAssignNode(ssa_iter, y_idx, t1);
+
+    return ssa_iter;
 }
 
-ssa_iterator PassCSDMul::insertReinterpretNode(ssa_iterator ssa_iter, uint32_t src, uint32_t dst)
-{
-    SSANode n;
-    n.operation = SSANode::OP_Reinterpret;
-    n.var3 = dst;
-    n.var1 = src;
-    return m_ssaList->insert(ssa_iter, n);
-}
 
-ssa_iterator PassCSDMul::insertAddNode(ssa_iterator ssa_iter, uint32_t src1, uint32_t src2, uint32_t dst)
-{
-    SSANode n;
-    n.operation = SSANode::OP_Add;
-    n.var3 = dst;
-    n.var1 = src1;
-    n.var2 = src2;
-    return m_ssaList->insert(ssa_iter, n);
-}
-
-ssa_iterator PassCSDMul::insertSubNode(ssa_iterator ssa_iter, uint32_t src1, uint32_t src2, uint32_t dst)
-{
-    SSANode n;
-    // dst = src2 - src1
-    n.operation = SSANode::OP_Sub;
-    n.var3 = dst;
-    n.var1 = src2;
-    n.var2 = src1;
-    return m_ssaList->insert(ssa_iter, n);
-}
-
-ssa_iterator PassCSDMul::insertExtendNode(ssa_iterator ssa_iter, uint32_t src, uint32_t dst, int32_t bits)
-{
-    SSANode n;
-    // dst = src2 - src1
-    n.operation = SSANode::OP_ExtendLSBs;
-    n.bits = bits;
-    n.var3 = dst;
-    n.var1 = src;
-    return m_ssaList->insert(ssa_iter, n);
-}
-
-#endif

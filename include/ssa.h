@@ -135,6 +135,12 @@ public:
     */
     operandIndex createExtendLSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
 
+    /** create a reinterpret node.
+        s1 must either be TypeInput, TypeIntermediate.
+    */
+    operandIndex createReinterpretNode(ssa_iterator where, operandIndex s1, int32_t intbits, int32_t fracbits);
+
+
     /** create a new temporary operand and return its index */
     operandIndex createNewTemporary(int32_t intbits, int32_t fracbits);
 
@@ -164,23 +170,31 @@ public:
         m_operands[index].type = operand_t::TypeRemoved;
     }
 
+    /** remove a node, return an iterator to the next item */
+    ssa_iterator removeNode(ssa_iterator where)
+    {
+        return m_list.erase(where);
+    }
 
-
+    /** return an iterator pointing to the beginning of the operation list */
     ssa_iterator begin()
     {
         return m_list.begin();
     }
 
+    /** return an iterator pointing to the end of the operation list */
     ssa_iterator end()
     {
         return m_list.end();
     }
 
+    /** return an iterator pointing to the beginning of the operands list */
     std::vector<operand_t>::iterator beginOperands()
     {
         return m_operands.begin();
     }
 
+    /** return an iterator pointing to the end of the operands list */
     std::vector<operand_t>::iterator endOperands()
     {
         return m_operands.end();

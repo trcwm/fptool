@@ -93,6 +93,11 @@ void VHDLCodeGen::execute(SSAObject &ssa)
             op1 = ssa.getOperand(iter->var1);
             os << "extendMSBs(" << op1.info.txt << ");\n";
             break;
+        case SSANode::OP_Reinterpret:
+            op1 = ssa.getOperand(iter->var1);
+            //os << "reinterpret(" << op1.info.txt << "," << iter->bits << "," << iter->fbits << ");\n";
+            os << op1.info.txt << "; -- reinterpret as Q(" << iter->bits << "," << iter->fbits << ");\n";
+            break;
         default:
             throw std::runtime_error("VHDLCodeGen: unknown SSA operation node");
         }

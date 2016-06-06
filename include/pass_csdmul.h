@@ -17,32 +17,18 @@
 #include "ssapass.h"
 
 
-#if 0
 class PassCSDMul : public SSAPass
 {
 protected:
-    virtual void execute();
+    virtual void execute(SSAObject &ssa);
 
     /** Add a shift-and-add operation to the SSA list.
-        The assumption is that var1 holds the CSD and
-        var2 hold the variable. Var3 is the final
-        output variable.
+        x_idx is the index of the non-CSD variable.
+        y_idx is the index of the result variable.
     */
-    ssa_iterator shiftAndAdd(SSA::ssa_iterator ssa_iter, const csd_t &csd, uint32_t &x_idx, const operand_t &result);
+    ssa_iterator shiftAndAdd(SSAObject &ssa, ssa_iterator where, const csd_t &csd, uint32_t x_idx, uint32_t y_idx);
 
-    /** insert a reinterpret SSA node stating dst = src */
-    ssa_iterator insertReinterpretNode(SSA::ssa_iterator ssa_iter, uint32_t src, uint32_t dst);
-
-    /** insert an addition node: dst = src1 + src2 */
-    ssa_iterator insertAddNode(SSA::ssa_iterator ssa_iter, uint32_t src1, uint32_t src2, uint32_t dst);
-
-    /** insert a subtract node: dst = src1 - src2 */
-    ssa_iterator insertSubNode(SSA::ssa_iterator ssa_iter, uint32_t src1, uint32_t src2, uint32_t dst);
-
-    /** insert an Extend LSB node dst = extendLSB(src, bits) */
-    ssa_iterator insertExtendNode(SSA::ssa_iterator ssa_iter, uint32_t src, uint32_t dst, int32_t bits);
 };
 
-#endif
 
 #endif
