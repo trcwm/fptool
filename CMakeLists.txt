@@ -12,4 +12,5 @@ add_executable (fptool
                 src/vhdlcodegen.cpp
                 src/pass_addsub.cpp
                 src/pass_csdmul.cpp
+                src/pass_clean.cpp
                 src/main.cpp)

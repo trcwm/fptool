@@ -15,6 +15,7 @@
 #include "csd.h"
 #include "pass_addsub.h"
 #include "pass_csdmul.h"
+#include "pass_clean.h"
 #include "vhdlcodegen.h"
 
 #define __VERSION__ "0.1a"
@@ -215,6 +216,9 @@ int main(int argc, char *argv[])
 
             PassAddSub  addsub;
             addsub.process(ssa);
+
+            PassClean  clean;
+            clean.process(ssa);
 
             VHDLCodeGen codegen;
             codegen.process(ssa);
