@@ -11,6 +11,7 @@
 
 #include "ssa.h"
 #include "csd.h"
+#include "logging.h"
 #include <math.h>
 #include <sstream>
 
@@ -253,6 +254,51 @@ bool SSAObject::getOperandIndexByName(const std::string &name, operandIndex &ind
     return false;
 }
 
+
+void SSAObject::dumpStatements(std::ostream &stream)
+{
+    doLog(LOG_INFO, "Dumping SSA statements: \n");
+
+    auto iter = m_list.begin();
+    while(iter != m_list.end())
+    {
+        uint32_t idx1 = iter->var1;
+        uint32_t idx2 = iter->var2;
+        uint32_t idx3 = iter->var3;
+        switch(iter->operation)
+        {
+        case SSANode::OP_Add:
+            stream << getOperand(idx3).info.txt.c_str() << " := "
+                   << getOperand(idx1).info.txt.c_str() << " + "
+                   << getOperand(idx2).info.txt.c_str() << ";\n";
+            break;
+        case SSANode::OP_Sub:
+            stream << getOperand(idx3).info.txt.c_str() << " := "
+                   << getOperand(idx1).info.txt.c_str() << " - "
+                   << getOperand(idx2).info.txt.c_str() << ";\n";
+            break;
+        case SSANode::OP_Mul:
+            stream << getOperand(idx3).info.txt.c_str() << " := "
+                   << getOperand(idx1).info.txt.c_str() << " * "
+                   << getOperand(idx2).info.txt.c_str() << ";\n";
+            break;
+        case SSANode::OP_Negate:
+            stream << getOperand(idx3).info.txt.c_str() << " := -"
+                   << getOperand(idx1).info.txt.c_str() << ";\n";
+            break;
+        case SSANode::OP_Assign:
+            stream << getOperand(idx3).info.txt.c_str() << " <= "
+                   << getOperand(idx1).info.txt.c_str() << ";\n";
+            break;
+        default:
+            stream << "** unknown SSA node **\n";
+        }
+        iter++;
+    }
+}
+
+
+
 bool SSACreator::process(const statements_t &statements, SSAObject &ssa)
 {
     m_lastError.clear();
@@ -474,3 +520,5 @@ bool SSACreator::executeASTNode(const ASTNodePtr node, SSAObject &ssa)
     } // end switch
     return true;
 }
+
+

@@ -9,6 +9,7 @@
 
 */
 
+#include "logging.h"
 #include "tokenizer.h"
 
 Tokenizer::Tokenizer()
@@ -446,4 +447,91 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
         }
     }
     return true;
+}
+
+
+void Tokenizer::dumpTokens(std::ostream &stream, const std::vector<token_t> &tokens)
+{
+    doLog(LOG_INFO, "Dumping tokens: \n");
+
+    // show the tokens
+    uint32_t newlineCnt = 0;
+    for(size_t i=0; i<tokens.size(); i++)
+    {
+        token_t token  = tokens[i];
+        if (token.tokID != TOK_NEWLINE)
+        {
+            newlineCnt = 0;
+        }
+
+        switch(token.tokID)
+        {
+        default:
+        case TOK_UNKNOWN:
+            stream << "Unknown\n";
+            break;
+        case TOK_NEWLINE:   // suppress superfluous newlines
+            if (newlineCnt == 0)
+                stream <<"\n";
+            newlineCnt++;
+            break;
+        case TOK_IDENT:
+            stream << "<ident>" << token.txt.c_str();
+            break;
+        case TOK_INTEGER:
+            stream << "<int>" << token.txt.c_str();
+            break;
+        case TOK_FLOAT:
+            stream << "<float>" << token.txt.c_str();
+            break;
+        case TOK_PLUS:
+            stream << " + ";
+            break;
+        case TOK_MINUS:
+            stream << " - ";
+            break;
+        case TOK_STAR:
+            stream << " * ";
+            break;
+        case TOK_EQUAL:
+            stream << " = ";
+            break;
+        case TOK_LPAREN:
+            stream << " ( ";
+            break;
+        case TOK_RPAREN:
+            stream << " ) ";
+            break;
+        case TOK_COMMA:
+            stream << " , ";
+            break;
+        case TOK_SEMICOL:
+            stream << ";";
+            break;
+        case TOK_SHL:
+            stream << " << ";
+            break;
+        case TOK_SHR:
+            stream << " >> ";
+            break;
+        case TOK_ROL:
+            stream << " <<< ";
+            break;
+        case TOK_ROR:
+            stream << " >>> ";
+            break;
+        case TOK_EOF:
+            stream << "\nEOF\n";
+            break;
+        case 100:
+            stream << "DEFINE";
+            break;
+        case 101:
+            stream << "INPUT";
+            break;
+        case 102:
+            stream << "CSD";
+            break;
+        }
+    }
 }

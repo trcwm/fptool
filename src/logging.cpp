@@ -13,6 +13,13 @@
 #include <stdarg.h>
 #include "logging.h"
 
+static bool g_debugEnabled = false;
+
+void setDebugging(bool enabled)
+{
+    g_debugEnabled = enabled;
+}
+
 void doLog(logtype_t t, const char *format, ...)
 {
     switch(t)
@@ -21,6 +28,7 @@ void doLog(logtype_t t, const char *format, ...)
         std::cout << "INFO: ";
         break;
     case LOG_DEBUG:
+        if (!g_debugEnabled) return;
         std::cout << "DEBUG: ";
         break;
     case LOG_WARN:

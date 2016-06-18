@@ -14,7 +14,6 @@ void VHDLCodeGen::execute(SSAObject &ssa)
 {
     doLog(LOG_INFO, "Running VHDLCodeGen\n");
     uint32_t indent = 2;
-    std::ostream &os = std::cout;
 
     genProcessHeader(ssa, os, indent);
 
@@ -36,25 +35,11 @@ void VHDLCodeGen::execute(SSAObject &ssa)
             op1 = ssa.getOperand(iter->var1);
             op2 = ssa.getOperand(iter->var2);
             os << op2.info.txt << " + " << op1.info.txt << ";\n";
-            // check if the fractional bits have been
-            // equalized
-            if (op1.info.fracBits != op2.info.fracBits)
-            {
-                // warning
-                std::cout << "Warning: fractional bits not equalized\n";
-            }
             break;
         case SSANode::OP_Sub:
             op1 = ssa.getOperand(iter->var1);
             op2 = ssa.getOperand(iter->var2);
             os << op2.info.txt << " - " << op1.info.txt << ";\n";
-            // check if the fractional bits have been
-            // equalized
-            if (op1.info.fracBits != op2.info.fracBits)
-            {
-                // warning
-                std::cout << "Warning: fractional bits not equalized\n";
-            }
             break;
         case SSANode::OP_Mul:
             op1 = ssa.getOperand(iter->var1);
@@ -68,13 +53,6 @@ void VHDLCodeGen::execute(SSAObject &ssa)
         case SSANode::OP_Assign:
             op1 = ssa.getOperand(iter->var1);
             os << op1.info.txt << ";\n";
-            // check if the bits are equal
-            if ((op1.info.fracBits != lhs.info.fracBits) ||
-                (op1.info.intBits != lhs.info.intBits))
-            {
-                // warning
-                std::cout << "Warning: bit-widths not equalized\n";
-            }
             break;
         case SSANode::OP_Saturate:
             op1 = ssa.getOperand(iter->var1);
@@ -85,7 +63,8 @@ void VHDLCodeGen::execute(SSAObject &ssa)
             break;
         case SSANode::OP_ExtendLSBs:
             op1 = ssa.getOperand(iter->var1);
-            os << "extendLSBs(" << op1.info.txt << "," << node.bits <<");\n";
+            extendLSBs(os, op1.info.txt, node.bits);
+            os << ";\n";
             break;
         case SSANode::OP_RemoveMSBs:
             op1 = ssa.getOperand(iter->var1);
@@ -93,11 +72,10 @@ void VHDLCodeGen::execute(SSAObject &ssa)
             break;
         case SSANode::OP_ExtendMSBs:
             op1 = ssa.getOperand(iter->var1);
-            os << "extendMSBs(" << op1.info.txt << ");\n";
+            os << "resize(" << op1.info.txt << "," << op1.info.intBits+op1.info.fracBits+node.bits << ");\n";
             break;
         case SSANode::OP_Reinterpret:
             op1 = ssa.getOperand(iter->var1);
-            //os << "reinterpret(" << op1.info.txt << "," << iter->bits << "," << iter->fbits << ");\n";
             os << op1.info.txt << "; -- reinterpret as Q(" << iter->bits << "," << iter->fbits << ");\n";
             break;
         default:
@@ -214,4 +192,11 @@ void VHDLCodeGen::genIndent(std::ostream &os, uint32_t indent)
     }
 }
 
-
+/** extend LSBs of a signal by adding zeroes */
+void VHDLCodeGen::extendLSBs(std::ostream &os, const std::string &name, uint32_t bits)
+{
+    os << name << " & \"";
+    for(uint32_t i=0; i<bits; i++)
+        os << "0";
+    os << "\"";
+}

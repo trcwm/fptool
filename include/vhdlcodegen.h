@@ -14,6 +14,8 @@
 
 class VHDLCodeGen : public SSAPass
 {
+public:
+    VHDLCodeGen(std::ostream &_os) : os(_os) {}
 
 protected:
     virtual void execute(SSAObject &ssa);
@@ -26,6 +28,14 @@ protected:
 
     /** generate indentation */
     void genIndent(std::ostream &os, uint32_t indent);
+
+    /** extend MSBs of a signal by replicating the sign bit */
+    void extendMSBs(std::ostream &os, std::string name, uint32_t bits);
+
+    /** extend LSBs of a signal by adding zeroes */
+    void extendLSBs(std::ostream &os, const std::string &name, uint32_t bits);
+
+    std::ostream &os;
 };
 
 #endif

@@ -214,6 +214,10 @@ public:
     {
         return m_operands.end();
     }
+
+    /** dump statements in human readable form */
+    void dumpStatements(std::ostream &stream);
+
 protected:
 
     /** check for the existance of an identifier */

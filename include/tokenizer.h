@@ -78,6 +78,8 @@ public:
     return m_lastError;
   }
 
+  void dumpTokens(std::ostream &stream, const std::vector<token_t> &tokens);
+
 protected:
   bool isDigit(char c) const;
   bool isWhitespace(char c) const;
