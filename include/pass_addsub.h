@@ -9,6 +9,8 @@
                 the least number of fractional bits
                 is extended with zero bits.
 
+  Author: Niels A. Moseley
+
 */
 
 #ifndef passaddsub_h

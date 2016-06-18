@@ -4,6 +4,16 @@ project(fptool)
 include_directories("include")
 
 add_executable (fptool
+                include/logging.h
+                include/csd.h
+                include/ssa.h
+                include/tokenizer.h
+                include/reader.h
+                include/parser.h
+                include/pass_addsub.h
+                include/pass_clean.h
+                include/pass_csdmul.h
+                src/logging.cpp
                 src/reader.cpp
                 src/tokenizer.cpp
                 src/parser.cpp

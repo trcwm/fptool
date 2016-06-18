@@ -6,6 +6,8 @@
                 and provides in interface to it's characters with
                 an interface that supports roll-backs.
 
+  Author: Niels A. Moseley
+
 */
 
 #ifndef reader_h

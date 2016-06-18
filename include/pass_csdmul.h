@@ -8,6 +8,8 @@
   expanded by introducting an addition or
   subtraction of shifted inputs for each digit.
 
+  Author: Niels A. Moseley
+
 */
 
 #ifndef csdmul_h

@@ -135,6 +135,11 @@ public:
     */
     operandIndex createExtendLSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
 
+    /** create an extendMSB node.
+        s1 must either be TypeInput, TypeIntermediate.
+    */
+    operandIndex createExtendMSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
+
     /** create a reinterpret node.
         s1 must either be TypeInput, TypeIntermediate.
     */

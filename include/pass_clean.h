@@ -7,6 +7,8 @@
   1) remove re-interpret nodes
   2) remove superluous assignment nodes
 
+  Author: Niels A. Moseley
+
 */
 
 

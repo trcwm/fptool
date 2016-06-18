@@ -162,6 +162,29 @@ operandIndex SSAObject::createExtendLSBNode(ssa_iterator where, operandIndex s1,
     return lhs_index;
 }
 
+operandIndex SSAObject::createExtendMSBNode(ssa_iterator where, operandIndex s1, int32_t bits)
+{
+    // create a new temporary result operand
+    if (s1 >= m_operands.size())
+    {
+        throw std::runtime_error("createExtendMSBNode: operands index out of bounds!");
+    }
+
+    int32_t intbits = m_operands[s1].info.intBits;
+    int32_t fracbits = m_operands[s1].info.fracBits;
+    operandIndex lhs_index = createNewTemporary(intbits, fracbits+bits);
+
+    SSANode n;
+    n.operation = SSANode::OP_ExtendMSBs;
+    n.bits = bits;
+    n.var1 = s1;
+    n.var2 = 0;
+    n.var3 = lhs_index;
+
+    m_list.insert(where, n);
+    return lhs_index;
+}
+
 operandIndex SSAObject::createReinterpretNode(ssa_iterator where, operandIndex s1, int32_t intbits, int32_t fracbits)
 {
     // create a new temporary result operand

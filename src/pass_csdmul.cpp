@@ -6,12 +6,15 @@
 
 */
 
+#include "logging.h"
 #include "csd.h"
 #include "pass_csdmul.h"
 
 
 void PassCSDMul::execute(SSAObject &ssa)
 {
+    doLog(LOG_INFO, "Running CSDMul pass\n");
+
     auto iter = ssa.begin();
 
     // look for CSD * variable, variable * CSD
@@ -27,6 +30,7 @@ void PassCSDMul::execute(SSAObject &ssa)
 
             if ((op1.type == operand_t::TypeCSD) && (op2.type == operand_t::TypeCSD))
             {
+                doLog(LOG_WARN, "Both arguments are of type CSD (%s) (%s)\n", op1.info.txt.c_str(), op2.info.txt.c_str());
                 // both operands are CSD!
                 // TODO: think of a better strategy
                 // FIXME: produce a warning
@@ -53,9 +57,10 @@ void PassCSDMul::execute(SSAObject &ssa)
             {
                 if (!convertToCSD(op1.info.csdFloat, op1.info.csdBits, my_csd))
                 {
-                    throw std::runtime_error("PassCSDMul: cannot convert number to CSD");
+                    doLog(LOG_ERROR, "Cannot convert number (%f) to CSD\n", op1.info.csdFloat);
+                    throw std::runtime_error("");
                 }
-                operand_t result;
+                doLog(LOG_DEBUG, "CSD: converted (%f) to (%f)\n", op1.info.csdFloat, my_csd.value);
                 iter = shiftAndAdd(ssa, iter, my_csd, iter->var2, iter->var3);
             }
 

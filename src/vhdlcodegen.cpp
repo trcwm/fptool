@@ -6,11 +6,13 @@
 
 */
 
+#include "logging.h"
 #include <algorithm>
 #include "vhdlcodegen.h"
 
 void VHDLCodeGen::execute(SSAObject &ssa)
 {
+    doLog(LOG_INFO, "Running VHDLCodeGen\n");
     uint32_t indent = 2;
     std::ostream &os = std::cout;
 

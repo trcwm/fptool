@@ -9,12 +9,15 @@
 
 */
 
+#include "logging.h"
 #include "pass_clean.h"
 
 // make sure the fractional parts of every
 // addition and subtraction is the same
 void PassClean::execute(SSAObject &ssa)
 {
+    doLog(LOG_INFO, "Running Clean pass\n");
+
     // remove re-interpreted nodes
     auto iter = ssa.begin();
     while(iter != ssa.end())
@@ -23,6 +26,8 @@ void PassClean::execute(SSAObject &ssa)
 
         if (operation == SSANode::OP_Reinterpret)
         {
+            doLog(LOG_DEBUG, "Replacing variable %d (%s)\n", iter->var3, ssa.getOperand(iter->var3).info.txt.c_str());
+
             // replace reinterpreted with original variable
             substitute(ssa, iter->var3, iter->var1);
 
@@ -51,6 +56,8 @@ void PassClean::execute(SSAObject &ssa)
             // preserve output assignments
             if (lhs.type != operand_t::TypeOutput)
             {
+                doLog(LOG_DEBUG, "Removing variable %d (%s)\n", iter->var3, ssa.getOperand(iter->var3).info.txt.c_str());
+
                 // replace the assigned var with original var
                 substitute(ssa, iter->var3, iter->var1);
 
