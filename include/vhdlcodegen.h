@@ -17,6 +17,16 @@ class VHDLCodeGen : public SSAPass
 public:
     VHDLCodeGen(std::ostream &_os) : os(_os) {}
 
+    void setProlog(const std::string &s)
+    {
+        m_prolog = s;
+    }
+
+    void setEpilog(const std::string &s)
+    {
+        m_epilog = s;
+    }
+
 protected:
     virtual void execute(SSAObject &ssa);
 
@@ -36,6 +46,8 @@ protected:
     void extendLSBs(std::ostream &os, const std::string &name, uint32_t bits);
 
     std::ostream &os;
+    std::string  m_prolog;
+    std::string  m_epilog;
 };
 
 #endif

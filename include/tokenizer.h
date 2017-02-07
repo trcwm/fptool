@@ -36,6 +36,7 @@
 #define TOK_COMMA   13
 #define TOK_ROL     14
 #define TOK_ROR     15
+#define TOK_SLASH   16
 
 #define TOK_INTEGER 30
 #define TOK_FLOAT   31

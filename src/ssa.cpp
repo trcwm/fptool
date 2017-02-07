@@ -97,6 +97,28 @@ operandIndex SSAObject::createMulNode(ssa_iterator where, operandIndex s1, opera
     return lhs_index;
 }
 
+operandIndex SSAObject::createDivNode(ssa_iterator where, operandIndex s1, operandIndex s2)
+{
+    // create a new temporary result operand
+    if ((s1 >= m_operands.size()) || (s2 >= m_operands.size()))
+    {
+        throw std::runtime_error("createDivNode: operands index out of bounds!");
+    }
+
+    int32_t intbits = m_operands[s1].info.intBits + m_operands[s2].info.intBits;
+    int32_t fracbits = m_operands[s1].info.fracBits + m_operands[s2].info.fracBits;
+    operandIndex lhs_index = createNewTemporary(intbits, fracbits);
+
+    SSANode n;
+    n.operation = SSANode::OP_Div;
+    n.var1 = s1;
+    n.var2 = s2;
+    n.var3 = lhs_index;
+
+    m_list.insert(where, n);
+    return lhs_index;
+}
+
 operandIndex SSAObject::createNegateNode( ssa_iterator where, operandIndex s1)
 {
     // create a new temporary result operand
@@ -357,7 +379,7 @@ void SSACreator::determineWordlength(const operand_t &var, int32_t &intBits, int
     }
 }
 
-bool SSACreator::executeASTNode(const ASTNodePtr node, SSAObject &ssa)
+bool SSACreator::executeASTNode(ASTNode *node, SSAObject &ssa)
 {
     if (node->left != 0)
     {
@@ -493,6 +515,28 @@ bool SSACreator::executeASTNode(const ASTNodePtr node, SSAObject &ssa)
         m_opStack.pop_back();
 
         index = ssa.createMulNode(ssa.end(), arg1_idx, arg2_idx);
+        m_opStack.push_back(index);
+
+        return true;
+    }
+    case ASTNode::NodeDiv:
+    {
+        // sanity checking
+        if (m_opStack.size() < 2)
+        {
+            error("NodeDiv - not enough operands on the stack");
+            // not enough operands!
+            return false;
+        }
+
+        // two items at top of stack:
+        //
+        uint32_t arg2_idx = m_opStack.back();
+        m_opStack.pop_back();
+        uint32_t arg1_idx = m_opStack.back();
+        m_opStack.pop_back();
+
+        index = ssa.createDivNode(ssa.end(), arg1_idx, arg2_idx);
         m_opStack.push_back(index);
 
         return true;

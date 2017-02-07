@@ -28,10 +28,13 @@ Operators:
 - shift: '<<', '>>'
 - rotate: '<<<', '>>>'
 - line comment: '%'
+- division operator is accepted but code for it will no be generated.
 
 Current project state:
 
 - Lexer is working.
 - Parser can check the grammar (Except <<, >>, <<<, >>> and saturate & truncate) and build an abstract syntax tree.
+- VHDL code generator is working (except for division operator)
+- CSD expansion should be working (requires more testing)
 
 License: GPL v2.

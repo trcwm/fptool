@@ -17,19 +17,19 @@ defspec &rarr; CSD '(' FLOAT, INTEGER ')'
 
 assignment &rarr; IDENT '=' expr ';'
 
-expr &rarr; term + expr  
-expr &rarr; term - expr  
-expr &rarr; term  
+expr &rarr; term + expr'
+expr' &rarr; - term expr'
+expr' &rarr; + term expr'
+expr' &rarr; <i>epsilon</i>
 
-term &rarr; '-' factor  
-term &rarr; factor * term  
-term &rarr; factor >> INTEGER  
-term &rarr; factor << INTEGER  
-term &rarr; factor >>> INTEGER  
-term &rarr; factor <<< INTEGER    
-term &rarr; factor
-  
-factor &rarr; '(' expr ')'  
-factor &rarr; INTEGER  
-factor &rarr; FLOAT  
-factor &rarr; IDENT  
+term &rarr; factor term'
+term' &rarr; * factor term'
+term' &rarr; / factor term'
+term' &rarr; <i>epsilon</i>
+
+factor &rarr; FUNCTION '(' expr ')'
+factor &rarr; '(' expr ')'
+factor &rarr; - factor
+factor &rarr; INTEGER
+factor &rarr; FLOAT
+factor &rarr; IDENT

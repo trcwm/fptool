@@ -11,6 +11,8 @@
 
 // make sure the fractional parts of every
 // addition and subtraction is the same
+// and sign-extend the arguments to overflow never occurs
+//
 void PassAddSub::execute(SSAObject &ssa)
 {
     doLog(LOG_INFO, "Running AddSub pass\n");
@@ -27,6 +29,9 @@ void PassAddSub::execute(SSAObject &ssa)
 
             doLog(LOG_DEBUG, "Processing (%s) and (%s) for addition\n", op1.info.txt.c_str(), op2.info.txt.c_str());
 
+            // **********************************************************************
+            //   Equalise the LSBs/fractional part
+            // **********************************************************************
             if (op1.info.fracBits > op2.info.fracBits)
             {
                 // extend LSBs of op2 by creating a new extended
@@ -46,8 +51,14 @@ void PassAddSub::execute(SSAObject &ssa)
                 iter->var1 = newop;
             }
 
+            // **********************************************************************
+            //   Extend both arguments by 1 MSB to avoid overflow
+            // **********************************************************************
+
             // extend largest argument by one MSB
-            if (op1.info.intBits > op2.info.intBits)
+            // of, if there is no largets argument
+            // pick op1.
+            if (op1.info.intBits >= op2.info.intBits)
             {
                 // extend MSBs of op1 by creating a new extended
                 // version of op1

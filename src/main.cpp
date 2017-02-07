@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 
 #include "logging.h"
@@ -26,6 +27,8 @@ int main(int argc, char *argv[])
 {
     CmdLine cmdline("o");
 
+    setDebugging();
+
     printf("FPTOOL version "__VERSION__" compiled on "__DATE__"\n\n");
     if (!cmdline.parseOptions(argc, argv))
     {
@@ -43,16 +46,17 @@ int main(int argc, char *argv[])
         }
 
         std::string outfile;
-        //std::ostream outstream(std::cout);
+        std::ofstream outstream;
         if (cmdline.getOption('o', outfile))
         {
-            //outstream = std::ofstream(outfile, std::ios::out);
+            outstream = std::ofstream(outfile, std::ios::out);
             doLog(LOG_DEBUG, "output file: %s\n", outfile.c_str());
         }
 
         Tokenizer tokenizer;
         std::vector<token_t> tokens;
         tokenizer.process(reader, tokens);
+        tokenizer.dumpTokens(std::cout, tokens);
         delete reader;
 
         Parser parse;
@@ -79,8 +83,17 @@ int main(int argc, char *argv[])
             PassClean  clean;
             clean.process(ssa);
 
-            VHDLCodeGen codegen(std::cout);
-            codegen.process(ssa);
+            if (outstream.bad())
+            {
+                VHDLCodeGen codegen(std::cout);
+                codegen.process(ssa);
+            }
+            else
+            {
+                VHDLCodeGen codegen(outstream);
+                codegen.setEpilog("");
+                codegen.process(ssa);
+            }
 
         }
         else

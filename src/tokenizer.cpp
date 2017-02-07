@@ -212,6 +212,12 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 result.push_back(tok);
                 r->accept();
             }
+            else if (c == '/')
+            {
+                tok.tokID = TOK_SLASH;
+                result.push_back(tok);
+                r->accept();
+            }
             else if (isNumeric(c))
             {
                 // we could have an integer,
@@ -492,6 +498,9 @@ void Tokenizer::dumpTokens(std::ostream &stream, const std::vector<token_t> &tok
             break;
         case TOK_STAR:
             stream << " * ";
+            break;
+        case TOK_SLASH:
+            stream << " / ";
             break;
         case TOK_EQUAL:
             stream << " = ";

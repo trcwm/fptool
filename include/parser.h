@@ -38,7 +38,7 @@ struct ASTNode
                NodeAssign,
                NodeInput, NodeCSD,
                NodeTemp,
-               NodeAdd, NodeSub, NodeMul,
+               NodeAdd, NodeSub, NodeMul, NodeDiv,
                NodeUnaryMinus,
                NodeIdent,
                NodeInteger, NodeFloat,
@@ -113,13 +113,13 @@ struct ASTNode
     node_t          type;   // the type of the node
     varInfo         info;   // variable related information
 
-    std::shared_ptr<ASTNode>  left;
-    std::shared_ptr<ASTNode>  right;
+    ASTNode *left;
+    ASTNode *right;
 };
 
 typedef std::shared_ptr<ASTNode> ASTNodePtr;
 
-typedef std::vector<ASTNodePtr> statements_t;
+typedef std::vector<ASTNode*> statements_t;
 
 /** Parser to translate token stream from tokenizer/lexer to operation stack. */
 class Parser
@@ -164,23 +164,29 @@ protected:
     */
 
     bool acceptProgram(state_t &s, statements_t &result);
-    bool acceptDefinition(state_t &s, ASTNodePtr newNode);
+    ASTNode* acceptDefinition(state_t &s);
 
-    bool acceptDefspec(state_t &s, ASTNodePtr newNode);
-    bool acceptDefspec1(state_t &s, ASTNodePtr newNode);
-    bool acceptDefspec2(state_t &s, ASTNodePtr newNode);
+    ASTNode *acceptDefspec(state_t &s);
+    ASTNode *acceptDefspec1(state_t &s);
+    ASTNode *acceptDefspec2(state_t &s);
 
-    bool acceptAssignment(state_t &s, ASTNodePtr newNode);
-    bool acceptExpr(state_t &s, ASTNodePtr newNode);
-    bool acceptExpr1(state_t &s, ASTNodePtr newNode);
-    bool acceptExpr2(state_t &s, ASTNodePtr newNode);
+    ASTNode *acceptAssignment(state_t &s);
+    ASTNode* acceptExpr(state_t &s);
+    ASTNode* acceptExprAccent(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptExprAccent1(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptExprAccent2(state_t &s, ASTNode *leftNode);
 
-    bool acceptTerm(state_t &s, ASTNodePtr newNode);
-    bool acceptTerm1(state_t &s, ASTNodePtr newNode);
-    bool acceptTerm2(state_t &s, ASTNodePtr newNode);
+    ASTNode* acceptTerm(state_t &s);
+    ASTNode* acceptTermAccent(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptTermAccent1(state_t &s, ASTNode *leftNode);
+    ASTNode* acceptTermAccent2(state_t &s, ASTNode *leftNode);
 
-    bool acceptFactor(state_t &s, ASTNodePtr newNode);
-    bool acceptFactor1(state_t &s, ASTNodePtr newNode);
+    ASTNode *acceptFactor(state_t &s);
+    ASTNode* Parser::acceptFactor1(state_t &s);
+    ASTNode* Parser::acceptFactor2(state_t &s);
+    ASTNode* Parser::acceptFactor3(state_t &s);
+
+    //ASTNode *acceptFactor1(state_t &s, ASTNode *);
 
     /** match a token, return true if matched and advance the token index. */
     bool match(state_t &s, uint32_t tokenID);

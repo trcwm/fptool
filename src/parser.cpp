@@ -82,17 +82,17 @@ bool Parser::acceptProgram(state_t &s, statements_t &statements)
     while(productionAccepted == true)
     {
         productionAccepted = false;
-        ASTNodePtr newNode(new ASTNode());
-
-        if (acceptDefinition(s, newNode))
+        
+        ASTNode *node = 0;
+        if ((node=acceptDefinition(s)) != 0)
         {
             productionAccepted = true;
-            statements.push_back(newNode);
+            statements.push_back(node);
         }
-        else if (acceptAssignment(s, newNode))
+        else if ((node=acceptAssignment(s)) != 0)
         {
             productionAccepted = true;
-            statements.push_back(newNode);
+            statements.push_back(node);
         }
         else if (match(s, TOK_NEWLINE))
         {
@@ -108,7 +108,7 @@ bool Parser::acceptProgram(state_t &s, statements_t &statements)
 }
 
 
-bool Parser::acceptDefinition(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptDefinition(state_t &s)
 {
     // production: DEFINE IDENT EQUAL declspec SEMICOL
 
@@ -133,41 +133,48 @@ bool Parser::acceptDefinition(state_t &s, ASTNodePtr newNode)
         return false;
     }
 
-    newNode->info.txt  = getToken(s, -2).txt;    // get identifier string
+    std::string identifier = getToken(s, -2).txt;    // get identifier string
 
     // create new RHS specification node:
-    if (!acceptDefspec(s, newNode))
+    ASTNode *declNode = 0;
+    if ((declNode=acceptDefspec(s)) == 0)
     {
+        error(s,"Expected a declaration.");
         s = savestate;
-        return false;
+        return NULL;
     }
 
     if (!match(s,TOK_SEMICOL))
     {
         error(s,"Definitions should end with a semicolon.");
         s = savestate;
-        return false;
+        delete declNode;
+        return NULL;
     }
 
-    return true;
+    //FIXME: is this correct!?!
+    declNode->info.txt = identifier;
+
+    return declNode;
 }
 
-bool Parser::acceptDefspec(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptDefspec(state_t &s)
 {
     // productions: defspec1 | defspec2
 
-    if (acceptDefspec1(s, newNode))
+    ASTNode *node = 0;
+    if ((node=acceptDefspec1(s)) != NULL)
     {
-        return true;
+        return node;
     }
-    else if (acceptDefspec2(s, newNode))
+    else if ((node=acceptDefspec2(s)) != NULL)
     {
-        return true;
+        return node;
     }
-    return false;
+    return NULL;
 }
 
-bool Parser::acceptDefspec1(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptDefspec1(state_t &s)
 {
     // production: INPUT LPAREN INTEGER COMMA INTEGER RPAREN
 
@@ -181,15 +188,16 @@ bool Parser::acceptDefspec1(state_t &s, ASTNodePtr newNode)
         return false;
     }
 
+    ASTNode* newNode = new ASTNode();
     newNode->type = ASTNode::NodeInput;
     newNode->info.intBits = atoi(getToken(s, -4).txt.c_str()); // first integer
     newNode->info.fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
 
-    return true;
+    return newNode;
 }
 
 
-bool Parser::acceptDefspec2(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptDefspec2(state_t &s)
 {
     // production: CSD LPAREN FLOAT COMMA INTEGER RPAREN
 
@@ -200,9 +208,10 @@ bool Parser::acceptDefspec2(state_t &s, ASTNodePtr newNode)
     if (!matchList(s, tokenList))
     {
         s=savestate;
-        return false;
+        return NULL;
     }
 
+    ASTNode *newNode = new ASTNode();
     newNode->type = ASTNode::NodeCSD;
     newNode->info.csdFloat = atof(getToken(s, -4).txt.c_str()); // first argument
     newNode->info.csdBits = atoi(getToken(s, -2).txt.c_str()); // second argument
@@ -216,10 +225,10 @@ bool Parser::acceptDefspec2(state_t &s, ASTNodePtr newNode)
     float msb = ceil(log10(fabs(static_cast<double>(csd.value)))/log10(2.0));
     newNode->info.intBits = static_cast<int32_t>(msb+1); // add sign bit
     newNode->info.fracBits = -csd.digits.back().power;
-    return true;
+    return newNode;
 }
 
-bool Parser::acceptAssignment(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptAssignment(state_t &s)
 {
     // production: IDENT EQUAL expr SEMICOL
     state_t savestate = s;
@@ -239,9 +248,8 @@ bool Parser::acceptAssignment(state_t &s, ASTNodePtr newNode)
 
     std::string identifier = getToken(s, -2).txt;
 
-    ASTNodePtr exprNode(new ASTNode());
-
-    if (!acceptExpr(s, exprNode))
+    ASTNode *exprNode = 0;
+    if ((exprNode=acceptExpr(s)) == 0)
     {
         error(s,"Expression expected");
         s = savestate;
@@ -252,217 +260,338 @@ bool Parser::acceptAssignment(state_t &s, ASTNodePtr newNode)
     {
         error(s,"Assignments must end with a semicolon.");
         s = savestate;
-        return false;
+        delete exprNode;
+        return NULL;
     }
 
+    ASTNode *newNode = new ASTNode();
     newNode->type = ASTNode::NodeAssign;
     newNode->info.txt  = identifier;
     newNode->right = exprNode;
 
-    return true;
+    return newNode;
 }
 
-bool Parser::acceptExpr(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptExpr(state_t &s)
 {
-    // productions: term + expr | term - expr | term
+    // productions: term expr'
+    //
+    // the term is the first term
+    // and must therefore be
+    // added as the left leaf
+    //
+
     state_t savestate = s;
 
-    if (acceptExpr1(s, newNode))
+    ASTNode *leftNode = 0;
+    if ((leftNode=acceptTerm(s)) != NULL)
     {
-         return true;
+        // the term is the left-hand size of the expr'
+        // the right hand side and the operation node
+        // itself still need to be found.
+        //
+        // note, exprAccentNode is never NULL
+        // because of it's epsilon solution
+        //
+        ASTNode *exprAccentNode = acceptExprAccent(s, leftNode);
+        return exprAccentNode;
+    }
+    s = savestate;
+    return NULL;
+}
+
+ASTNode* Parser::acceptExprAccent(state_t &s, ASTNode *leftNode)
+{
+    // production: - term expr' | + term expr' | epsilon
+    //
+    // we already have the left-hand side of the
+    // addition or subtraction.
+    //
+    // if we encounter the epsilon,
+    // the resulting node is just
+    // the leftNode, which was already
+    // matched
+    //
+
+    state_t savestate = s;
+
+    ASTNode *topNode = 0;
+    if ((topNode = acceptExprAccent1(s, leftNode)) != 0)
+    {
+        return topNode;
     }
 
     s = savestate;
-    if (acceptExpr2(s, newNode))
+    if ((topNode = acceptExprAccent2(s, leftNode)) != 0)
     {
-        return true;
+        return topNode;
     }
 
+    // if nothing matched, that's ok
+    // because we have an epsilon
+    // solution
     s = savestate;
-    if (acceptTerm(s, newNode))
-    {
-        return true;
-    }
-
-    //error("Error parsing expression");
-    return false;
+    return leftNode;
 }
 
-bool Parser::acceptExpr1(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
 {
-    // production: term + expr
+    // production: - term expr'
     state_t savestate = s;
 
-    ASTNodePtr termNode(new ASTNode());
-    ASTNodePtr exprNode(new ASTNode());
+    if (!match(s, TOK_MINUS))
+    {
+        return NULL;
+    }
 
-    if (!acceptTerm(s, termNode))
+    ASTNode *rightNode = 0;
+    if ((rightNode=acceptTerm(s)) == NULL)
     {
         s = savestate;
-        return false;
+        return NULL;
     }
+
+    // create a new 'head' node here
+    // with the right leaf being
+    // the term that was just found
+    // and the left leaf the argument node
+    //
+    // supply the new head node to the next
+    // acceptExprAccent function
+
+    ASTNode *operationNode = new ASTNode(ASTNode::NodeSub);
+    operationNode->left = leftNode;
+    operationNode->right = rightNode;
+
+    // note: acceptExprAccent will never return NULL
+    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    return headNode;
+}
+
+ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
+{
+    // production: + term expr'
+    state_t savestate = s;
+
     if (!match(s, TOK_PLUS))
     {
-        s = savestate;
-        return false;
+        return NULL;
     }
-    if (!acceptExpr(s, exprNode))
+
+    ASTNode *rightNode = 0;
+    if ((rightNode=acceptTerm(s)) == NULL)
     {
         s = savestate;
-        return false;
+        return NULL;
     }
-    newNode->type = ASTNode::NodeAdd;
-    newNode->left = termNode;
-    newNode->right = exprNode;
-    return true;
+
+    // create a new 'head' node here
+    // with the right leaf being
+    // the term that was just found
+    // and the left leaf the argument node
+    //
+    // supply the new head node to the next
+    // acceptExprAccent function
+
+    ASTNode *operationNode = new ASTNode(ASTNode::NodeAdd);
+    operationNode->left = leftNode;
+    operationNode->right = rightNode;
+
+    // note: acceptExprAccent will never return NULL
+    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    return headNode;
 }
 
-bool Parser::acceptExpr2(state_t &s, ASTNodePtr newNode)
+
+ASTNode* Parser::acceptTerm(state_t &s)
 {
-    // production: term - expr
+    // production: factor term'
     state_t savestate = s;
 
-    ASTNodePtr termNode(new ASTNode());
-    ASTNodePtr exprNode(new ASTNode());
-
-    if (!acceptTerm(s, termNode))
+    ASTNode *leftNode = 0;
+    if ((leftNode=acceptFactor(s)) != NULL)
     {
-        s = savestate;
-        return false;
-    }
-    if (!match(s, TOK_MINUS))
-    {
-        s = savestate;
-        return false;
-    }
-    if (!acceptExpr(s, exprNode))
-    {
-        s = savestate;
-        return false;
-    }
-    newNode->type = ASTNode::NodeSub;
-    newNode->left = termNode;
-    newNode->right = exprNode;
-    return true;
-}
-
-bool Parser::acceptTerm(state_t &s, ASTNodePtr newNode)
-{
-    // production: term1 | term2 | factor
-    state_t savestate = s;
-    if (acceptTerm1(s, newNode))
-    {
-        return true;
+        // the term is the left-hand size of the term'
+        // the right hand side and the operation node
+        // itself still need to be found.
+        //
+        // note, termAccentNode is never NULL
+        // because of it's epsilon solution
+        //
+        ASTNode *termAccentNode = acceptTermAccent(s, leftNode);
+        return termAccentNode;
     }
 
     s = savestate;
-    if (acceptTerm2(s, newNode))
+    return NULL;
+}
+
+ASTNode* Parser::acceptTermAccent(state_t &s, ASTNode *leftNode)
+{
+    // production: * factor term' | / factor term' | epsilon
+    //
+    // we already have the left-hand side of the
+    // multiplication or division.
+    //
+    // if we encounter the epsilon,
+    // the resulting node is just
+    // the leftNode, which was already
+    // matched
+    //
+
+    state_t savestate = s;
+
+    ASTNode *topNode = 0;
+    if ((topNode=acceptTermAccent1(s, leftNode)) != NULL)
     {
-        return true;
+        return topNode;
     }
 
     s = savestate;
-    if (acceptFactor(s, newNode))
+    if ((topNode = acceptTermAccent2(s, leftNode)) != NULL)
     {
-        return true;
+        return topNode;
     }
-    return false;
+
+    // if nothing matched, that's ok
+    // because we have an epsilon
+    // solution
+    s = savestate;
+    return leftNode;
 }
 
-bool Parser::acceptTerm1(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
 {
-    // MINUS factor
+    // production: * factor term'
     state_t savestate = s;
-    if (!match(s, TOK_MINUS))
-    {
-        s = savestate;
-        return false;
-    }
-    ASTNodePtr factorNode(new ASTNode());
-    if (!acceptFactor(s, factorNode))
-    {
-        s = savestate;
-        return false;
-    }
 
-    newNode->type = ASTNode::NodeUnaryMinus;
-    newNode->right = factorNode;
-    return true;
-}
-
-bool Parser::acceptTerm2(state_t &s, ASTNodePtr newNode)
-{
-    // production: factor * term
-    ASTNodePtr factorNode(new ASTNode());
-    ASTNodePtr termNode(new ASTNode());
-
-    state_t savestate = s;
-    if (!acceptFactor(s, factorNode))
-    {
-        s = savestate;
-        return false;
-    }
     if (!match(s, TOK_STAR))
     {
-        s = savestate;
-        return false;
+        return NULL;
     }
-    if (!acceptTerm(s, termNode))
+
+    ASTNode *rightNode = 0;
+    if ((rightNode=acceptTerm(s)) == NULL)
     {
         s = savestate;
-        return false;
+        return NULL;
     }
-    newNode->type = ASTNode::NodeMul;
-    newNode->left = factorNode;
-    newNode->right = termNode;
-    return true;
+
+    // create a new 'head' node here
+    // with the right leaf being
+    // the term that was just found
+    // and the left leaf the argument node
+    //
+    // supply the new head node to the next
+    // acceptTermAccent function
+
+    ASTNode *operationNode = new ASTNode(ASTNode::NodeMul);
+    operationNode->left = leftNode;
+    operationNode->right = rightNode;
+
+    // note: acceptExprAccent will never return NULL
+    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    return headNode;
 }
 
-bool Parser::acceptFactor(state_t &s, ASTNodePtr newNode)
+ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
+{
+    // production: / factor term'
+    state_t savestate = s;
+
+    if (!match(s, TOK_SLASH))
+    {
+        return NULL;
+    }
+
+    ASTNode *rightNode = 0;
+    if ((rightNode=acceptTerm(s)) == NULL)
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    // create a new 'head' node here
+    // with the right leaf being
+    // the term that was just found
+    // and the left leaf the argument node
+    //
+    // supply the new head node to the next
+    // acceptTermAccent function
+
+    ASTNode *operationNode = new ASTNode(ASTNode::NodeDiv);
+    operationNode->left = leftNode;
+    operationNode->right = rightNode;
+
+    // note: acceptExprAccent will never return NULL
+    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    return headNode;
+}
+
+
+ASTNode* Parser::acceptFactor(state_t &s)
 {
     state_t savestate = s;
 
-    if (match(s, TOK_INTEGER))
+    // FUNCTION ( expr )
+    ASTNode *factorNode = 0;
+
+    if ((factorNode=acceptFactor1(s)) != NULL)
     {
-        newNode->type = ASTNode::NodeInteger;
-        newNode->info.intVal = atoi(getToken(s, -1).txt.c_str());
-        return true;    // INTEGER
+        return factorNode;
     }
 
+    s = savestate;
+    // ( expr )
+    if ((factorNode=acceptFactor2(s)) != NULL)
+    {
+        return factorNode;
+    }
+
+    s = savestate;
+    // - factor
+    if ((factorNode=acceptFactor3(s)) != NULL)
+    {
+        return factorNode;
+    }
+
+    s = savestate;
+    // INTEGER
+    if (match(s, TOK_INTEGER))
+    {
+        factorNode = new ASTNode(ASTNode::NodeInteger);
+        factorNode->info.intVal = atoi(getToken(s, -1).txt.c_str());
+        return factorNode;
+    }
+
+    // FLOAT
     if (match(s, TOK_FLOAT))
     {
         error(s, "literal floats are not supported!");
-        return false;
+        return NULL;
         //newNode->type = ASTNode::NodeIdent;
         //newNode->info.txt = getToken(s, -1).txt;
         //return true;    // IDENT
     }
 
+    // IDENTIFIER
     if (match(s, TOK_IDENT))
     {
-        newNode->type = ASTNode::NodeIdent;
-        newNode->info.txt = getToken(s, -1).txt;
-        return true;    // IDENT
-    }
-
-    if (acceptFactor1(s, newNode))
-    {
-        return true;
-    }
-
-    if (match(s, TOK_IDENT))
-    {
-        newNode->type = ASTNode::NodeIdent;
-        newNode->info.txt = getToken(s, -1).txt;
-        return true;    // IDENT
+        factorNode = new ASTNode(ASTNode::NodeIdent);
+        factorNode->info.txt = getToken(s, -1).txt;
+        return factorNode;    // IDENT
     }
 
     error(s, "Factor is not an integer, float, identifier or parenthesised expression.");
     return false;
 }
 
-bool Parser::acceptFactor1(state_t &s, ASTNodePtr newNode)
-{
+ASTNode* Parser::acceptFactor1(state_t &s)
+{    
+    // production: FUNCTION ( expr )
+
+    return NULL; // no functions yet!
+#if 0
     state_t savestate = s;
     if (!match(s, TOK_LPAREN))
     {
@@ -480,4 +609,55 @@ bool Parser::acceptFactor1(state_t &s, ASTNodePtr newNode)
         return false;
     }
     return true;
+#endif
+}
+
+ASTNode* Parser::acceptFactor2(state_t &s)
+{
+    // ( expr )
+
+    state_t savestate = s;
+    if (!match(s, TOK_LPAREN))
+    {
+        s = savestate;
+        return NULL;
+    }
+    ASTNode *exprNode = 0;
+    if ((exprNode=acceptExpr(s)) == NULL)
+    {
+        s = savestate;
+        return NULL;
+    }
+    if (!match(s, TOK_RPAREN))
+    {
+        delete exprNode;
+        s = savestate;
+        return NULL;
+    }
+    return exprNode;
+}
+
+ASTNode* Parser::acceptFactor3(state_t &s)
+{
+    // production: - factor
+    state_t savestate = s;
+    if (!match(s, TOK_MINUS))
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    ASTNode *factorNode = 0;
+    if ((factorNode=acceptFactor(s)) == NULL)
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    // unary minus node
+    ASTNode *exprNode = new ASTNode(ASTNode::NodeUnaryMinus);
+    exprNode->left = 0;
+    exprNode->right = factorNode;
+
+    return exprNode;
 }

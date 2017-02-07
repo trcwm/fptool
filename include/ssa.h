@@ -66,6 +66,7 @@ struct SSANode
         OP_Add,         // Add two variables var3 = var1 + var2
         OP_Sub,         // Subtract two variables var3 = var1 - var2
         OP_Mul,         // Multiply two variables var3 = var1 * var2
+        OP_Div,         // Divide two variables var3 = var1 / var2
         OP_Negate,      // Sign reverse
         OP_Assign,      // Assign to an output/register variable
         OP_Reinterpret, // Reinterpret Q(n1,m2) to Q(n2,m2) where n1-m2 = n2-m2
@@ -118,6 +119,12 @@ public:
          s1 and s2 must either be TypeInput, TypeIntermediate or TypeCSD.
     */
     operandIndex createMulNode(ssa_iterator where, operandIndex s1, operandIndex s2);
+
+    /** create a Div node tmp = s1/s2, returning the index
+         of the new temp variable.
+         s1 and s2 must either be TypeInput, TypeIntermediate.
+    */
+    operandIndex createDivNode(ssa_iterator where, operandIndex s1, operandIndex s2);
 
     /** create a negate node, returning the index
         of the new temp variable.
@@ -251,7 +258,7 @@ public:
     }
 
 protected:
-    bool executeASTNode(const ASTNodePtr node, SSAObject &ssa);
+    bool executeASTNode(ASTNode *node, SSAObject &ssa);
 
     /** determine the Q(n,m) wordlength of a variable */
     void determineWordlength(const operand_t &var, int32_t &intBits, int32_t &fracBits);

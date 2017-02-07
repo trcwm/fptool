@@ -15,6 +15,8 @@ void VHDLCodeGen::execute(SSAObject &ssa)
     doLog(LOG_INFO, "Running VHDLCodeGen\n");
     uint32_t indent = 2;
 
+    os << m_prolog;
+
     genProcessHeader(ssa, os, indent);
 
     indent+=2;
@@ -34,17 +36,22 @@ void VHDLCodeGen::execute(SSAObject &ssa)
         case SSANode::OP_Add:
             op1 = ssa.getOperand(iter->var1);
             op2 = ssa.getOperand(iter->var2);
-            os << op2.info.txt << " + " << op1.info.txt << ";\n";
+            os << op1.info.txt << " + " << op2.info.txt << ";\n";
             break;
         case SSANode::OP_Sub:
             op1 = ssa.getOperand(iter->var1);
             op2 = ssa.getOperand(iter->var2);
-            os << op2.info.txt << " - " << op1.info.txt << ";\n";
+            os << op1.info.txt << " - " << op2.info.txt << ";\n";
             break;
         case SSANode::OP_Mul:
             op1 = ssa.getOperand(iter->var1);
             op2 = ssa.getOperand(iter->var2);
-            os << op2.info.txt << " * " << op1.info.txt << ";\n";
+            os << op1.info.txt << " * " << op2.info.txt << ";\n";
+            break;
+        case SSANode::OP_Div:
+            op1 = ssa.getOperand(iter->var1);
+            op2 = ssa.getOperand(iter->var2);
+            os << op1.info.txt << " / " << op2.info.txt << "; -- Note: this doesn't work!\n";
             break;
         case SSANode::OP_Negate:
             op1 = ssa.getOperand(iter->var1);
@@ -86,6 +93,8 @@ void VHDLCodeGen::execute(SSAObject &ssa)
     indent-=2;
     genIndent(os, indent);
     os << "end process;\n";
+
+    os << m_epilog;
 }
 
 void VHDLCodeGen::genLHS(std::ostream &os, operand_t op, uint32_t indent)
