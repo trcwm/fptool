@@ -20,12 +20,13 @@
 #include "pass_csdmul.h"
 #include "pass_clean.h"
 #include "vhdlcodegen.h"
+#include "astgraphviz.h"
 
 #define __VERSION__ "0.1a"
 
 int main(int argc, char *argv[])
 {
-    CmdLine cmdline("o");
+    CmdLine cmdline("og");
 
     setDebugging();
 
@@ -34,6 +35,10 @@ int main(int argc, char *argv[])
     {
 
         printf("\nUsage: fptool <source.fp>\n\n");
+        printf("options: \n");
+        printf("  -o <outputfile>    Output file for VHDL code.\n");
+        printf("  -g <graphvizfile>  Output file for Graphviz/dot program visualisation.\n");
+        printf("\n\n");
         return 1;
     }
     else
@@ -53,6 +58,14 @@ int main(int argc, char *argv[])
             doLog(LOG_DEBUG, "output file: %s\n", outfile.c_str());
         }
 
+        std::string graphvizFilename;
+        std::ofstream graphvizStream;
+        if (cmdline.getOption('g', graphvizFilename))
+        {
+            graphvizStream = std::ofstream(graphvizFilename, std::ios::out);
+            doLog(LOG_DEBUG, "graphviz file: %s\n", graphvizFilename.c_str());
+        }
+
         Tokenizer tokenizer;
         std::vector<token_t> tokens;
         tokenizer.process(reader, tokens);
@@ -65,14 +78,34 @@ int main(int argc, char *argv[])
         {
             doLog(LOG_INFO, "Parse OK!\n");
 
+            // dump the AST
+            ASTDumpVisitor ASTdumper(std::cout);
+            for(uint32_t i=0; i<statements.size(); i++)
+            {
+                std::cout << "Statement " << i+1 << ":\n";
+                ASTdumper.visit(statements[i]);
+                std::cout << "\n";
+            }
+
+            // dump the AST using graphviz
+            if (graphvizStream.is_open())
+            {
+                AST2Graphviz graphviz(graphvizStream);
+                graphviz.writeProlog();
+                for(uint32_t i=0; i<statements.size(); i++)
+                {
+                    graphviz.addStatement(statements[i]);
+                }
+                graphviz.writeEpilog();
+                graphvizStream.close();
+            }
+
             SSACreator ssaCreator;
             SSAObject ssa;
             if (!ssaCreator.process(statements, ssa))
             {
                 doLog(LOG_ERROR, "Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
             }
-
-            //ssa.dumpStatements(std::cout);
 
             PassCSDMul csdmul;
             csdmul.process(ssa);

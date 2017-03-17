@@ -25,8 +25,8 @@ void PassCSDMul::execute(SSAObject &ssa)
         if (operation == SSANode::OP_Mul)
         {
             // check both operands for CSD
-            operand_t op1 = ssa.getOperand(iter->var1);
-            operand_t op2 = ssa.getOperand(iter->var2);
+            operand_t op1 = ssa.getOperand(iter->op1Idx);
+            operand_t op2 = ssa.getOperand(iter->op2Idx);
 
             if ((op1.type == operand_t::TypeCSD) && (op2.type == operand_t::TypeCSD))
             {
@@ -47,7 +47,7 @@ void PassCSDMul::execute(SSAObject &ssa)
             // simplifies the code ahead
             if (op2.type == operand_t::TypeCSD)
             {
-                std::swap(iter->var1, iter->var2);
+                std::swap(iter->op1Idx, iter->op2Idx);
                 std::swap(op1, op2);
             }
 
@@ -61,7 +61,7 @@ void PassCSDMul::execute(SSAObject &ssa)
                     throw std::runtime_error("");
                 }
                 doLog(LOG_DEBUG, "CSD: converted (%f) to (%f)\n", op1.info.csdFloat, my_csd.value);
-                iter = shiftAndAdd(ssa, iter, my_csd, iter->var2, iter->var3);
+                iter = shiftAndAdd(ssa, iter, my_csd, iter->op2Idx, iter->op3Idx);
             }
 
             // TODO: check if the final result matches the width of the

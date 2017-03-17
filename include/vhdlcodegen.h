@@ -45,6 +45,9 @@ protected:
     /** extend LSBs of a signal by adding zeroes */
     void extendLSBs(std::ostream &os, const std::string &name, uint32_t bits);
 
+    /** generate a TO_SIGNED() argument in case of an integer literal */
+    operand_t handleLiteralInt(operand_t &op);
+
     std::ostream &os;
     std::string  m_prolog;
     std::string  m_epilog;

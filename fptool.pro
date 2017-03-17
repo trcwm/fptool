@@ -13,11 +13,14 @@ HEADERS += include/cmdline.h \
            include/pass_addsub.h \
            include/pass_clean.h \
            include/pass_csdmul.h \
-           include/pass_graphviz.h \
+           include/astgraphviz.h \
            include/reader.h \
            include/ssa.h \
+           include/ssapass.h \
            include/tokenizer.h \
-           include/vhdlcodegen.h
+           include/vhdlcodegen.h \
+           include/astnode.h \
+           include/astvisitor.h
 
 SOURCES += src/cmdline.cpp \
            src/cppcodegen.cpp \
@@ -28,11 +31,12 @@ SOURCES += src/cmdline.cpp \
            src/pass_addsub.cpp \
            src/pass_clean.cpp \
            src/pass_csdmul.cpp \
-           src/pass_graphviz.cpp \
+           src/astgraphviz.cpp \
            src/reader.cpp \
            src/ssa.cpp \
            src/tokenizer.cpp \
-           src/vhdlcodegen.cpp
+           src/vhdlcodegen.cpp \
+           src/astvisitor.cpp
 
 
 

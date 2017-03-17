@@ -24,8 +24,8 @@ void PassAddSub::execute(SSAObject &ssa)
         if ((operation == SSANode::OP_Add) || (operation == SSANode::OP_Sub))
         {
             // get operands
-            operand_t op1 = ssa.getOperand(iter->var1);
-            operand_t op2 = ssa.getOperand(iter->var2);
+            operand_t op1 = ssa.getOperand(iter->op1Idx);
+            operand_t op2 = ssa.getOperand(iter->op2Idx);
 
             doLog(LOG_DEBUG, "Processing (%s) and (%s) for addition\n", op1.info.txt.c_str(), op2.info.txt.c_str());
 
@@ -36,19 +36,19 @@ void PassAddSub::execute(SSAObject &ssa)
             {
                 // extend LSBs of op2 by creating a new extended
                 // version of op2
-                operandIndex newop = ssa.createExtendLSBNode(iter, iter->var2, op1.info.fracBits-op2.info.fracBits);
+                operandIndex newop = ssa.createExtendLSBNode(iter, iter->op2Idx, op1.info.fracBits-op2.info.fracBits);
 
                 // replace op2 by this new node in the current SSA node
-                iter->var2 = newop;
+                iter->op2Idx = newop;
             }
             else if (op2.info.fracBits > op1.info.fracBits)
             {
                 // extend LSBs of op1 by creating a new extended
                 // version of op1
-                operandIndex newop = ssa.createExtendLSBNode(iter, iter->var1, op2.info.fracBits-op1.info.fracBits);
+                operandIndex newop = ssa.createExtendLSBNode(iter, iter->op1Idx, op2.info.fracBits-op1.info.fracBits);
 
                 // replace op1 by this new node in the current SSA node
-                iter->var1 = newop;
+                iter->op1Idx = newop;
             }
 
             // **********************************************************************
@@ -62,19 +62,19 @@ void PassAddSub::execute(SSAObject &ssa)
             {
                 // extend MSBs of op1 by creating a new extended
                 // version of op1
-                operandIndex newop = ssa.createExtendMSBNode(iter, iter->var1, 1);
+                operandIndex newop = ssa.createExtendMSBNode(iter, iter->op1Idx, 1);
 
                 // replace op1 by this new node in the current SSA node
-                iter->var1 = newop;
+                iter->op1Idx = newop;
             }
             else if (op2.info.intBits > op1.info.intBits)
             {
                 // extend MSBs of op2 by creating a new extended
                 // version of op2
-                operandIndex newop = ssa.createExtendMSBNode(iter, iter->var2, 1);
+                operandIndex newop = ssa.createExtendMSBNode(iter, iter->op2Idx, 1);
 
                 // replace op1 by this new node in the current SSA node
-                iter->var2 = newop;
+                iter->op2Idx = newop;
             }
         }
         iter++;

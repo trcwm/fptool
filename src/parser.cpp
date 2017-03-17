@@ -471,7 +471,7 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
     }
 
     ASTNode *rightNode = 0;
-    if ((rightNode=acceptTerm(s)) == NULL)
+    if ((rightNode=acceptFactor(s)) == NULL)
     {
         s = savestate;
         return NULL;
@@ -489,8 +489,8 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
-    // note: acceptExprAccent will never return NULL
-    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    // note: acceptTermAccent will never return NULL
+    ASTNode *headNode = acceptTermAccent(s, operationNode);
     return headNode;
 }
 
@@ -505,7 +505,7 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
     }
 
     ASTNode *rightNode = 0;
-    if ((rightNode=acceptTerm(s)) == NULL)
+    if ((rightNode=acceptFactor(s)) == NULL)
     {
         s = savestate;
         return NULL;
@@ -523,8 +523,8 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
-    // note: acceptExprAccent will never return NULL
-    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    // note: acceptTermAccent will never return NULL
+    ASTNode *headNode = acceptTermAccent(s, operationNode);
     return headNode;
 }
 
@@ -561,6 +561,9 @@ ASTNode* Parser::acceptFactor(state_t &s)
     {
         factorNode = new ASTNode(ASTNode::NodeInteger);
         factorNode->info.intVal = atoi(getToken(s, -1).txt.c_str());
+        // calculate the int and frac bits for the integer
+        factorNode->info.intBits = static_cast<int32_t>(pow(2.0f,ceil(log10((float)factorNode->info.intVal)/log10(2.0f))))+1;
+        factorNode->info.fracBits = 0;
         return factorNode;
     }
 

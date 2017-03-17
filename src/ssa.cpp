@@ -46,9 +46,9 @@ operandIndex SSAObject::createAddNode(ssa_iterator where, operandIndex s1, opera
 
     SSANode n;
     n.operation = SSANode::OP_Add;
-    n.var1 = s1;
-    n.var2 = s2;
-    n.var3 = lhs_index;
+    n.op1Idx = s1;
+    n.op2Idx = s2;
+    n.op3Idx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -68,9 +68,9 @@ operandIndex SSAObject::createSubNode(ssa_iterator where, operandIndex s1, opera
 
     SSANode n;
     n.operation = SSANode::OP_Sub;
-    n.var1 = s1;
-    n.var2 = s2;
-    n.var3 = lhs_index;
+    n.op1Idx = s1;
+    n.op2Idx = s2;
+    n.op3Idx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -90,9 +90,9 @@ operandIndex SSAObject::createMulNode(ssa_iterator where, operandIndex s1, opera
 
     SSANode n;
     n.operation = SSANode::OP_Mul;
-    n.var1 = s1;
-    n.var2 = s2;
-    n.var3 = lhs_index;
+    n.op1Idx = s1;
+    n.op2Idx = s2;
+    n.op3Idx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -112,9 +112,9 @@ operandIndex SSAObject::createDivNode(ssa_iterator where, operandIndex s1, opera
 
     SSANode n;
     n.operation = SSANode::OP_Div;
-    n.var1 = s1;
-    n.var2 = s2;
-    n.var3 = lhs_index;
+    n.op1Idx = s1;
+    n.op2Idx = s2;
+    n.op3Idx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -134,9 +134,9 @@ operandIndex SSAObject::createNegateNode( ssa_iterator where, operandIndex s1)
 
     SSANode n;
     n.operation = SSANode::OP_Negate;
-    n.var1 = s1;
-    n.var2 = 0;
-    n.var3 = lhs_index;
+    n.op1Idx = s1;
+    n.op2Idx = 0;
+    n.op3Idx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -156,9 +156,9 @@ void SSAObject::createAssignNode(ssa_iterator where, operandIndex output, operan
 
     SSANode n;
     n.operation = SSANode::OP_Assign;
-    n.var1 = s1;
-    n.var2 = 0;
-    n.var3 = output;
+    n.op1Idx = s1;
+    n.op2Idx = 0;
+    n.op3Idx = output;
 
     m_list.insert(where, n);
 }
@@ -178,9 +178,9 @@ operandIndex SSAObject::createExtendLSBNode(ssa_iterator where, operandIndex s1,
     SSANode n;
     n.operation = SSANode::OP_ExtendLSBs;
     n.bits = bits;
-    n.var1 = s1;
-    n.var2 = 0;
-    n.var3 = lhs_index;
+    n.op1Idx = s1;
+    n.op2Idx = 0;
+    n.op3Idx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -196,14 +196,14 @@ operandIndex SSAObject::createExtendMSBNode(ssa_iterator where, operandIndex s1,
 
     int32_t intbits = m_operands[s1].info.intBits;
     int32_t fracbits = m_operands[s1].info.fracBits;
-    operandIndex lhs_index = createNewTemporary(intbits, fracbits+bits);
+    operandIndex lhs_index = createNewTemporary(intbits+bits, fracbits);
 
     SSANode n;
     n.operation = SSANode::OP_ExtendMSBs;
     n.bits = bits;
-    n.var1 = s1;
-    n.var2 = 0;
-    n.var3 = lhs_index;
+    n.op1Idx = s1;
+    n.op2Idx = 0;
+    n.op3Idx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -230,8 +230,8 @@ operandIndex SSAObject::createReinterpretNode(ssa_iterator where, operandIndex s
     n.operation = SSANode::OP_Reinterpret;
     n.bits = intbits;
     n.fbits = fracbits;
-    n.var1 = s1;
-    n.var3 = lhs_index;
+    n.op1Idx = s1;
+    n.op3Idx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -285,9 +285,9 @@ void SSAObject::dumpStatements(std::ostream &stream)
     auto iter = m_list.begin();
     while(iter != m_list.end())
     {
-        uint32_t idx1 = iter->var1;
-        uint32_t idx2 = iter->var2;
-        uint32_t idx3 = iter->var3;
+        uint32_t idx1 = iter->op1Idx;
+        uint32_t idx2 = iter->op2Idx;
+        uint32_t idx3 = iter->op3Idx;
         switch(iter->operation)
         {
         case SSANode::OP_Add:

@@ -25,7 +25,7 @@ void VHDLCodeGen::execute(SSAObject &ssa)
     {
         // get LHS operand as output variable/signal
         // and generate the code
-        operand_t lhs = ssa.getOperand(iter->var3);
+        operand_t lhs = ssa.getOperand(iter->op3Idx);
         genLHS(os, lhs, indent);
 
         operand_t op1;
@@ -34,55 +34,65 @@ void VHDLCodeGen::execute(SSAObject &ssa)
         switch(node.operation)
         {
         case SSANode::OP_Add:
-            op1 = ssa.getOperand(iter->var1);
-            op2 = ssa.getOperand(iter->var2);
+            op1 = ssa.getOperand(iter->op1Idx);
+            op2 = ssa.getOperand(iter->op2Idx);
+            op1=handleLiteralInt(op1);
+            op2=handleLiteralInt(op2);
             os << op1.info.txt << " + " << op2.info.txt << ";\n";
             break;
         case SSANode::OP_Sub:
-            op1 = ssa.getOperand(iter->var1);
-            op2 = ssa.getOperand(iter->var2);
+            op1 = ssa.getOperand(iter->op1Idx);
+            op2 = ssa.getOperand(iter->op2Idx);
+            op1=handleLiteralInt(op1);
+            op2=handleLiteralInt(op2);
             os << op1.info.txt << " - " << op2.info.txt << ";\n";
             break;
         case SSANode::OP_Mul:
-            op1 = ssa.getOperand(iter->var1);
-            op2 = ssa.getOperand(iter->var2);
+            op1 = ssa.getOperand(iter->op1Idx);
+            op2 = ssa.getOperand(iter->op2Idx);
+            op1=handleLiteralInt(op1);
+            op2=handleLiteralInt(op2);
             os << op1.info.txt << " * " << op2.info.txt << ";\n";
             break;
         case SSANode::OP_Div:
-            op1 = ssa.getOperand(iter->var1);
-            op2 = ssa.getOperand(iter->var2);
+            op1 = ssa.getOperand(iter->op1Idx);
+            op2 = ssa.getOperand(iter->op2Idx);
+            op1=handleLiteralInt(op1);
+            op2=handleLiteralInt(op2);
             os << op1.info.txt << " / " << op2.info.txt << "; -- Note: this doesn't work!\n";
             break;
         case SSANode::OP_Negate:
-            op1 = ssa.getOperand(iter->var1);
+            op1 = ssa.getOperand(iter->op1Idx);
+            op1=handleLiteralInt(op1);
             os << "-" << op1.info.txt << ";\n";
             break;
         case SSANode::OP_Assign:
-            op1 = ssa.getOperand(iter->var1);
+            op1 = ssa.getOperand(iter->op1Idx);
+            op1=handleLiteralInt(op1);
             os << op1.info.txt << ";\n";
             break;
         case SSANode::OP_Saturate:
-            op1 = ssa.getOperand(iter->var1);
+            op1 = ssa.getOperand(iter->op1Idx);
             break;
         case SSANode::OP_RemoveLSBs:
-            op1 = ssa.getOperand(iter->var1);
+            op1 = ssa.getOperand(iter->op1Idx);
             os << "removeLSBs(" << op1.info.txt << ");\n";
             break;
         case SSANode::OP_ExtendLSBs:
-            op1 = ssa.getOperand(iter->var1);
+            op1 = ssa.getOperand(iter->op1Idx);
             extendLSBs(os, op1.info.txt, node.bits);
             os << ";\n";
             break;
         case SSANode::OP_RemoveMSBs:
-            op1 = ssa.getOperand(iter->var1);
+            op1 = ssa.getOperand(iter->op1Idx);
             os << "removeMSBs(" << op1.info.txt << ");\n";
             break;
         case SSANode::OP_ExtendMSBs:
-            op1 = ssa.getOperand(iter->var1);
+            op1 = ssa.getOperand(iter->op1Idx);
             os << "resize(" << op1.info.txt << "," << op1.info.intBits+op1.info.fracBits+node.bits << ");\n";
             break;
         case SSANode::OP_Reinterpret:
-            op1 = ssa.getOperand(iter->var1);
+            op1 = ssa.getOperand(iter->op1Idx);
             os << op1.info.txt << "; -- reinterpret as Q(" << iter->bits << "," << iter->fbits << ");\n";
             break;
         default:
@@ -95,6 +105,22 @@ void VHDLCodeGen::execute(SSAObject &ssa)
     os << "end process;\n";
 
     os << m_epilog;
+}
+
+operand_t VHDLCodeGen::handleLiteralInt(operand_t &op)
+{
+    if (op.type == operand_t::TypeInteger)
+    {
+        std::stringstream ss;
+        operand_t newOp = op;
+        ss << "TO_SIGNED(" << op.info.intVal << "," << op.info.intBits << ")";
+        newOp.info.txt = ss.str();
+        return newOp;
+    }
+    else
+    {
+        return op;
+    }
 }
 
 void VHDLCodeGen::genLHS(std::ostream &os, operand_t op, uint32_t indent)
@@ -204,6 +230,15 @@ void VHDLCodeGen::genIndent(std::ostream &os, uint32_t indent)
 /** extend LSBs of a signal by adding zeroes */
 void VHDLCodeGen::extendLSBs(std::ostream &os, const std::string &name, uint32_t bits)
 {
+    // sanity check
+    if (bits > 2048)
+    {
+        printf("VHDLCodeGen::extendLSB - error: extending more than 2048 bits!\n");
+        printf("                         truncating to 2048 - your VHDL won't work.\n");
+        printf("                         this is most likely due to a bug in fptool.\n");
+        bits = 2048;
+    }
+
     os << name << " & \"";
     for(uint32_t i=0; i<bits; i++)
         os << "0";

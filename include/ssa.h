@@ -78,16 +78,16 @@ struct SSANode
     };
 
     /** constructor to initialize things to safe defaults */
-    SSANode() : operation(OP_Undefined), var1(0),var2(0),var3(0),bits(0),fbits(0)
+    SSANode() : operation(OP_Undefined), op1Idx(0),op2Idx(0),op3Idx(0),bits(0),fbits(0)
     {
     }
 
     operation_t operation;
-    size_t      var1;   // Index of operand 1
-    size_t      var2;   // Index of operand 2
-    size_t      var3;   // Index of operand 3 (lhs)
-    int32_t     bits;   // remove/extend/saturate (integer) bits
-    int32_t     fbits;  // saturate (fractional) bits
+    size_t      op1Idx;     // Index of operand 1
+    size_t      op2Idx;     // Index of operand 2
+    size_t      op3Idx;     // Index of operand 3 (lhs)
+    int32_t     bits;       // remove/extend/saturate (integer) bits
+    int32_t     fbits;      // saturate (fractional) bits
 };
 
 typedef std::list<SSANode> ssaList_t;

@@ -26,13 +26,13 @@ void PassClean::execute(SSAObject &ssa)
 
         if (operation == SSANode::OP_Reinterpret)
         {
-            doLog(LOG_DEBUG, "Replacing variable %d (%s)\n", iter->var3, ssa.getOperand(iter->var3).info.txt.c_str());
+            doLog(LOG_DEBUG, "Replacing variable %d (%s)\n", iter->op3Idx, ssa.getOperand(iter->op3Idx).info.txt.c_str());
 
             // replace reinterpreted with original variable
-            substitute(ssa, iter->var3, iter->var1);
+            substitute(ssa, iter->op3Idx, iter->op1Idx);
 
             // mark lhs variable as removed
-            ssa.markRemoved(iter->var3);
+            ssa.markRemoved(iter->op3Idx);
 
             // remove the reinterpret node
             iter = ssa.removeNode(iter);
@@ -51,18 +51,18 @@ void PassClean::execute(SSAObject &ssa)
 
         if (operation == SSANode::OP_Assign)
         {
-            operand_t lhs = ssa.getOperand(iter->var3);
+            operand_t lhs = ssa.getOperand(iter->op3Idx);
 
             // preserve output assignments
             if (lhs.type != operand_t::TypeOutput)
             {
-                doLog(LOG_DEBUG, "Removing variable %d (%s)\n", iter->var3, ssa.getOperand(iter->var3).info.txt.c_str());
+                doLog(LOG_DEBUG, "Removing variable %d (%s)\n", iter->op3Idx, ssa.getOperand(iter->op3Idx).info.txt.c_str());
 
                 // replace the assigned var with original var
-                substitute(ssa, iter->var3, iter->var1);
+                substitute(ssa, iter->op3Idx, iter->op1Idx);
 
                 // mark lhs variable as removed
-                ssa.markRemoved(iter->var3);
+                ssa.markRemoved(iter->op3Idx);
 
                 // remove the assignment node
                 iter = ssa.removeNode(iter);
@@ -84,11 +84,11 @@ void PassClean::substitute(SSAObject &ssa, operandIndex idx1, operandIndex idx2)
     auto iter = ssa.begin();
     while(iter != ssa.end())
     {
-        if (iter->var1 == idx1)
-            iter->var1 = idx2;
+        if (iter->op1Idx == idx1)
+            iter->op1Idx = idx2;
 
-        if (iter->var2 == idx1)
-            iter->var2 = idx2;
+        if (iter->op2Idx == idx1)
+            iter->op2Idx = idx2;
 
         iter++;
     }
