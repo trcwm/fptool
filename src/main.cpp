@@ -26,9 +26,7 @@
 
 int main(int argc, char *argv[])
 {
-    CmdLine cmdline("og");
-
-    setDebugging();
+    CmdLine cmdline("og","d");
 
     printf("FPTOOL version "__VERSION__" compiled on "__DATE__"\n\n");
     if (!cmdline.parseOptions(argc, argv))
@@ -42,7 +40,12 @@ int main(int argc, char *argv[])
         return 1;
     }
     else
-    {        
+    {
+        if (cmdline.hasOption('d'))
+        {
+            setDebugging();
+        }
+
         Reader* reader = Reader::open(cmdline.getMainArg().c_str());
         if (reader == 0)
         {
@@ -55,7 +58,7 @@ int main(int argc, char *argv[])
         if (cmdline.getOption('o', outfile))
         {
             outstream = std::ofstream(outfile, std::ios::out);
-            doLog(LOG_DEBUG, "output file: %s\n", outfile.c_str());
+            doLog(LOG_INFO, "output file: %s\n", outfile.c_str());
         }
 
         std::string graphvizFilename;
@@ -69,7 +72,12 @@ int main(int argc, char *argv[])
         Tokenizer tokenizer;
         std::vector<token_t> tokens;
         tokenizer.process(reader, tokens);
-        tokenizer.dumpTokens(std::cout, tokens);
+
+        if (cmdline.hasOption('d'))
+        {
+            tokenizer.dumpTokens(std::cout, tokens);
+        }
+
         delete reader;
 
         Parser parse;
@@ -78,13 +86,16 @@ int main(int argc, char *argv[])
         {
             doLog(LOG_INFO, "Parse OK!\n");
 
-            // dump the AST
-            ASTDumpVisitor ASTdumper(std::cout);
-            for(uint32_t i=0; i<statements.size(); i++)
+            if (cmdline.hasOption('d'))
             {
-                std::cout << "Statement " << i+1 << ":\n";
-                ASTdumper.visit(statements[i]);
-                std::cout << "\n";
+                // dump the AST
+                ASTDumpVisitor ASTdumper(std::cout);
+                for(uint32_t i=0; i<statements.size(); i++)
+                {
+                    std::cout << "Statement " << i+1 << ":\n";
+                    ASTdumper.visit(statements[i]);
+                    std::cout << "\n";
+                }
             }
 
             // dump the AST using graphviz
@@ -109,6 +120,8 @@ int main(int argc, char *argv[])
 
             PassCSDMul csdmul;
             csdmul.process(ssa);
+
+            ssa.dumpStatements(std::cout);
 
             PassAddSub  addsub;
             addsub.process(ssa);

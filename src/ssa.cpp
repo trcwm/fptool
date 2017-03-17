@@ -288,6 +288,8 @@ void SSAObject::dumpStatements(std::ostream &stream)
         uint32_t idx1 = iter->op1Idx;
         uint32_t idx2 = iter->op2Idx;
         uint32_t idx3 = iter->op3Idx;
+        uint32_t ttt=iter->operation;
+
         switch(iter->operation)
         {
         case SSANode::OP_Add:
@@ -312,6 +314,16 @@ void SSAObject::dumpStatements(std::ostream &stream)
         case SSANode::OP_Assign:
             stream << getOperand(idx3).info.txt.c_str() << " <= "
                    << getOperand(idx1).info.txt.c_str() << ";\n";
+            break;
+        case SSANode::OP_Reinterpret:
+            stream << getOperand(idx3).info.txt.c_str() << " := Reinterpret("
+                   << getOperand(idx1).info.txt.c_str() << ","
+                   << iter->bits << "," << iter->fbits << ");\n";
+            break;
+        case SSANode::OP_ExtendLSBs:
+            stream << getOperand(idx3).info.txt.c_str() << " := ExtendLSB("
+                   << getOperand(idx1).info.txt.c_str() << ","
+                   << iter->bits << ");\n";
             break;
         default:
             stream << "** unknown SSA node **\n";

@@ -9,4 +9,4 @@ define a = input(1,15);
 define b = csd(3.1415927,4);
 
 % do some actual arithmetic
-out = a*b;
+result = a*b;

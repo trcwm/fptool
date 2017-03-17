@@ -24,7 +24,7 @@
 class CmdLine
 {
 public:
-    CmdLine(const std::string &acceptedOptions, bool mainArgRequired = true);
+    CmdLine(const std::string &acceptedOptions, const std::string &acceptedFlags, bool mainArgRequired = true);
 
     /** parse the command line */
     bool parseOptions(int32_t argc, char *argv[]);
@@ -44,6 +44,20 @@ public:
         }
     }
 
+    /** check if an option is available */
+    bool hasOption(char opt) const
+    {
+        auto iter = m_options.find(opt);
+        if (iter!=m_options.end())
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
     /** get the main argument */
     std::string getMainArg() const
     {
@@ -53,6 +67,7 @@ public:
 protected:
     std::map<char, std::string> m_options;
     std::string m_acceptedOptions;
+    std::string m_acceptedFlags;
     std::string m_mainArg;
     bool m_mainArgRequired;
 };

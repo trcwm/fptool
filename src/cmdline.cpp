@@ -11,8 +11,10 @@
 #include "logging.h"
 #include "cmdline.h"
 
-CmdLine::CmdLine(const std::string &acceptedOptions, bool mainArgRequired)
-    : m_acceptedOptions(acceptedOptions), m_mainArgRequired(mainArgRequired)
+CmdLine::CmdLine(const std::string &acceptedOptions, const std::string &acceptedFlags, bool mainArgRequired)
+    : m_acceptedOptions(acceptedOptions),
+      m_acceptedFlags(acceptedFlags),
+      m_mainArgRequired(mainArgRequired)
 {
 
 }
@@ -33,7 +35,12 @@ bool CmdLine::parseOptions(int32_t argc, char *argv[])
         case S_start:
             if (*ptr == '-')
             {
-                if (m_acceptedOptions.find(ptr[1]) != std::string::npos)
+                if (m_acceptedFlags.find(ptr[1]) != std::string::npos)
+                {
+                    // flag is accepted
+                    m_options.insert(std::pair<char, std::string>(ptr[1],""));
+                }
+                else if (m_acceptedOptions.find(ptr[1]) != std::string::npos)
                 {
                     // option is accepted
                     option = ptr[1];

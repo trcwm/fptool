@@ -198,7 +198,7 @@ void VHDLCodeGen::genProcessHeader(const SSAObject &ssa, std::ostream &os, uint3
         }
         iter++;
     }
-    os << ");\n"; // terminate process header
+    os << ")\n"; // terminate process header
     indent+=2;
 
     // write the variable list

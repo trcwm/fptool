@@ -38,7 +38,7 @@ void PassCSDMul::execute(SSAObject &ssa)
                 throw std::runtime_error("PassCSDMul: both operands are CSD -- unsupported");
             }
 
-            // convert the number to a CSD represenation
+            // convert the number to a CSD representation
             // FIXME: do this somewhere better up the
             // hierarchy!
 
@@ -136,6 +136,18 @@ ssa_iterator PassCSDMul::shiftAndAdd(SSAObject &ssa,
     // FIXME: what if the first digit is negative?
     operand_t x = ssa.getOperand(x_idx);
     operandIndex t1 = ssa.createReinterpretNode(ssa_iter, x_idx, x.info.intBits+shift, x.info.fracBits-shift);
+
+    // check if the first digit is negative
+    // if so, we need to negate it first.
+    //
+    // FIXME: we need to add protection against overflows here
+    // as negating the most negative number cannot be
+    // represented as a positive number in 2's complement
+    // arithmetic!
+    if (csd.digits[idx].sign < 0)
+    {
+        t1 = ssa.createNegateNode(ssa_iter, t1);
+    }
 
     // while there are digits in CSD
     // keep on adding new terms
