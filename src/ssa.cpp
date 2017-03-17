@@ -14,6 +14,7 @@
 #include "logging.h"
 #include <math.h>
 #include <sstream>
+#include <algorithm>
 
 operandIndex SSAObject::createNewTemporary(int32_t intbits, int32_t fracbits)
 {
