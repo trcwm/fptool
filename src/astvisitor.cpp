@@ -42,10 +42,10 @@ void ASTDumpVisitor::visit(const ASTNode *node)
         m_os << node->info.txt << " = ";
         break;
     case ASTNode::NodeInput:
-        m_os << "INPUT Q(" << node->info.intBits << "," << node->info.fracBits << ")";
+        m_os << "INPUT "<< node->info.txt << " Q(" << node->info.intBits << "," << node->info.fracBits << ")";
         break;
     case ASTNode::NodeCSD:
-        m_os << "CSD (" << node->info.csdFloat << "," << node->info.csdBits << ")";
+        m_os << "CSD " << node->info.txt << " Q(" << node->info.csdFloat << "," << node->info.csdBits << ")";
         break;
     case ASTNode::NodeAdd:
         m_os << "+";
@@ -71,6 +71,9 @@ void ASTDumpVisitor::visit(const ASTNode *node)
         break;
     case ASTNode::NodeDiv:
         m_os << "/";
+        break;
+    case ASTNode::NodeTruncate:
+        m_os << "Truncate to Q(" << node->info.intBits << "," << node->info.fracBits << ")";
         break;
     default:
         m_os << "???";

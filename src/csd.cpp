@@ -30,6 +30,9 @@ bool convertToCSD(const double v, uint32_t terms, csd_t &result)
         csdigit_t digit;
         if (sign)
         {
+            //FIXME: using ceil is wrong -> need to figure out the
+            // exponent that will result in the smallest absolute
+            // residue!
             digit.power = static_cast<int32_t>(ceil(log(-residue)/log(2.0)));
             double val = pow(2.0, static_cast<double>(digit.power));
             residue += val;
@@ -38,6 +41,9 @@ bool convertToCSD(const double v, uint32_t terms, csd_t &result)
         }
         else
         {
+            //FIXME: using ceil is wrong -> need to figure out the
+            // exponent that will result in the smallest absolute
+            // residue!
             digit.power = static_cast<int32_t>(ceil(log(residue)/log(2.0)));
             double val = pow(2.0, static_cast<double>(digit.power));
             residue -= val;

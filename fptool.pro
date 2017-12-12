@@ -11,6 +11,7 @@ HEADERS += include/cmdline.h \
            include/logging.h \
            include/parser.h \
            include/pass_addsub.h \
+           include/pass_truncate.h \
            include/pass_clean.h \
            include/pass_csdmul.h \
            include/astgraphviz.h \
@@ -29,6 +30,7 @@ SOURCES += src/cmdline.cpp \
            src/main.cpp \
            src/parser.cpp \
            src/pass_addsub.cpp \
+           src/pass_truncate.cpp \
            src/pass_clean.cpp \
            src/pass_csdmul.cpp \
            src/astgraphviz.cpp \

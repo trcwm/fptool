@@ -17,6 +17,7 @@
 #include "ssa.h"
 #include "csd.h"
 #include "pass_addsub.h"
+#include "pass_truncate.h"
 #include "pass_csdmul.h"
 #include "pass_clean.h"
 #include "vhdlcodegen.h"
@@ -118,16 +119,39 @@ int main(int argc, char *argv[])
                 doLog(LOG_ERROR, "Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
             }
 
+            ssa.dumpStatements(std::cout);
+
+            // ------------------------------------------------------------
+            // -- CSD PASS
+            // ------------------------------------------------------------
             PassCSDMul csdmul;
             csdmul.process(ssa);
 
             ssa.dumpStatements(std::cout);
 
+            // ------------------------------------------------------------
+            // -- ADDSUB PASS
+            // ------------------------------------------------------------
             PassAddSub  addsub;
             addsub.process(ssa);
 
+            ssa.dumpStatements(std::cout);
+
+            // ------------------------------------------------------------
+            // -- TRUNCATE PASS
+            // ------------------------------------------------------------
+            PassTruncate truncate;
+            truncate.process(ssa);
+
+            ssa.dumpStatements(std::cout);
+
+            // ------------------------------------------------------------
+            // -- CLEAN PASS
+            // ------------------------------------------------------------
             PassClean  clean;
             clean.process(ssa);
+
+            ssa.dumpStatements(std::cout);
 
             if (outstream.bad())
             {

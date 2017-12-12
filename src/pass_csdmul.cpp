@@ -13,7 +13,9 @@
 
 void PassCSDMul::execute(SSAObject &ssa)
 {
-    doLog(LOG_INFO, "Running CSDMul pass\n");
+    doLog(LOG_INFO, "-----------------------\n");
+    doLog(LOG_INFO, "  Running CSDMul pass\n");
+    doLog(LOG_INFO, "-----------------------\n");
 
     auto iter = ssa.begin();
 
@@ -38,16 +40,15 @@ void PassCSDMul::execute(SSAObject &ssa)
                 throw std::runtime_error("PassCSDMul: both operands are CSD -- unsupported");
             }
 
-            // convert the number to a CSD representation
-            // FIXME: do this somewhere better up the
-            // hierarchy!
+            doLog(LOG_DEBUG, "Processing (%s) and (%s) for CSD expansion\n", op1.info.txt.c_str(), op2.info.txt.c_str());
 
             // check if operand 2 is the CSD
             // if so, swap operands as this
             // simplifies the code ahead
+            operandIndex varIdx = iter->op2Idx;
             if (op2.type == operand_t::TypeCSD)
             {
-                std::swap(iter->op1Idx, iter->op2Idx);
+                varIdx = iter->op1Idx;
                 std::swap(op1, op2);
             }
 
@@ -61,7 +62,12 @@ void PassCSDMul::execute(SSAObject &ssa)
                     throw std::runtime_error("");
                 }
                 doLog(LOG_DEBUG, "CSD: converted (%f) to (%f)\n", op1.info.csdFloat, my_csd.value);
-                iter = shiftAndAdd(ssa, iter, my_csd, iter->op2Idx, iter->op3Idx);
+                iter = shiftAndAdd(ssa, iter, my_csd, varIdx, iter->op3Idx);
+
+                // the new iter will now point to the next statement:
+                // we must use continue here to avoid calling the iter++ later on
+                // as this will skip the statement directly following this one.
+                continue;
             }
 
             // TODO: check if the final result matches the width of the
@@ -113,7 +119,7 @@ ssa_iterator PassCSDMul::shiftAndAdd(SSAObject &ssa,
         throw std::runtime_error("PassCSDMul: can't expand a CSD without digits!");
     }
 
-    // remove the current assigment as we're replacing it
+    // remove the current assigment as we're replacing it.
     // the iterator now points to the next (unrelated)
     // operation. We must insert new nodes before this
     // operation, which is exactly what the 'create'

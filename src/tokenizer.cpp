@@ -16,6 +16,11 @@ Tokenizer::Tokenizer()
 {
     // define the keywords
     // must be lower case!
+    //
+    // the order defines the token ID
+    // starting with ID = 100
+    //
+
     m_keywords.push_back("define");
     m_keywords.push_back("input");
     m_keywords.push_back("csd");
@@ -540,6 +545,12 @@ void Tokenizer::dumpTokens(std::ostream &stream, const std::vector<token_t> &tok
             break;
         case 102:
             stream << "CSD";
+            break;
+        case 103:
+            stream << "TRUNCATE";
+            break;
+        case 104:
+            stream << "SATURATE";
             break;
         }
     }

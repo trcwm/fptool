@@ -228,6 +228,85 @@ ASTNode* Parser::acceptDefspec2(state_t &s)
     return newNode;
 }
 
+
+ASTNode* Parser::acceptTruncate(state_t &s)
+{
+    // production: TRUNCATE LPAREN EXPR COMMA INTEGER COMMA INTEGER RPAREN
+    state_t savestate = s;
+
+    if (!match(s, TOK_TRUNC))
+    {
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s, TOK_LPAREN))
+    {
+        error(s,"Left parenthesis expected");
+        s = savestate;
+        return NULL;
+    }
+
+    ASTNode* exprNode = Parser::acceptExpr(s);
+    if (!exprNode)
+    {
+        error(s,"Expression expected");
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s, TOK_COMMA))
+    {
+        delete exprNode;
+        error(s,"Comma expected");
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s, TOK_INTEGER))
+    {
+        delete exprNode;
+        error(s,"Integer expected");
+        s = savestate;
+        return NULL;
+    }
+
+    int32_t intbits = atoi(getToken(s, -1).txt.c_str());
+
+    if (!match(s, TOK_COMMA))
+    {
+        delete exprNode;
+        error(s,"Comma expected");
+        s = savestate;
+        return NULL;
+    }
+
+    if (!match(s, TOK_INTEGER))
+    {
+        delete exprNode;
+        error(s,"Integer expected");
+        s = savestate;
+        return NULL;
+    }
+
+    int32_t fracbits = atoi(getToken(s, -1).txt.c_str());
+
+    if (!match(s, TOK_RPAREN))
+    {
+        error(s,"Right parenthesis expected");
+        s = savestate;
+        return NULL;
+    }
+
+    ASTNode *newNode = new ASTNode();
+    newNode->type = ASTNode::NodeTruncate;
+    newNode->info.intBits  = intbits;
+    newNode->info.fracBits = fracbits;
+    newNode->right = exprNode;
+
+    return newNode;
+}
+
 ASTNode* Parser::acceptAssignment(state_t &s)
 {
     // production: IDENT EQUAL expr SEMICOL
@@ -593,7 +672,14 @@ ASTNode* Parser::acceptFactor1(state_t &s)
 {    
     // production: FUNCTION ( expr )
 
-    return NULL; // no functions yet!
+    ASTNode *node = NULL;
+    if ((node=acceptTruncate(s)) != NULL)
+    {
+        return node;
+    }
+
+    return node;
+
 #if 0
     state_t savestate = s;
     if (!match(s, TOK_LPAREN))

@@ -73,7 +73,11 @@ protected:
     ASTNode *acceptDefspec1(state_t &s);
     ASTNode *acceptDefspec2(state_t &s);
 
+    // functions
+    ASTNode* acceptTruncate(state_t &s);
+
     ASTNode *acceptAssignment(state_t &s);
+
     ASTNode* acceptExpr(state_t &s);
     ASTNode* acceptExprAccent(state_t &s, ASTNode *leftNode);
     ASTNode* acceptExprAccent1(state_t &s, ASTNode *leftNode);
@@ -85,11 +89,11 @@ protected:
     ASTNode* acceptTermAccent2(state_t &s, ASTNode *leftNode);
 
     ASTNode *acceptFactor(state_t &s);
-    ASTNode* Parser::acceptFactor1(state_t &s);
-    ASTNode* Parser::acceptFactor2(state_t &s);
-    ASTNode* Parser::acceptFactor3(state_t &s);
+    ASTNode* acceptFactor1(state_t &s);
+    ASTNode* acceptFactor2(state_t &s);
+    ASTNode* acceptFactor3(state_t &s);
 
-    //ASTNode *acceptFactor1(state_t &s, ASTNode *);
+
 
     /** match a token, return true if matched and advance the token index. */
     bool match(state_t &s, uint32_t tokenID);

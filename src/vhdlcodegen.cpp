@@ -30,6 +30,8 @@ void VHDLCodeGen::execute(SSAObject &ssa)
 
         operand_t op1;
         operand_t op2;
+        uint32_t totalOpBits;
+
         SSANode node = *iter;
         switch(node.operation)
         {
@@ -76,7 +78,8 @@ void VHDLCodeGen::execute(SSAObject &ssa)
             break;
         case SSANode::OP_RemoveLSBs:
             op1 = ssa.getOperand(iter->op1Idx);
-            os << "removeLSBs(" << op1.info.txt << ");\n";
+            totalOpBits = op1.info.intBits + op1.info.fracBits;
+            os << op1.info.txt << "(" << totalOpBits-1 << " downto " << iter->bits << "); -- remove " << iter->bits << " LSBs\n";
             break;
         case SSANode::OP_ExtendLSBs:
             op1 = ssa.getOperand(iter->op1Idx);
@@ -85,7 +88,8 @@ void VHDLCodeGen::execute(SSAObject &ssa)
             break;
         case SSANode::OP_RemoveMSBs:
             op1 = ssa.getOperand(iter->op1Idx);
-            os << "removeMSBs(" << op1.info.txt << ");\n";
+            totalOpBits = op1.info.intBits + op1.info.fracBits;
+            os << op1.info.txt << "(" << totalOpBits - iter->bits - 1<< " downto 0); -- remove " << iter->bits << " MSBs\n";
             break;
         case SSANode::OP_ExtendMSBs:
             op1 = ssa.getOperand(iter->op1Idx);
@@ -94,6 +98,10 @@ void VHDLCodeGen::execute(SSAObject &ssa)
         case SSANode::OP_Reinterpret:
             op1 = ssa.getOperand(iter->op1Idx);
             os << op1.info.txt << "; -- reinterpret as Q(" << iter->bits << "," << iter->fbits << ");\n";
+            break;
+        case SSANode::OP_Truncate:
+            op1 = ssa.getOperand(iter->op1Idx);
+            os << op1.info.txt << "; -- truncate to Q(" << iter->bits << "," << iter->fbits << ");\n";
             break;
         default:
             throw std::runtime_error("VHDLCodeGen: unknown SSA operation node");

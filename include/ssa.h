@@ -71,6 +71,7 @@ struct SSANode
         OP_Assign,      // Assign to an output/register variable
         OP_Reinterpret, // Reinterpret Q(n1,m2) to Q(n2,m2) where n1-m2 = n2-m2
         OP_Saturate,    // Saturate var3 = Saturate(var1, bits, fbits)
+        OP_Truncate,    // Truncate var3 = Truncate(var1, bits, fbits)
         OP_RemoveLSBs,  // Remove bits from the LSB side
         OP_ExtendLSBs,  // Add bits at the LSB side (zero bits)
         OP_RemoveMSBs,  // Remove bits at the MSB side
@@ -142,15 +143,30 @@ public:
     */
     operandIndex createExtendLSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
 
+    /** create an removeLSB node.
+        s1 must either be TypeInput, TypeIntermediate.
+    */
+    operandIndex createRemoveLSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
+
     /** create an extendMSB node.
         s1 must either be TypeInput, TypeIntermediate.
     */
     operandIndex createExtendMSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
 
+    /** create an removeMSB node.
+        s1 must either be TypeInput, TypeIntermediate.
+    */
+    operandIndex createRemoveMSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
+
+    /** truncate the number of bits of the s1 expression node */
+    operandIndex createTruncateNode(ssa_iterator where, operandIndex s1, int32_t ibits, int32_t fbits);
+
     /** create a reinterpret node.
         s1 must either be TypeInput, TypeIntermediate.
     */
     operandIndex createReinterpretNode(ssa_iterator where, operandIndex s1, int32_t intbits, int32_t fracbits);
+
+
 
 
     /** create a new temporary operand and return its index */

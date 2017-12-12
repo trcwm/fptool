@@ -1,5 +1,5 @@
 # FPTOOL README
-##A compiler for generating fixed-point VHDL code.
+## A compiler for generating fixed-point VHDL code.
 ### Niels A. Moseley
 
 The fixed-point tool (FPTOOL) takes mathematical expressions and fixed-point input variable definitions, and transforms them into VHDL (or verilog in the future). The compiler takes care of the precision/width of each intermediate result to avoid overflows.

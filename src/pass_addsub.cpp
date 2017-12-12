@@ -15,7 +15,9 @@
 //
 void PassAddSub::execute(SSAObject &ssa)
 {
-    doLog(LOG_INFO, "Running AddSub pass\n");
+    doLog(LOG_INFO, "-----------------------\n");
+    doLog(LOG_INFO, "  Running AddSub pass\n");
+    doLog(LOG_INFO, "-----------------------\n");
 
     auto iter = ssa.begin();
     while(iter != ssa.end())

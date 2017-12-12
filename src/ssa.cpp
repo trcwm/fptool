@@ -84,7 +84,12 @@ operandIndex SSAObject::createMulNode(ssa_iterator where, operandIndex s1, opera
         throw std::runtime_error("createMulNode: operands index out of bounds!");
     }
 
-    int32_t intbits = m_operands[s1].info.intBits + m_operands[s2].info.intBits;
+    // Note: when multiplying two signed numbers:
+    //
+    //       Q(a,b)*Q(c,d) -> Q(a+c-1,b+d)
+
+    // FIXME: is this correct ???
+    int32_t intbits = m_operands[s1].info.intBits + m_operands[s2].info.intBits-1;
     int32_t fracbits = m_operands[s1].info.fracBits + m_operands[s2].info.fracBits;
     operandIndex lhs_index = createNewTemporary(intbits, fracbits);
 
@@ -186,6 +191,29 @@ operandIndex SSAObject::createExtendLSBNode(ssa_iterator where, operandIndex s1,
     return lhs_index;
 }
 
+operandIndex SSAObject::createRemoveLSBNode(ssa_iterator where, operandIndex s1, int32_t bits)
+{
+    // create a new temporary result operand
+    if (s1 >= m_operands.size())
+    {
+        throw std::runtime_error("createRemoveLSBNode: operands index out of bounds!");
+    }
+
+    int32_t intbits = m_operands[s1].info.intBits;
+    int32_t fracbits = m_operands[s1].info.fracBits;
+    operandIndex lhs_index = createNewTemporary(intbits, fracbits-bits);
+
+    SSANode n;
+    n.operation = SSANode::OP_RemoveLSBs;
+    n.bits = bits;
+    n.op1Idx = s1;
+    n.op2Idx = 0;
+    n.op3Idx = lhs_index;
+
+    m_list.insert(where, n);
+    return lhs_index;
+}
+
 operandIndex SSAObject::createExtendMSBNode(ssa_iterator where, operandIndex s1, int32_t bits)
 {
     // create a new temporary result operand
@@ -208,6 +236,53 @@ operandIndex SSAObject::createExtendMSBNode(ssa_iterator where, operandIndex s1,
     m_list.insert(where, n);
     return lhs_index;
 }
+
+operandIndex SSAObject::createRemoveMSBNode(ssa_iterator where, operandIndex s1, int32_t bits)
+{
+    // create a new temporary result operand
+    if (s1 >= m_operands.size())
+    {
+        throw std::runtime_error("createRemoveMSBNode: operands index out of bounds!");
+    }
+
+    int32_t intbits = m_operands[s1].info.intBits;
+    int32_t fracbits = m_operands[s1].info.fracBits;
+    operandIndex lhs_index = createNewTemporary(intbits-bits, fracbits);
+
+    SSANode n;
+    n.operation = SSANode::OP_RemoveMSBs;
+    n.bits = bits;
+    n.op1Idx = s1;
+    n.op2Idx = 0;
+    n.op3Idx = lhs_index;
+
+    m_list.insert(where, n);
+    return lhs_index;
+}
+
+operandIndex SSAObject::createTruncateNode(ssa_iterator where, operandIndex s1, int32_t ibits, int32_t fbits)
+{
+    // create a new temporary result operand
+    if (s1 >= m_operands.size())
+    {
+        throw std::runtime_error("createTruncateNod: operands index out of bounds!");
+    }
+
+    operandIndex lhs_index = createNewTemporary(ibits, fbits);
+
+    SSANode n;
+    n.operation = SSANode::OP_Truncate;
+    n.bits = ibits;
+    n.fbits = fbits;
+    n.op1Idx = s1;
+    n.op2Idx = 0;
+    n.op3Idx = lhs_index;
+
+    m_list.insert(where, n);
+    return lhs_index;
+}
+
+
 
 operandIndex SSAObject::createReinterpretNode(ssa_iterator where, operandIndex s1, int32_t intbits, int32_t fracbits)
 {
@@ -290,6 +365,9 @@ void SSAObject::dumpStatements(std::ostream &stream)
         uint32_t idx3 = iter->op3Idx;
         uint32_t ttt=iter->operation;
 
+        stream << "Q(" << getOperand(idx3).info.intBits << ",";
+        stream << getOperand(idx3).info.fracBits << ") ";
+
         switch(iter->operation)
         {
         case SSANode::OP_Add:
@@ -312,8 +390,16 @@ void SSAObject::dumpStatements(std::ostream &stream)
                    << getOperand(idx1).info.txt.c_str() << ";\n";
             break;
         case SSANode::OP_Assign:
-            stream << getOperand(idx3).info.txt.c_str() << " <= "
-                   << getOperand(idx1).info.txt.c_str() << ";\n";
+            if (getOperand(idx3).type == operand_t::TypeOutput)
+            {
+                stream << getOperand(idx3).info.txt.c_str() << " <= "
+                       << getOperand(idx1).info.txt.c_str() << ";\n";
+            }
+            else
+            {
+                stream << getOperand(idx3).info.txt.c_str() << " := "
+                       << getOperand(idx1).info.txt.c_str() << ";\n";
+            }
             break;
         case SSANode::OP_Reinterpret:
             stream << getOperand(idx3).info.txt.c_str() << " := Reinterpret("
@@ -324,6 +410,26 @@ void SSAObject::dumpStatements(std::ostream &stream)
             stream << getOperand(idx3).info.txt.c_str() << " := ExtendLSB("
                    << getOperand(idx1).info.txt.c_str() << ","
                    << iter->bits << ");\n";
+            break;
+        case SSANode::OP_ExtendMSBs:
+            stream << getOperand(idx3).info.txt.c_str() << " := ExtendMSB("
+                   << getOperand(idx1).info.txt.c_str() << ","
+                   << iter->bits << ");\n";
+            break;
+        case SSANode::OP_RemoveLSBs:
+            stream << getOperand(idx3).info.txt.c_str() << " := RemoveLSB("
+                   << getOperand(idx1).info.txt.c_str() << ","
+                   << iter->bits << ");\n";
+            break;
+        case SSANode::OP_RemoveMSBs:
+            stream << getOperand(idx3).info.txt.c_str() << " := RemoveMSB("
+                   << getOperand(idx1).info.txt.c_str() << ","
+                   << iter->bits << ");\n";
+            break;
+        case SSANode::OP_Truncate:
+            stream << getOperand(idx3).info.txt.c_str() << " := Truncate("
+                   << getOperand(idx1).info.txt.c_str() << ","
+                   << iter->bits << "," << iter->fbits << ");\n";
             break;
         default:
             stream << "** unknown SSA node **\n";
@@ -569,7 +675,30 @@ bool SSACreator::executeASTNode(ASTNode *node, SSAObject &ssa)
         uint32_t arg1_idx = m_opStack.back();
         m_opStack.pop_back();
 
+        operand_t rhs = ssa.getOperand(arg1_idx);
+        node->info.intBits = rhs.info.intBits;
+        node->info.fracBits = rhs.info.fracBits;
+
         index = ssa.createNegateNode(ssa.end(), arg1_idx);
+        m_opStack.push_back(index);
+
+        return true;
+    }
+    case ASTNode::NodeTruncate:
+    {
+        // sanity checking
+        if (m_opStack.size() < 1)
+        {
+            error("NodeTruncate - not enough operands on the stack");
+            // not enough operands!
+            return false;
+        }
+
+        // one item at top of stack:
+        uint32_t arg1_idx = m_opStack.back();
+        m_opStack.pop_back();
+
+        index = ssa.createTruncateNode(ssa.end(), arg1_idx, node->info.intBits, node->info.fracBits);
         m_opStack.push_back(index);
 
         return true;

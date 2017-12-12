@@ -40,6 +40,7 @@ public:
                NodeUnaryMinus,
                NodeIdent,
                NodeInteger, NodeFloat,
+               NodeTruncate
               };
 
     /** create an AST node */
