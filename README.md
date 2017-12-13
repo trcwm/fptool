@@ -33,7 +33,7 @@ Operators:
 Current project state:
 
 - Lexer is working.
-- Parser can check the grammar (Except <<, >>, <<<, >>> and saturate & truncate) and build an abstract syntax tree.
+- Parser can check the grammar (Except <<, >>, <<<, >>> and saturate) and build an abstract syntax tree.
 - VHDL code generator is working (except for division operator)
 - CSD expansion should be working (requires more testing)
 - Don't use it for production unless you test the output thoroughly!!
