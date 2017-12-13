@@ -161,34 +161,46 @@ void VHDLCodeGen::genProcessHeader(const SSAObject &ssa, std::ostream &os, uint3
     //
 
     // generate documentation for output signals
-    auto iter = ssa.beginOperands();
+    os << "  -- *** OUTPUT SIGNALS ***\n";
+    auto iter = ssa.beginOperands();    
     while(iter != ssa.endOperands())
     {
+
         switch(iter->type)
         {
         case operand_t::TypeOutput:
             genIndent(os, indent);
-            os << "-- " << iter->info.txt << " Q(" << iter->info.intBits << "," << iter->info.fracBits << ");\n";
+            os << "-- " << iter->info.txt << " Q(" << iter->info.intBits << "," << iter->info.fracBits << ");";
+            os << "  SIGNED(" << iter->info.intBits + iter->info.fracBits-1 << " downto 0);\n";
             break;
         }
         iter++;
     }
 
     // generate documentation for input signals
+    os << "\n";
+    os << "  -- *** INPUT SIGNALS ***\n";
     iter = ssa.beginOperands();
     while(iter != ssa.endOperands())
     {
+
         switch(iter->type)
         {
         case operand_t::TypeInput:
             genIndent(os, indent);
-            os << "-- " << iter->info.txt << " Q(" << iter->info.intBits << "," << iter->info.fracBits << ");\n";
+            os << "-- " << iter->info.txt << " Q(" << iter->info.intBits << "," << iter->info.fracBits << ");";
+            os << "  SIGNED(" << iter->info.intBits + iter->info.fracBits-1 << " downto 0);\n";
             break;
         }
         iter++;
     }
 
     // generate process header with sensitivity list
+    os << "\n";
+    os << "  -------------------\n";
+    os << "  -- PROCESS BLOCK --\n";
+    os << "  -------------------\n";
+
     genIndent(os, indent);
     os << "proc_comb: process(";
     bool isFirst = true;
