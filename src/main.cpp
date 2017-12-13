@@ -27,7 +27,8 @@
 
 int main(int argc, char *argv[])
 {
-    CmdLine cmdline("og","d");
+    bool verbose = false;
+    CmdLine cmdline("ogL","dV");
 
     printf("FPTOOL version "__VERSION__" compiled on "__DATE__"\n\n");
     if (!cmdline.parseOptions(argc, argv))
@@ -37,6 +38,9 @@ int main(int argc, char *argv[])
         printf("options: \n");
         printf("  -o <outputfile>    Output file for VHDL code.\n");
         printf("  -g <graphvizfile>  Output file for Graphviz/dot program visualisation.\n");
+        printf("  -L <logfile>       Write output log to file.\n");
+        printf("  -d                 Enable debug output.\n");
+        printf("  -V                 Enable verbose output.\n");
         printf("\n\n");
         return 1;
     }
@@ -45,6 +49,18 @@ int main(int argc, char *argv[])
         if (cmdline.hasOption('d'))
         {
             setDebugging();
+        }
+
+        if (cmdline.hasOption('V'))
+        {
+            verbose = true;
+        }
+
+        std::string logfile;
+        if (cmdline.getOption('L', logfile))
+        {
+            doLog(LOG_INFO, "Logging to file: %s\n", logfile.c_str());
+            setLogFile(logfile.c_str());
         }
 
         Reader* reader = Reader::open(cmdline.getMainArg().c_str());
@@ -67,7 +83,7 @@ int main(int argc, char *argv[])
         if (cmdline.getOption('g', graphvizFilename))
         {
             graphvizStream = std::ofstream(graphvizFilename, std::ios::out);
-            doLog(LOG_DEBUG, "graphviz file: %s\n", graphvizFilename.c_str());
+            doLog(LOG_INFO, "Graphviz/dot file: %s\n", graphvizFilename.c_str());
         }
 
         Tokenizer tokenizer;
@@ -119,7 +135,7 @@ int main(int argc, char *argv[])
                 doLog(LOG_ERROR, "Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
             }
 
-            ssa.dumpStatements(std::cout);
+            if (verbose) ssa.dumpStatements(std::cout);
 
             // ------------------------------------------------------------
             // -- CSD PASS
@@ -127,7 +143,7 @@ int main(int argc, char *argv[])
             PassCSDMul csdmul;
             csdmul.process(ssa);
 
-            ssa.dumpStatements(std::cout);
+            if (verbose) ssa.dumpStatements(std::cout);
 
             // ------------------------------------------------------------
             // -- ADDSUB PASS
@@ -135,7 +151,7 @@ int main(int argc, char *argv[])
             PassAddSub  addsub;
             addsub.process(ssa);
 
-            ssa.dumpStatements(std::cout);
+            if (verbose) ssa.dumpStatements(std::cout);
 
             // ------------------------------------------------------------
             // -- TRUNCATE PASS
@@ -143,7 +159,7 @@ int main(int argc, char *argv[])
             PassTruncate truncate;
             truncate.process(ssa);
 
-            ssa.dumpStatements(std::cout);
+            if (verbose) ssa.dumpStatements(std::cout);
 
             // ------------------------------------------------------------
             // -- CLEAN PASS
@@ -151,7 +167,7 @@ int main(int argc, char *argv[])
             PassClean  clean;
             clean.process(ssa);
 
-            ssa.dumpStatements(std::cout);
+            if (verbose) ssa.dumpStatements(std::cout);
 
             if (outstream.bad())
             {
@@ -174,6 +190,8 @@ int main(int argc, char *argv[])
                   parse.getLastError().c_str());
         }
     }
+
+    closeLogFile();
 
     return 0;
 }

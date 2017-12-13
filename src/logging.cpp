@@ -14,10 +14,30 @@
 #include "logging.h"
 
 static bool g_debugEnabled = false;
+static FILE* g_logFile = NULL;
 
 void setDebugging(bool enabled)
 {
     g_debugEnabled = enabled;
+}
+
+bool setLogFile(const char *filename)
+{
+    if (g_logFile != NULL)
+    {
+        fclose(g_logFile);
+    }
+    g_logFile = fopen(filename, "wt");
+    return (g_logFile != NULL);
+}
+
+void closeLogFile()
+{
+    if (g_logFile != NULL)
+    {
+        fclose(g_logFile);
+        g_logFile = NULL;
+    }
 }
 
 void doLog(logtype_t t, const char *format, ...)
@@ -45,5 +65,9 @@ void doLog(logtype_t t, const char *format, ...)
     va_list argptr;
     va_start(argptr, format);
     vprintf(format, argptr);
+    if (g_logFile != NULL)
+    {
+        vfprintf(g_logFile, format, argptr);
+    }
     va_end(argptr);
 }

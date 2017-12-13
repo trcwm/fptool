@@ -16,7 +16,9 @@
 // addition and subtraction is the same
 void PassClean::execute(SSAObject &ssa)
 {
-    doLog(LOG_INFO, "Running Clean pass\n");
+    doLog(LOG_INFO, "----------------------\n");
+    doLog(LOG_INFO, "  Running Clean pass\n");
+    doLog(LOG_INFO, "----------------------\n");
 
     // remove re-interpreted nodes
     auto iter = ssa.begin();
