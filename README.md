@@ -4,6 +4,8 @@
 
 The fixed-point tool (FPTOOL) takes mathematical expressions and fixed-point input variable definitions, and transforms them into VHDL (or verilog in the future). The compiler takes care of the precision/width of each intermediate result to avoid overflows.
 
+It is designed to be most useful for digital signal processing arithmetic running in a single clock domain.
+
 The compiler can generate multipliers with Canonical Signed Digit (CSD) constants, leading to area-efficient implementations.
 
 Assumptions:
@@ -43,5 +45,12 @@ Load the project file (.pro) into [QtCreator](https://www.qt.io/ide/), configure
 
 - "-o VHDLFILENAME" to generate VHDL source code.
 - "-g DOTFILENAME" to generate Graphviz/Dot formatted AST dump.
+
+## Internal program flow
+* The input file is read by the lexer. It produces a list of tokens.
+* The parser analyses the tokens to check the syntax and collect data on variables/identifiers etc. It produces an abstract syntax tree (AST).
+* The AST is transformed to a single-static-assigment (SSA) form, i.e. a list of simple assignments.
+* Several micro passes (transformations) are performed on the SSA to remove the more complex commands and/or operands, such as multiplcations by a canonical signed digit constant.
+* Finally, the VHDL code generate takes the final SSA list and transforms it into VHDL statements and associated documentation.
 
 License: GPL v2.
