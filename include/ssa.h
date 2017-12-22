@@ -15,9 +15,10 @@
 #include <string>
 #include <stdint.h>
 #include <list>
+#include <map>
 #include <iostream>
 #include "parser.h"
-
+#include "fplib.h"
 
 typedef size_t operandIndex;
 
@@ -87,8 +88,8 @@ struct SSANode
     size_t      op1Idx;     // Index of operand 1
     size_t      op2Idx;     // Index of operand 2
     size_t      op3Idx;     // Index of operand 3 (lhs)
-    int32_t     bits;       // remove/extend/saturate (integer) bits
-    int32_t     fbits;      // saturate (fractional) bits
+    int32_t     bits;       // remove/extend/saturate/truncate (integer) bits
+    int32_t     fbits;      // saturate/truncate (fractional) bits
 };
 
 typedef std::list<SSANode> ssaList_t;
@@ -210,8 +211,20 @@ public:
         return m_list.begin();
     }
 
+    /** return a const iterator pointing to the beginning of the operation list */
+    std::list<SSANode>::const_iterator begin() const
+    {
+        return m_list.begin();
+    }
+
     /** return an iterator pointing to the end of the operation list */
     ssa_iterator end()
+    {
+        return m_list.end();
+    }
+
+    /** return a const iterator pointing to the end of the operation list */
+    std::list<SSANode>::const_iterator end() const
     {
         return m_list.end();
     }
@@ -290,6 +303,28 @@ protected:
 
     std::string         m_lastError;
     std::vector<uint32_t> m_opStack;
+};
+
+
+/** Evaluate a SSA intermediate language program */
+class SSAEvaluator
+{
+public:
+    SSAEvaluator() {}
+
+    bool createVariable(uint32_t index, int32_t intBits, int32_t fracBits);
+    void setVariable(uint32_t index, const fplib::SFix &value);
+
+    bool process(const SSAObject &ssa);
+
+protected:
+    bool varExists(uint32_t index)
+    {
+        return (m_variables.find(index) != m_variables.end());
+    }
+
+    // map of variables, stored by (non-contiguous) IDs.
+    std::map<uint32_t, fplib::SFix> m_variables;
 };
 
 #endif

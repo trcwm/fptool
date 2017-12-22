@@ -4,6 +4,7 @@ CONFIG -= app_bundle
 CONFIG -= qt
 
 INCLUDEPATH += include
+INCLUDEPATH += externals/fplib/src
 
 HEADERS += include/cmdline.h \
            include/cppcodegen.h \
@@ -21,7 +22,8 @@ HEADERS += include/cmdline.h \
            include/tokenizer.h \
            include/vhdlcodegen.h \
            include/astnode.h \
-           include/astvisitor.h
+           include/astvisitor.h \
+           externals/fplib/src/fplib.h
 
 SOURCES += src/cmdline.cpp \
            src/cppcodegen.cpp \
@@ -38,7 +40,5 @@ SOURCES += src/cmdline.cpp \
            src/ssa.cpp \
            src/tokenizer.cpp \
            src/vhdlcodegen.cpp \
-           src/astvisitor.cpp
-
-
-
+           src/astvisitor.cpp \
+           externals/fplib/src/fplib.cpp

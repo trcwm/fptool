@@ -135,7 +135,35 @@ int main(int argc, char *argv[])
                 doLog(LOG_ERROR, "Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
             }
 
-            if (verbose) ssa.dumpStatements(std::cout);
+            if (verbose)
+            {
+                std::stringstream ss;
+                ssa.dumpStatements(ss);
+                doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
+            }
+
+            SSAEvaluator eval;
+            // set all inputs for evaluation
+            auto iter = ssa.beginOperands();
+            uint32_t opIndex = 0;
+            while(iter != ssa.endOperands())
+            {
+                if (iter->type == operand_t::TypeInput)
+                {
+                    doLog(LOG_INFO,"Setting input (var index=%d) %s to zero\n", opIndex, iter->info.txt.c_str());
+                    eval.createVariable(opIndex, iter->info.intBits, iter->info.fracBits);
+                }
+                if (iter->type == operand_t::TypeCSD)
+                {
+                    doLog(LOG_INFO,"Setting CSD (var index=%d) %s to %f\n", opIndex, iter->info.txt.c_str()
+                          ,iter->info.csdFloat);
+                    eval.createVariable(opIndex, iter->info.intBits, iter->info.fracBits);
+                    //eval.setVariable(opIndex, convertCSDToSFix(iter->info.));
+                }
+                iter++;
+                opIndex++;
+            }
+            eval.process(ssa);
 
             // ------------------------------------------------------------
             // -- CSD PASS
@@ -143,7 +171,35 @@ int main(int argc, char *argv[])
             PassCSDMul csdmul;
             csdmul.process(ssa);
 
-            if (verbose) ssa.dumpStatements(std::cout);
+            if (verbose)
+            {
+                std::stringstream ss;
+                ssa.dumpStatements(ss);
+                doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
+            }
+
+            SSAEvaluator eval2;
+            // set all inputs for evaluation
+            iter = ssa.beginOperands();
+            opIndex = 0;
+            while(iter != ssa.endOperands())
+            {
+                if (iter->type == operand_t::TypeInput)
+                {
+                    doLog(LOG_INFO,"Setting input (var index=%d) %s to zero\n", opIndex, iter->info.txt.c_str());
+                    eval2.createVariable(opIndex, iter->info.intBits, iter->info.fracBits);
+                }
+                if (iter->type == operand_t::TypeCSD)
+                {
+                    doLog(LOG_INFO,"Setting CSD (var index=%d) %s to %f\n", opIndex, iter->info.txt.c_str()
+                          ,iter->info.csdFloat);
+                    eval2.createVariable(opIndex, iter->info.intBits, iter->info.fracBits);
+                    //eval.setVariable(opIndex, convertCSDToSFix(iter->info.));
+                }
+                iter++;
+                opIndex++;
+            }
+            eval2.process(ssa);
 
             // ------------------------------------------------------------
             // -- ADDSUB PASS
@@ -151,7 +207,12 @@ int main(int argc, char *argv[])
             PassAddSub  addsub;
             addsub.process(ssa);
 
-            if (verbose) ssa.dumpStatements(std::cout);
+            if (verbose)
+            {
+                std::stringstream ss;
+                ssa.dumpStatements(ss);
+                doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
+            }
 
             // ------------------------------------------------------------
             // -- TRUNCATE PASS
@@ -159,7 +220,12 @@ int main(int argc, char *argv[])
             PassTruncate truncate;
             truncate.process(ssa);
 
-            if (verbose) ssa.dumpStatements(std::cout);
+            if (verbose)
+            {
+                std::stringstream ss;
+                ssa.dumpStatements(ss);
+                doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
+            }
 
             // ------------------------------------------------------------
             // -- CLEAN PASS
@@ -167,7 +233,12 @@ int main(int argc, char *argv[])
             PassClean  clean;
             clean.process(ssa);
 
-            if (verbose) ssa.dumpStatements(std::cout);
+            if (verbose)
+            {
+                std::stringstream ss;
+                ssa.dumpStatements(ss);
+                doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
+            }
 
             if (outstream.bad())
             {

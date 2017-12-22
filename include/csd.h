@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include <vector>
+#include "fplib.h"
 
 /** A canonical signed digit represents [-/+] 2^power */
 struct csdigit_t
@@ -32,6 +33,9 @@ struct csd_t
 /** convert a floating-point value to a CSD representation
     with a determined number of terms */
 bool convertToCSD(const double v, uint32_t terms, csd_t &result);
+
+/** convert a CSD representation into a fixed-point data type */
+fplib::SFix convertCSDToSFix(const csd_t &csd);
 
 /** convert a floating-point value to a CSD representation
     with a determined precision */

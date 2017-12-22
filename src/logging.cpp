@@ -46,16 +46,20 @@ void doLog(logtype_t t, const char *format, ...)
     {
     case LOG_INFO:
         std::cout << "INFO: ";
+        if (g_logFile != NULL) fprintf(g_logFile, "INFO: ");
         break;
     case LOG_DEBUG:
         if (!g_debugEnabled) return;
         std::cout << "DEBUG: ";
+        if (g_logFile != NULL) fprintf(g_logFile, "DEBUG: ");
         break;
     case LOG_WARN:
         std::cout << "WARNING: ";
+        if (g_logFile != NULL) fprintf(g_logFile, "WARNING: ");
         break;
     case LOG_ERROR:
         std::cout << "ERROR: ";
+        if (g_logFile != NULL) fprintf(g_logFile, "ERROR: ");
         break;
     default:
         break;

@@ -58,6 +58,17 @@ bool convertToCSD(const double v, uint32_t terms, csd_t &result)
     return true;
 }
 
+fplib::SFix convertCSDToSFix(const csd_t &csd)
+{
+    fplib::SFix num(csd.intBits, csd.fracBits);
+    auto iter = csd.digits.begin();
+    while(iter != csd.digits.end())
+    {
+        num.addPowerOfTwo(iter->power, iter->sign < 0);
+    }
+    return num;
+}
+
 /** convert a floating-point value to a CSD representation
     with a determined precision */
 //bool convertToCSD(const double v, double precisionPercent, csd_t &result);

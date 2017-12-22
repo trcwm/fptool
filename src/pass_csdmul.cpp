@@ -173,8 +173,24 @@ ssa_iterator PassCSDMul::shiftAndAdd(SSAObject &ssa,
         idx--;
     }
 
+    // sanity check: the output size and temporary
+    // variable t1 must match!
+    operand_t outputOp = ssa.getOperand(y_idx);
+    operand_t tempOp   = ssa.getOperand(t1);
+    if ((outputOp.info.fracBits != tempOp.info.fracBits) || (outputOp.info.intBits != tempOp.info.intBits))
+    {
+        doLog(LOG_WARN, "CSD output operand size mismatch: \n");
+        doLog(LOG_WARN, "  output: %s Q(%d,%d)\n", outputOp.info.txt.c_str(), outputOp.info.intBits, outputOp.info.fracBits);
+        doLog(LOG_WARN, "  temp  : %s Q(%d,%d)\n", tempOp.info.txt.c_str(), tempOp.info.intBits, tempOp.info.fracBits);
+        doLog(LOG_WARN, "Creating truncation statement to fix this ..\n");
+        // Note: this is most likely ok, because the CSD constant will not cause overflow
+        //       as a work-around we insert a truncate node
+        t1 = ssa.createTruncateNode(ssa_iter, t1, outputOp.info.intBits, outputOp.info.fracBits);
+    }
+
     // make the final assignment
     ssa.createAssignNode(ssa_iter, y_idx, t1);
+
 
     return ssa_iter;
 }
