@@ -225,6 +225,7 @@ ASTNode* Parser::acceptDefspec2(state_t &s)
     float msb = ceil(log10(fabs(static_cast<double>(csd.value)))/log10(2.0));
     newNode->info.intBits = static_cast<int32_t>(msb+1); // add sign bit
     newNode->info.fracBits = -csd.digits.back().power;
+    newNode->info.csd = csd;
     return newNode;
 }
 

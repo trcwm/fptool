@@ -15,6 +15,7 @@
 #include "tokenizer.h"
 #include "parser.h"
 #include "ssa.h"
+#include "ssaevaluator.h"
 #include "csd.h"
 #include "pass_addsub.h"
 #include "pass_truncate.h"
@@ -142,6 +143,9 @@ int main(int argc, char *argv[])
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
+            SSAObject referenceSSA = ssa;
+
+#if 0
             SSAEvaluator eval;
             // set all inputs for evaluation
             auto iter = ssa.beginOperands();
@@ -151,19 +155,40 @@ int main(int argc, char *argv[])
                 if (iter->type == operand_t::TypeInput)
                 {
                     doLog(LOG_INFO,"Setting input (var index=%d) %s to zero\n", opIndex, iter->info.txt.c_str());
-                    eval.createVariable(opIndex, iter->info.intBits, iter->info.fracBits);
+                    eval.setInputVariable(opIndex, fplib::SFix(iter->info.intBits, iter->info.fracBits));
                 }
                 if (iter->type == operand_t::TypeCSD)
                 {
                     doLog(LOG_INFO,"Setting CSD (var index=%d) %s to %f\n", opIndex, iter->info.txt.c_str()
                           ,iter->info.csdFloat);
-                    eval.createVariable(opIndex, iter->info.intBits, iter->info.fracBits);
-                    //eval.setVariable(opIndex, convertCSDToSFix(iter->info.));
+                    eval.createCSDConstant(opIndex, iter->info.csd);
                 }
                 iter++;
                 opIndex++;
             }
             eval.process(ssa);
+
+            iter = ssa.beginOperands();
+            opIndex = 0;
+            while(iter != ssa.endOperands())
+            {
+                if (iter->type == operand_t::TypeOutput)
+                {
+                    fplib::SFix output;
+                    if (eval.getValue(opIndex, output))
+                    {
+                        doLog(LOG_INFO, "Output (index=%d) %s: Q(%d,%d) %s\n",
+                              opIndex,
+                              iter->info.txt.c_str(),
+                              output.intBits(),
+                              output.fracBits(),
+                              output.toHexString().c_str());
+                    }
+                }
+                iter++;
+                opIndex++;
+            }
+#endif
 
             // ------------------------------------------------------------
             // -- CSD PASS
@@ -178,6 +203,8 @@ int main(int argc, char *argv[])
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
+
+#if 0
             SSAEvaluator eval2;
             // set all inputs for evaluation
             iter = ssa.beginOperands();
@@ -187,19 +214,46 @@ int main(int argc, char *argv[])
                 if (iter->type == operand_t::TypeInput)
                 {
                     doLog(LOG_INFO,"Setting input (var index=%d) %s to zero\n", opIndex, iter->info.txt.c_str());
-                    eval2.createVariable(opIndex, iter->info.intBits, iter->info.fracBits);
+                    eval2.setInputVariable(opIndex, fplib::SFix(iter->info.intBits, iter->info.fracBits));
                 }
                 if (iter->type == operand_t::TypeCSD)
                 {
                     doLog(LOG_INFO,"Setting CSD (var index=%d) %s to %f\n", opIndex, iter->info.txt.c_str()
                           ,iter->info.csdFloat);
-                    eval2.createVariable(opIndex, iter->info.intBits, iter->info.fracBits);
-                    //eval.setVariable(opIndex, convertCSDToSFix(iter->info.));
+                    eval2.createCSDConstant(opIndex, iter->info.csd);
                 }
                 iter++;
                 opIndex++;
             }
             eval2.process(ssa);
+
+            iter = ssa.beginOperands();
+            opIndex = 0;
+            while(iter != ssa.endOperands())
+            {
+                if (iter->type == operand_t::TypeOutput)
+                {
+                    fplib::SFix output;
+                    if (eval2.getValue(opIndex, output))
+                    {
+                        doLog(LOG_INFO, "Output (index=%d) %s: Q(%d,%d) %s\n",
+                            opIndex,
+                            iter->info.txt.c_str(),
+                            output.intBits(),
+                            output.fracBits(),
+                            output.toHexString().c_str());
+                    }
+                }
+                iter++;
+                opIndex++;
+            }
+#endif
+
+            if (!fuzzer(referenceSSA, ssa, 1))
+            {
+                doLog(LOG_ERROR, "Fuzzer reported an error!\n");
+                return 1;
+            }
 
             // ------------------------------------------------------------
             // -- ADDSUB PASS

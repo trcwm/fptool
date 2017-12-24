@@ -13,17 +13,27 @@
 
 #include <string>
 #include <stdint.h>
+#include "csd.h"
 #include "astvisitor.h"
 
 /** variable related information */
 struct varInfo
 {
+    varInfo() : fracBits(0),
+        intBits(0),
+        csdBits(0),
+        csdFloat(0.0f),
+        intVal(0)
+    {
+    }
+
     std::string     txt;        // identifier name, integer or float value.
     int32_t         fracBits;   // number of factional bits in INPUT definition
     int32_t         intBits;    // number of integer bits in INPUT defintion
     int32_t         csdBits;    // number of CSD factors/bits
     double          csdFloat;   // desired value of CSD coefficient
     int32_t         intVal;     // integer value
+    csd_t           csd;        // CSD representation.
 };
 
 

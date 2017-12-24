@@ -65,6 +65,7 @@ fplib::SFix convertCSDToSFix(const csd_t &csd)
     while(iter != csd.digits.end())
     {
         num.addPowerOfTwo(iter->power, iter->sign < 0);
+        iter++;
     }
     return num;
 }

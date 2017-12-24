@@ -306,25 +306,5 @@ protected:
 };
 
 
-/** Evaluate a SSA intermediate language program */
-class SSAEvaluator
-{
-public:
-    SSAEvaluator() {}
-
-    bool createVariable(uint32_t index, int32_t intBits, int32_t fracBits);
-    void setVariable(uint32_t index, const fplib::SFix &value);
-
-    bool process(const SSAObject &ssa);
-
-protected:
-    bool varExists(uint32_t index)
-    {
-        return (m_variables.find(index) != m_variables.end());
-    }
-
-    // map of variables, stored by (non-contiguous) IDs.
-    std::map<uint32_t, fplib::SFix> m_variables;
-};
 
 #endif
