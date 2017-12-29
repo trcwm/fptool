@@ -21,8 +21,8 @@ class AST2Graphviz : public ASTVisitorBase
 public:
     /** create an object to dump the AST to a stream */
     AST2Graphviz(std::ostream &os)
-        : m_os(os),
-          m_count(0)
+        : m_count(0),
+          m_os(os)
     {}
 
     void writeProlog();

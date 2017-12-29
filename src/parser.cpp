@@ -44,7 +44,7 @@ bool Parser::match(state_t &s, uint32_t tokenID)
 
 bool Parser::matchList(state_t &s, const uint32_t *tokenIDlist)
 {
-    while (*tokenIDlist != NULL)
+    while (*tokenIDlist != 0)
     {
         if (!match(s, *tokenIDlist++))
             return false;

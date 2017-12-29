@@ -59,9 +59,9 @@
 
 struct token_t
 {
-  Reader::position_info pos;      // position withing the source
-  uint32_t              tokID;    // token identifier
-  std::string           txt;      // identifier, keyword or number string
+    Reader::position_info pos;      // position withing the source
+    uint32_t              tokID;    // token identifier
+    std::string           txt;      // identifier, keyword or number string
 };
 
 class Tokenizer

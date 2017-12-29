@@ -115,6 +115,8 @@ protected:
     {
         token_t dummy_token;
 
+        dummy_token.tokID = TOK_UNKNOWN;
+
         if (m_tokens == 0)
             return dummy_token;
 
