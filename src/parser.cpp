@@ -116,21 +116,21 @@ ASTNode* Parser::acceptDefinition(state_t &s)
     if (!match(s, TOK_DEFINE))
     {
         s = savestate;
-        return false;
+        return NULL;
     }
 
     if (!match(s, TOK_IDENT))
     {
         error(s,"Identifier expected after DEFINE");
         s = savestate;
-        return false;
+        return NULL;
     }
 
     if (!match(s, TOK_EQUAL))
     {
         error(s,"'=' expected");
         s = savestate;
-        return false;
+        return NULL;
     }
 
     std::string identifier = getToken(s, -2).txt;    // get identifier string
@@ -185,7 +185,7 @@ ASTNode* Parser::acceptDefspec1(state_t &s)
     if (!matchList(s, tokenList))
     {
         s=savestate;
-        return false;
+        return NULL;
     }
 
     ASTNode* newNode = new ASTNode();
@@ -316,14 +316,14 @@ ASTNode* Parser::acceptAssignment(state_t &s)
     if (!match(s,TOK_IDENT))
     {
         s = savestate;
-        return false;
+        return NULL;
     }
 
     if (!match(s,TOK_EQUAL))
     {
         error(s,"Expected '='");
         s = savestate;
-        return false;
+        return NULL;
     }
 
     std::string identifier = getToken(s, -2).txt;
@@ -333,7 +333,7 @@ ASTNode* Parser::acceptAssignment(state_t &s)
     {
         error(s,"Expression expected");
         s = savestate;
-        return false;
+        return NULL;
     }
 
     if (!match(s, TOK_SEMICOL))
@@ -666,7 +666,7 @@ ASTNode* Parser::acceptFactor(state_t &s)
     }
 
     error(s, "Factor is not an integer, float, identifier or parenthesised expression.");
-    return false;
+    return NULL;
 }
 
 ASTNode* Parser::acceptFactor1(state_t &s)

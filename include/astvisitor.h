@@ -33,8 +33,8 @@ class ASTDumpVisitor : public ASTVisitorBase
 public:
     /** create an object to dump the AST to a stream */
     ASTDumpVisitor(std::ostream &os)
-        : m_os(os),
-          m_depth(0)
+        : m_depth(0),
+          m_os(os)
     {}
 
     /** dump a specific node */
