@@ -16,7 +16,7 @@ bool SSAEvaluator::process(const SSAObject &ssa)
     {
         operandIndex op1 = iter->op1Idx;
         operandIndex op2 = iter->op2Idx;
-        operandIndex op3 = iter->op3Idx;
+        operandIndex op3 = iter->lhsIdx;
 
         fplib::SFix tmp;
         switch(iter->operation)

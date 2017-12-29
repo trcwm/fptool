@@ -64,15 +64,16 @@ struct SSANode
     enum operation_t
     {
         OP_Undefined,   // Node is undefined
-        OP_Add,         // Add two variables var3 = var1 + var2
-        OP_Sub,         // Subtract two variables var3 = var1 - var2
-        OP_Mul,         // Multiply two variables var3 = var1 * var2
-        OP_Div,         // Divide two variables var3 = var1 / var2
+        OP_Add,         // Add two variables lhs = var1 + var2
+        OP_Sub,         // Subtract two variables lhs = var1 - var2
+        OP_Mul,         // Multiply two variables lhs = var1 * var2
+        //OP_CSDMul,      // Multiply one variable by CSD var3 = csd * var1
+        OP_Div,         // Divide two variables lhs = var1 / var2
         OP_Negate,      // Sign reverse
         OP_Assign,      // Assign to an output/register variable
         OP_Reinterpret, // Reinterpret Q(n1,m2) to Q(n2,m2) where n1-m2 = n2-m2
-        OP_Saturate,    // Saturate var3 = Saturate(var1, bits, fbits)
-        OP_Truncate,    // Truncate var3 = Truncate(var1, bits, fbits)
+        OP_Saturate,    // Saturate lhs = Saturate(var1, bits, fbits)
+        OP_Truncate,    // Truncate lhs = Truncate(var1, bits, fbits)
         OP_RemoveLSBs,  // Remove bits from the LSB side
         OP_ExtendLSBs,  // Add bits at the LSB side (zero bits)
         OP_RemoveMSBs,  // Remove bits at the MSB side
@@ -80,14 +81,14 @@ struct SSANode
     };
 
     /** constructor to initialize things to safe defaults */
-    SSANode() : operation(OP_Undefined), op1Idx(0),op2Idx(0),op3Idx(0),bits(0),fbits(0)
+    SSANode() : operation(OP_Undefined), op1Idx(0),op2Idx(0),lhsIdx(0),bits(0),fbits(0)
     {
     }
 
     operation_t operation;
     size_t      op1Idx;     // Index of operand 1
     size_t      op2Idx;     // Index of operand 2
-    size_t      op3Idx;     // Index of operand 3 (lhs)
+    size_t      lhsIdx;     // Index of operand 3 (lhs)
     int32_t     bits;       // remove/extend/saturate/truncate (integer) bits
     int32_t     fbits;      // saturate/truncate (fractional) bits
 };

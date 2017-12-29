@@ -28,13 +28,13 @@ void PassClean::execute(SSAObject &ssa)
 
         if (operation == SSANode::OP_Reinterpret)
         {
-            doLog(LOG_DEBUG, "Replacing variable %d (%s)\n", iter->op3Idx, ssa.getOperand(iter->op3Idx).info.txt.c_str());
+            doLog(LOG_DEBUG, "Replacing variable %d (%s)\n", iter->lhsIdx, ssa.getOperand(iter->lhsIdx).info.txt.c_str());
 
             // replace reinterpreted with original variable
-            substitute(ssa, iter->op3Idx, iter->op1Idx);
+            substitute(ssa, iter->lhsIdx, iter->op1Idx);
 
             // mark lhs variable as removed
-            ssa.markRemoved(iter->op3Idx);
+            ssa.markRemoved(iter->lhsIdx);
 
             // remove the reinterpret node
             iter = ssa.removeNode(iter);
@@ -53,18 +53,18 @@ void PassClean::execute(SSAObject &ssa)
 
         if (operation == SSANode::OP_Assign)
         {
-            operand_t lhs = ssa.getOperand(iter->op3Idx);
+            operand_t lhs = ssa.getOperand(iter->lhsIdx);
 
             // preserve output assignments
             if (lhs.type != operand_t::TypeOutput)
             {
-                doLog(LOG_DEBUG, "Removing variable %d (%s)\n", iter->op3Idx, ssa.getOperand(iter->op3Idx).info.txt.c_str());
+                doLog(LOG_DEBUG, "Removing variable %d (%s)\n", iter->lhsIdx, ssa.getOperand(iter->lhsIdx).info.txt.c_str());
 
                 // replace the assigned var with original var
-                substitute(ssa, iter->op3Idx, iter->op1Idx);
+                substitute(ssa, iter->lhsIdx, iter->op1Idx);
 
                 // mark lhs variable as removed
-                ssa.markRemoved(iter->op3Idx);
+                ssa.markRemoved(iter->lhsIdx);
 
                 // remove the assignment node
                 iter = ssa.removeNode(iter);

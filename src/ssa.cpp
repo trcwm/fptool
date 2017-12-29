@@ -48,7 +48,7 @@ operandIndex SSAObject::createAddNode(ssa_iterator where, operandIndex s1, opera
     n.operation = SSANode::OP_Add;
     n.op1Idx = s1;
     n.op2Idx = s2;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -70,7 +70,7 @@ operandIndex SSAObject::createSubNode(ssa_iterator where, operandIndex s1, opera
     n.operation = SSANode::OP_Sub;
     n.op1Idx = s1;
     n.op2Idx = s2;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -97,7 +97,7 @@ operandIndex SSAObject::createMulNode(ssa_iterator where, operandIndex s1, opera
     n.operation = SSANode::OP_Mul;
     n.op1Idx = s1;
     n.op2Idx = s2;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -119,7 +119,7 @@ operandIndex SSAObject::createDivNode(ssa_iterator where, operandIndex s1, opera
     n.operation = SSANode::OP_Div;
     n.op1Idx = s1;
     n.op2Idx = s2;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -141,7 +141,7 @@ operandIndex SSAObject::createNegateNode( ssa_iterator where, operandIndex s1)
     n.operation = SSANode::OP_Negate;
     n.op1Idx = s1;
     n.op2Idx = 0;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -163,7 +163,7 @@ void SSAObject::createAssignNode(ssa_iterator where, operandIndex output, operan
     n.operation = SSANode::OP_Assign;
     n.op1Idx = s1;
     n.op2Idx = 0;
-    n.op3Idx = output;
+    n.lhsIdx = output;
 
     m_list.insert(where, n);
 }
@@ -185,7 +185,7 @@ operandIndex SSAObject::createExtendLSBNode(ssa_iterator where, operandIndex s1,
     n.bits = bits;
     n.op1Idx = s1;
     n.op2Idx = 0;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -208,7 +208,7 @@ operandIndex SSAObject::createRemoveLSBNode(ssa_iterator where, operandIndex s1,
     n.bits = bits;
     n.op1Idx = s1;
     n.op2Idx = 0;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -231,7 +231,7 @@ operandIndex SSAObject::createExtendMSBNode(ssa_iterator where, operandIndex s1,
     n.bits = bits;
     n.op1Idx = s1;
     n.op2Idx = 0;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -254,7 +254,7 @@ operandIndex SSAObject::createRemoveMSBNode(ssa_iterator where, operandIndex s1,
     n.bits = bits;
     n.op1Idx = s1;
     n.op2Idx = 0;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -276,7 +276,7 @@ operandIndex SSAObject::createTruncateNode(ssa_iterator where, operandIndex s1, 
     n.fbits = fbits;
     n.op1Idx = s1;
     n.op2Idx = 0;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -306,7 +306,7 @@ operandIndex SSAObject::createReinterpretNode(ssa_iterator where, operandIndex s
     n.bits = intbits;
     n.fbits = fracbits;
     n.op1Idx = s1;
-    n.op3Idx = lhs_index;
+    n.lhsIdx = lhs_index;
 
     m_list.insert(where, n);
     return lhs_index;
@@ -362,7 +362,7 @@ void SSAObject::dumpStatements(std::ostream &stream)
     {
         uint32_t idx1 = iter->op1Idx;
         uint32_t idx2 = iter->op2Idx;
-        uint32_t idx3 = iter->op3Idx;
+        uint32_t idx3 = iter->lhsIdx;
 
         stream << "Q(" << getOperand(idx3).info.intBits << ",";
         stream << getOperand(idx3).info.fracBits << ") ";

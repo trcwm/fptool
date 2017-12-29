@@ -24,14 +24,14 @@
 #include "vhdlcodegen.h"
 #include "astgraphviz.h"
 
-#define __VERSION__ "0.1a"
+#define __FPTOOLVERSION__ "0.1a"
 
 int main(int argc, char *argv[])
 {
     bool verbose = false;
     CmdLine cmdline("ogL","dV");
 
-    printf("FPTOOL version " __VERSION__ " compiled on " __DATE__ "\n\n");
+    printf("FPTOOL version " __FPTOOLVERSION__ " compiled on " __DATE__ "\n\n");
     if (!cmdline.parseOptions(argc, argv))
     {
 

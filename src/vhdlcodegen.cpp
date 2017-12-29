@@ -25,7 +25,7 @@ void VHDLCodeGen::execute(SSAObject &ssa)
     {
         // get LHS operand as output variable/signal
         // and generate the code
-        operand_t lhs = ssa.getOperand(iter->op3Idx);
+        operand_t lhs = ssa.getOperand(iter->lhsIdx);
         genLHS(os, lhs, indent);
 
         operand_t op1;

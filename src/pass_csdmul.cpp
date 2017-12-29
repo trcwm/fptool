@@ -56,7 +56,7 @@ void PassCSDMul::execute(SSAObject &ssa)
             csd_t my_csd;
             if (op1.type == operand_t::TypeCSD)
             {                
-                iter = shiftAndAdd(ssa, iter, op1.info.csd, varIdx, iter->op3Idx);
+                iter = shiftAndAdd(ssa, iter, op1.info.csd, varIdx, iter->lhsIdx);
 
                 // the new iter will now point to the next statement:
                 // we must use continue here to avoid calling the iter++ later on
