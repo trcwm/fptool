@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     bool verbose = false;
     CmdLine cmdline("ogL","dV");
 
-    printf("FPTOOL version "__VERSION__" compiled on "__DATE__"\n\n");
+    printf("FPTOOL version " __VERSION__ " compiled on " __DATE__ "\n\n");
     if (!cmdline.parseOptions(argc, argv))
     {
 
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
         std::ofstream outstream;
         if (cmdline.getOption('o', outfile))
         {
-            outstream = std::ofstream(outfile, std::ios::out);
+            outstream.open(outfile, std::ofstream::out);
             doLog(LOG_INFO, "output file: %s\n", outfile.c_str());
         }
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[])
         std::ofstream graphvizStream;
         if (cmdline.getOption('g', graphvizFilename))
         {
-            graphvizStream = std::ofstream(graphvizFilename, std::ios::out);
+            graphvizStream.open(graphvizFilename, std::ofstream::out);
             doLog(LOG_INFO, "Graphviz/dot file: %s\n", graphvizFilename.c_str());
         }
 
@@ -249,12 +249,13 @@ int main(int argc, char *argv[])
             }
 #endif
 
+#if 0
             if (!fuzzer(referenceSSA, ssa, 1))
             {
                 doLog(LOG_ERROR, "Fuzzer reported an error!\n");
                 return 1;
             }
-
+#endif
             // ------------------------------------------------------------
             // -- ADDSUB PASS
             // ------------------------------------------------------------
