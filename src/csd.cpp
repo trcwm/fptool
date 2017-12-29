@@ -52,7 +52,7 @@ bool convertToCSD(const double v, uint32_t terms, csd_t &result)
         }
         result.digits.push_back(digit);
     }
-    result.intBits = result.digits[0].power+1;    // account for sign bit
+    result.intBits = result.digits[0].power+2;    // account for sign bit
     result.fracBits= -result.digits.back().power;
 
     return true;

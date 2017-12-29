@@ -55,14 +55,8 @@ void PassCSDMul::execute(SSAObject &ssa)
 
             csd_t my_csd;
             if (op1.type == operand_t::TypeCSD)
-            {
-                if (!convertToCSD(op1.info.csdFloat, op1.info.csdBits, my_csd))
-                {
-                    doLog(LOG_ERROR, "Cannot convert number (%f) to CSD\n", op1.info.csdFloat);
-                    throw std::runtime_error("");
-                }
-                doLog(LOG_DEBUG, "CSD: converted (%f) to (%f)\n", op1.info.csdFloat, my_csd.value);
-                iter = shiftAndAdd(ssa, iter, my_csd, varIdx, iter->op3Idx);
+            {                
+                iter = shiftAndAdd(ssa, iter, op1.info.csd, varIdx, iter->op3Idx);
 
                 // the new iter will now point to the next statement:
                 // we must use continue here to avoid calling the iter++ later on
