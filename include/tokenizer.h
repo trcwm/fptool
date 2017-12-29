@@ -52,6 +52,7 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 #include <stdint.h>
 
 #include "reader.h"
