@@ -1,3 +1,4 @@
+language: c++
 sudo: required
 dist: trusty
 
@@ -11,4 +12,4 @@ install:
 script:
   - source /opt/qt55/bin/qt55-env.sh
   - /opt/qt55/bin/qmake fptool.pro
-- make
+  - make
