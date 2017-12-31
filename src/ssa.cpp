@@ -445,16 +445,17 @@ void SSAObject::dumpStatements(std::ostream &stream)
 // ****************************************************************************************************
 
 
-bool SSACreator::process(const statements_t &statements, SSAObject &ssa)
+bool SSACreator::process(const AST::Statements &statements, SSAObject &ssa)
 {
     m_lastError.clear();
     m_opStack.clear();
 
-    size_t N = statements.size();
-    for(size_t i=0; i<N; i++)
+    auto iter = statements.m_statements.begin();
+    while(iter != statements.m_statements.end())
     {
-        if (!executeASTNode(statements[i], ssa))
+        if (!executeASTNode(*iter, ssa))
             return false;
+        iter++;
     }
 
     // check that the operations stack is empty

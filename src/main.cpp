@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
         delete reader;
 
         Parser parse;
-        statements_t statements;
+        AST::Statements statements;
         if (parse.process(tokens, statements))
         {
             doLog(LOG_INFO, "Parse OK!\n");
@@ -108,11 +108,15 @@ int main(int argc, char *argv[])
             {
                 // dump the AST
                 ASTDumpVisitor ASTdumper(std::cout);
-                for(uint32_t i=0; i<statements.size(); i++)
+                auto iter = statements.m_statements.begin();
+                uint32_t idx = 0;
+                while(iter != statements.m_statements.end())
                 {
-                    std::cout << "Statement " << i+1 << ":\n";
-                    ASTdumper.visit(statements[i]);
+                    std::cout << "Statement " << idx+1 << ":\n";
+                    ASTdumper.visit(*iter);
                     std::cout << "\n";
+                    iter++;
+                    idx++;
                 }
             }
 
@@ -121,9 +125,11 @@ int main(int argc, char *argv[])
             {
                 AST2Graphviz graphviz(graphvizStream);
                 graphviz.writeProlog();
-                for(uint32_t i=0; i<statements.size(); i++)
+                auto iter = statements.m_statements.begin();
+                while(iter != statements.m_statements.end())
                 {
-                    graphviz.addStatement(statements[i]);
+                    graphviz.addStatement(*iter);
+                    iter++;
                 }
                 graphviz.writeEpilog();
                 graphvizStream.close();

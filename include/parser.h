@@ -22,7 +22,7 @@
 
 typedef std::shared_ptr<ASTNode> ASTNodePtr;
 
-typedef std::vector<ASTNode*> statements_t;
+//typedef std::vector<ASTNode*> statements_t;
 
 /** Parser to translate token stream from tokenizer/lexer to operation stack. */
 class Parser
@@ -35,7 +35,7 @@ public:
         When an error occurs, call getLastError() to get
         a human-readable string of the error.
     */
-    bool process(const std::vector<token_t> &tokens, statements_t &result);
+    bool process(const std::vector<token_t> &tokens, AST::Statements &result);
 
     /** Return a description of the last parse error that occurred. */
     std::string getLastError() const
@@ -66,7 +66,7 @@ protected:
        recusively calling other accpet methods.
     */
 
-    bool acceptProgram(state_t &s, statements_t &result);
+    bool acceptProgram(state_t &s, AST::Statements &result);
     ASTNode* acceptDefinition(state_t &s);
 
     ASTNode *acceptDefspec(state_t &s);

@@ -12,6 +12,7 @@
 #define astnode_h
 
 #include <string>
+#include <list>
 #include <stdint.h>
 #include "csd.h"
 #include "astvisitor.h"
@@ -35,7 +36,6 @@ struct varInfo
     int32_t         intVal;     // integer value
     csd_t           csd;        // CSD representation.
 };
-
 
 /** Abstract Syntax Tree Node with visitor pattern support */
 class ASTNode
@@ -61,6 +61,8 @@ public:
         type = nodeType;
     }
 
+    virtual ~ASTNode() {}
+
     /** accept an AST visitor for iteration */
     void accept(ASTVisitorBase *visitor) const
     {
@@ -73,5 +75,24 @@ public:
     ASTNode *left;
     ASTNode *right;
 };
+
+
+namespace AST
+{
+
+class Statements : public ASTNode
+{
+public:
+    Statements() : ASTNode(NodeStatement)
+    {
+    }
+
+    virtual ~Statements() {}
+
+    std::list<ASTNode*> m_statements;
+};
+
+
+} // namespace
 
 #endif

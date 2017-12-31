@@ -279,7 +279,7 @@ public:
         and a list of variables/operands.
         Returns false if an error occurred.
     */
-    bool process(const statements_t &statements, SSAObject &ssa);
+    bool process(const AST::Statements &statements, SSAObject &ssa);
 
     /** Get a human readable version of the error */
     std::string getLastError() const
@@ -300,7 +300,7 @@ protected:
         m_lastError = errorstr;
     }
 
-    const statements_t  *m_statements;
+    //const statements_t  *m_statements;
 
     std::string         m_lastError;
     std::vector<uint32_t> m_opStack;

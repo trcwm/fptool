@@ -52,7 +52,7 @@ bool Parser::matchList(state_t &s, const uint32_t *tokenIDlist)
     return true;
 }
 
-bool Parser::process(const std::vector<token_t> &tokens, statements_t &result)
+bool Parser::process(const std::vector<token_t> &tokens, AST::Statements &result)
 {
     m_lastError.clear();
 
@@ -71,7 +71,7 @@ bool Parser::process(const std::vector<token_t> &tokens, statements_t &result)
     return acceptProgram(state, result);
 }
 
-bool Parser::acceptProgram(state_t &s, statements_t &statements)
+bool Parser::acceptProgram(state_t &s, AST::Statements &statements)
 {
     // productions: definition | assignment | NEWLINE | EOF
 
@@ -87,12 +87,12 @@ bool Parser::acceptProgram(state_t &s, statements_t &statements)
         if ((node=acceptDefinition(s)) != 0)
         {
             productionAccepted = true;
-            statements.push_back(node);
+            statements.m_statements.push_back(node);
         }
         else if ((node=acceptAssignment(s)) != 0)
         {
             productionAccepted = true;
-            statements.push_back(node);
+            statements.m_statements.push_back(node);
         }
         else if (match(s, TOK_NEWLINE))
         {
