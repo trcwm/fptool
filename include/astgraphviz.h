@@ -20,16 +20,16 @@ class AST2Graphviz : public AST::VisitorBase
 {
 public:
     /** create an object to dump the AST to a stream */
-    AST2Graphviz(std::ostream &os)
-        : m_count(0),
+    AST2Graphviz(std::ostream &os, bool noInputs=false)
+        : m_noInputs(noInputs),
+          m_count(0),
           m_os(os)
     {}
 
     void writeProlog();
-    void addStatement(const ASTNode *node) {};
+    void addStatement(ASTNode *node);
     void writeEpilog();
 
-    //void visit(const ASTNode *node) override;
     virtual void visit(const AST::Identifier *node) override;
     virtual void visit(const AST::IntegerConstant *node) override;
     virtual void visit(const AST::CSDDeclaration *node) override;
@@ -37,9 +37,11 @@ public:
     virtual void visit(const AST::InputDeclaration *node) override;
     virtual void visit(const AST::PrecisionModifier *node) override;
     virtual void visit(const AST::Assignment *node) override;
+    virtual void visit(const AST::Operation2 *node) override;
+    virtual void visit(const AST::Operation1 *node) override;
 
 protected:
-
+    bool m_noInputs;
     int32_t m_count;
     std::ostream &m_os;
 };

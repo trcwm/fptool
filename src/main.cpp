@@ -118,23 +118,20 @@ int main(int argc, char *argv[])
                 }
             }
 
-#if 0
             // dump the AST using graphviz
             if (graphvizStream.is_open())
             {
-                AST2Graphviz graphviz(graphvizStream);
+                AST2Graphviz graphviz(graphvizStream, true);
                 graphviz.writeProlog();
-                auto iter = statements.m_statements.begin();
-                while(iter != statements.m_statements.end())
+                for(ASTNode *node : statements.m_statements)
                 {
-                    graphviz.addStatement(*iter);
-                    iter++;
+                    graphviz.addStatement(node);
                 }
                 graphviz.writeEpilog();
                 graphvizStream.close();
             }
 
-
+#if 0
             SSA::Creator ssaCreator;
             SSAObject ssa;
             if (!ssaCreator.process(statements, ssa))
