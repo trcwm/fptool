@@ -23,6 +23,7 @@ void AST2Graphviz::writeEpilog()
     m_os << "}\n";
 }
 
+#if 0
 void AST2Graphviz::addStatement(const ASTNode *node)
 {
     visit(node);
@@ -57,13 +58,13 @@ void AST2Graphviz::visit(const ASTNode *node)
         m_os << "Unknown";
         break;
     case ASTNode::NodeAssign:
-        m_os << node->info.txt << " = ";
+        //m_os << node->info.txt << " = ";
         break;
     case ASTNode::NodeInput:
-        m_os << "INPUT " << node->info.txt << " Q(" << node->info.intBits << "," << node->info.fracBits << ")";
+        //m_os << "INPUT " << node->info.txt << " Q(" << node->info.intBits << "," << node->info.fracBits << ")";
         break;
     case ASTNode::NodeCSD:
-        m_os << "CSD " << node->info.txt << " (" << node->info.csdFloat << "," << node->info.csdBits << ")";
+        //m_os << "CSD " << node->info.txt << " (" << node->info.csdFloat << "," << node->info.csdBits << ")";
         break;
     case ASTNode::NodeAdd:
         m_os << "+";
@@ -78,10 +79,10 @@ void AST2Graphviz::visit(const ASTNode *node)
         m_os << "U-";
         break;
     case ASTNode::NodeIdent:
-        m_os << node->info.txt;
+        //m_os << node->info.txt;
         break;
     case ASTNode::NodeInteger:
-        m_os << node->info.intVal;
+        //m_os << node->info.intVal;
         break;
     case ASTNode::NodeFloat:
         m_os << "FLOATVAL";
@@ -107,3 +108,4 @@ void AST2Graphviz::visit(const ASTNode *node)
     }
 }
 
+#endif

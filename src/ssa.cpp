@@ -438,6 +438,7 @@ void SSAObject::dumpStatements(std::ostream &stream)
 }
 
 
+#if 0
 // ****************************************************************************************************
 //
 //     SSACreator
@@ -712,3 +713,5 @@ bool SSACreator::executeASTNode(ASTNode *node, SSAObject &ssa)
     } // end switch
     return true;
 }
+
+#endif

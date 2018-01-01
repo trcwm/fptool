@@ -69,9 +69,9 @@ protected:
     bool acceptProgram(state_t &s, AST::Statements &result);
     ASTNode* acceptDefinition(state_t &s);
 
-    ASTNode *acceptDefspec(state_t &s);
-    ASTNode *acceptDefspec1(state_t &s);
-    ASTNode *acceptDefspec2(state_t &s);
+    AST::Declaration *acceptDefspec(state_t &s);
+    AST::InputDeclaration *acceptDefspec1(state_t &s);    ///< accept an input declaration
+    AST::CSDDeclaration   *acceptDefspec2(state_t &s);    ///< accept a CSD declaration
 
     // functions
     ASTNode* acceptTruncate(state_t &s);

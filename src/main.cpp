@@ -15,6 +15,7 @@
 #include "tokenizer.h"
 #include "parser.h"
 #include "ssa.h"
+//#include "ssacreator.h"
 #include "ssaevaluator.h"
 #include "csd.h"
 #include "pass_addsub.h"
@@ -107,19 +108,17 @@ int main(int argc, char *argv[])
             if (cmdline.hasOption('d'))
             {
                 // dump the AST
-                ASTDumpVisitor ASTdumper(std::cout);
-                auto iter = statements.m_statements.begin();
-                uint32_t idx = 0;
-                while(iter != statements.m_statements.end())
+                AST::DumpVisitor ASTdumper(std::cout);
+                for(ASTNode *node : statements.m_statements)
                 {
-                    std::cout << "Statement " << idx+1 << ":\n";
-                    ASTdumper.visit(*iter);
-                    std::cout << "\n";
-                    iter++;
-                    idx++;
+                    if (node != NULL)
+                    {
+                        node->accept(&ASTdumper);
+                    }
                 }
             }
 
+#if 0
             // dump the AST using graphviz
             if (graphvizStream.is_open())
             {
@@ -135,7 +134,8 @@ int main(int argc, char *argv[])
                 graphvizStream.close();
             }
 
-            SSACreator ssaCreator;
+
+            SSA::Creator ssaCreator;
             SSAObject ssa;
             if (!ssaCreator.process(statements, ssa))
             {
@@ -151,7 +151,6 @@ int main(int argc, char *argv[])
 
             SSAObject referenceSSA = ssa;
 
-#if 0
             SSAEvaluator eval;
             // set all inputs for evaluation
             auto iter = ssa.beginOperands();
@@ -194,7 +193,6 @@ int main(int argc, char *argv[])
                 iter++;
                 opIndex++;
             }
-#endif
 
             // ------------------------------------------------------------
             // -- CSD PASS
@@ -210,7 +208,6 @@ int main(int argc, char *argv[])
             }
 
 
-#if 0
             SSAEvaluator eval2;
             // set all inputs for evaluation
             iter = ssa.beginOperands();
@@ -253,15 +250,15 @@ int main(int argc, char *argv[])
                 iter++;
                 opIndex++;
             }
-#endif
 
-#if 0
+
+
             if (!fuzzer(referenceSSA, ssa, 1))
             {
                 doLog(LOG_ERROR, "Fuzzer reported an error!\n");
                 return 1;
             }
-#endif
+
             // ------------------------------------------------------------
             // -- ADDSUB PASS
             // ------------------------------------------------------------
@@ -312,7 +309,6 @@ int main(int argc, char *argv[])
                 codegen.setEpilog("");
                 codegen.process(ssa);
             }
-
         }
         else
         {
@@ -320,6 +316,8 @@ int main(int argc, char *argv[])
             doLog(LOG_ERROR, "Line %d pos %d: %s\n", parse.getLastErrorPos().line+1,
                   parse.getLastErrorPos().pos+1,
                   parse.getLastError().c_str());
+        }
+#endif
         }
     }
 

@@ -64,13 +64,10 @@ public:
     virtual ~ASTNode() {}
 
     /** accept an AST visitor for iteration */
-    void accept(ASTVisitorBase *visitor) const
-    {
-        visitor->visit(this);
-    }
+    virtual void accept(AST::VisitorBase *visitor) = 0;
 
     node_t  type;   // the type of the node
-    varInfo info;   // variable related information
+    //varInfo info;   // variable related information
 
     ASTNode *left;
     ASTNode *right;
@@ -80,7 +77,8 @@ public:
 namespace AST
 {
 
-class Statements : public ASTNode
+/** An AST node describing a collection of sequential statements */
+class Statements : public ::ASTNode
 {
 public:
     Statements() : ASTNode(NodeStatement)
@@ -89,9 +87,158 @@ public:
 
     virtual ~Statements() {}
 
-    std::list<ASTNode*> m_statements;
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::list<ASTNode*> m_statements;   ///< collection of sequential statements
 };
 
+/** Declaration node base class holding information on an input var or constant name. */
+class Declaration : public ::ASTNode
+{
+public:
+    Declaration(node_t nodeType) : ASTNode(nodeType)
+    {
+    }
+
+#if 0
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+#endif
+
+
+    std::string m_identName;    ///< name of the variable or constant
+};
+
+/** Identifier node */
+class Identifier : public Declaration
+{
+public:
+    Identifier() : Declaration(NodeIdent)
+    {
+    }
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+};
+
+/** Input declaration */
+class InputDeclaration : public Declaration
+{
+public:
+    InputDeclaration() : Declaration(NodeInput) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    int32_t m_fracBits;   // number of factional bits in INPUT definition
+    int32_t m_intBits;    // number of integer bits in INPUT defintion
+};
+
+/** CSD declaration */
+class CSDDeclaration : public Declaration
+{
+public:
+    CSDDeclaration() : Declaration(NodeCSD) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    csd_t m_csd;
+};
+
+
+/** Precision modification node: RemoveLSB, ExtendLSB, RemoveMSB, ExtendMSB,
+    Truncate, Saturate.
+*/
+class PrecisionModifier : public ::ASTNode
+{
+public:
+    PrecisionModifier(node_t nodeType) : ASTNode(nodeType) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    int32_t m_fracBits;
+    int32_t m_intBits;
+};
+
+
+/** Assignment node */
+class Assignment : public ::ASTNode
+{
+public:
+    Assignment() : ASTNode(NodeAssign) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_identName;    ///< name of output identifier
+};
+
+
+/** Integer constant */
+class IntegerConstant : public ::ASTNode
+{
+public:
+    IntegerConstant() : ASTNode(NodeInteger) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    int32_t m_value;    ///< constant value
+};
+
+/** operation with two operands */
+class Operation2 : public ::ASTNode
+{
+public:
+    Operation2(node_t nodeType) : ASTNode(nodeType) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+};
+
+/** unary functions */
+class Operation1 : public ::ASTNode
+{
+public:
+    Operation1(node_t nodeType) : ASTNode(nodeType) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+};
 
 } // namespace
 

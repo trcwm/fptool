@@ -78,7 +78,6 @@ bool Parser::acceptProgram(state_t &s, AST::Statements &statements)
     bool productionAccepted = true;
     token_t tok = getToken(s);
 
-
     while(productionAccepted == true)
     {
         productionAccepted = false;
@@ -136,7 +135,15 @@ ASTNode* Parser::acceptDefinition(state_t &s)
     std::string identifier = getToken(s, -2).txt;    // get identifier string
 
     // create new RHS specification node:
-    ASTNode *declNode = 0;
+    //
+    // FIXME: create a special AST::Declaration base node
+    // here, which are actually a CSD node or Input node.
+    //
+    // The actual nodes are created in acceptDefspec1 and
+    // acceptDefspec1.
+    //
+
+    AST::Declaration *declNode = 0;
     if ((declNode=acceptDefspec(s)) == 0)
     {
         error(s,"Expected a declaration.");
@@ -152,17 +159,16 @@ ASTNode* Parser::acceptDefinition(state_t &s)
         return NULL;
     }
 
-    //FIXME: is this correct!?!
-    declNode->info.txt = identifier;
+    declNode->m_identName = identifier;
 
     return declNode;
 }
 
-ASTNode* Parser::acceptDefspec(state_t &s)
+AST::Declaration* Parser::acceptDefspec(state_t &s)
 {
     // productions: defspec1 | defspec2
 
-    ASTNode *node = 0;
+    AST::Declaration *node = 0;
     if ((node=acceptDefspec1(s)) != NULL)
     {
         return node;
@@ -174,7 +180,7 @@ ASTNode* Parser::acceptDefspec(state_t &s)
     return NULL;
 }
 
-ASTNode* Parser::acceptDefspec1(state_t &s)
+AST::InputDeclaration* Parser::acceptDefspec1(state_t &s)
 {
     // production: INPUT LPAREN INTEGER COMMA INTEGER RPAREN
 
@@ -188,16 +194,15 @@ ASTNode* Parser::acceptDefspec1(state_t &s)
         return NULL;
     }
 
-    ASTNode* newNode = new ASTNode();
-    newNode->type = ASTNode::NodeInput;
-    newNode->info.intBits = atoi(getToken(s, -4).txt.c_str()); // first integer
-    newNode->info.fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
+    AST::InputDeclaration* newNode = new AST::InputDeclaration();
+    newNode->m_intBits  = atoi(getToken(s, -4).txt.c_str()); // first integer
+    newNode->m_fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
 
     return newNode;
 }
 
 
-ASTNode* Parser::acceptDefspec2(state_t &s)
+AST::CSDDeclaration *Parser::acceptDefspec2(state_t &s)
 {
     // production: CSD LPAREN FLOAT COMMA INTEGER RPAREN
 
@@ -211,21 +216,19 @@ ASTNode* Parser::acceptDefspec2(state_t &s)
         return NULL;
     }
 
-    ASTNode *newNode = new ASTNode();
-    newNode->type = ASTNode::NodeCSD;
-    newNode->info.csdFloat = atof(getToken(s, -4).txt.c_str()); // first argument
-    newNode->info.csdBits = atoi(getToken(s, -2).txt.c_str()); // second argument
+    AST::CSDDeclaration* newNode = new AST::CSDDeclaration();
+    float    value = atof(getToken(s, -4).txt.c_str()); // first argument
+    uint32_t bits  = atoi(getToken(s, -2).txt.c_str()); // second argument
 
-    csd_t csd;
-    if (!convertToCSD(newNode->info.csdFloat, newNode->info.csdBits, csd))
+    if (!convertToCSD(value, bits, newNode->m_csd))
     {
         error(s,"acceptDefspec2: cannot convert CSD");
     }
 
-    float msb = ceil(log10(fabs(static_cast<double>(csd.value)))/log10(2.0));
-    newNode->info.intBits = static_cast<int32_t>(msb+1); // add sign bit
-    newNode->info.fracBits = -csd.digits.back().power;
-    newNode->info.csd = csd;
+    //float msb = ceil(log10(fabs(static_cast<double>(csd.value)))/log10(2.0));
+    //newNode->info.intBits = static_cast<int32_t>(msb+1); // add sign bit
+    //newNode->info.fracBits = -csd.digits.back().power;
+    //newNode->info.csd = csd;
     return newNode;
 }
 
@@ -299,10 +302,9 @@ ASTNode* Parser::acceptTruncate(state_t &s)
         return NULL;
     }
 
-    ASTNode *newNode = new ASTNode();
-    newNode->type = ASTNode::NodeTruncate;
-    newNode->info.intBits  = intbits;
-    newNode->info.fracBits = fracbits;
+    AST::PrecisionModifier *newNode = new AST::PrecisionModifier(ASTNode::NodeTruncate);
+    newNode->m_intBits  = intbits;
+    newNode->m_fracBits = fracbits;
     newNode->right = exprNode;
 
     return newNode;
@@ -344,9 +346,8 @@ ASTNode* Parser::acceptAssignment(state_t &s)
         return NULL;
     }
 
-    ASTNode *newNode = new ASTNode();
-    newNode->type = ASTNode::NodeAssign;
-    newNode->info.txt  = identifier;
+    AST::Assignment *newNode = new AST::Assignment();
+    newNode->m_identName = identifier;
     newNode->right = exprNode;
 
     return newNode;
@@ -439,7 +440,7 @@ ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
     // supply the new head node to the next
     // acceptExprAccent function
 
-    ASTNode *operationNode = new ASTNode(ASTNode::NodeSub);
+    AST::Operation2 *operationNode = new AST::Operation2(ASTNode::NodeSub);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
@@ -473,7 +474,7 @@ ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
     // supply the new head node to the next
     // acceptExprAccent function
 
-    ASTNode *operationNode = new ASTNode(ASTNode::NodeAdd);
+    AST::Operation2 *operationNode = new AST::Operation2(ASTNode::NodeAdd);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
@@ -565,7 +566,7 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
     // supply the new head node to the next
     // acceptTermAccent function
 
-    ASTNode *operationNode = new ASTNode(ASTNode::NodeMul);
+    AST::Operation2 *operationNode = new AST::Operation2(ASTNode::NodeMul);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
@@ -599,7 +600,7 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
     // supply the new head node to the next
     // acceptTermAccent function
 
-    ASTNode *operationNode = new ASTNode(ASTNode::NodeDiv);
+    AST::Operation2 *operationNode = new AST::Operation2(ASTNode::NodeDiv);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
@@ -639,12 +640,14 @@ ASTNode* Parser::acceptFactor(state_t &s)
     // INTEGER
     if (match(s, TOK_INTEGER))
     {
-        factorNode = new ASTNode(ASTNode::NodeInteger);
-        factorNode->info.intVal = atoi(getToken(s, -1).txt.c_str());
+        AST::IntegerConstant* newNode = new AST::IntegerConstant();
+        newNode->m_value = atoi(getToken(s, -1).txt.c_str());
+
+        // FIXME: remove this
         // calculate the int and frac bits for the integer
-        factorNode->info.intBits = static_cast<int32_t>(pow(2.0f,ceil(log10((float)factorNode->info.intVal)/log10(2.0f))))+1;
-        factorNode->info.fracBits = 0;
-        return factorNode;
+        //factorNode->info.intBits = static_cast<int32_t>(pow(2.0f,ceil(log10((float)factorNode->info.intVal)/log10(2.0f))))+1;
+        //factorNode->info.fracBits = 0;
+        return newNode;
     }
 
     // FLOAT
@@ -660,9 +663,9 @@ ASTNode* Parser::acceptFactor(state_t &s)
     // IDENTIFIER
     if (match(s, TOK_IDENT))
     {
-        factorNode = new ASTNode(ASTNode::NodeIdent);
-        factorNode->info.txt = getToken(s, -1).txt;
-        return factorNode;    // IDENT
+        AST::Identifier *newNode = new AST::Identifier();
+        newNode->m_identName = getToken(s, -1).txt;
+        return newNode; // IDENT
     }
 
     error(s, "Factor is not an integer, float, identifier or parenthesised expression.");
@@ -745,7 +748,7 @@ ASTNode* Parser::acceptFactor3(state_t &s)
     }
 
     // unary minus node
-    ASTNode *exprNode = new ASTNode(ASTNode::NodeUnaryMinus);
+    AST::Operation1 *exprNode = new AST::Operation1(ASTNode::NodeUnaryMinus);
     exprNode->left = 0;
     exprNode->right = factorNode;
 

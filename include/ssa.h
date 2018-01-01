@@ -267,7 +267,7 @@ protected:
 
 
 
-
+#if 0
 /** Create a SSA intermediate language representation from
     Abstract Syntax Tree */
 class SSACreator
@@ -305,7 +305,7 @@ protected:
     std::string         m_lastError;
     std::vector<uint32_t> m_opStack;
 };
-
+#endif
 
 
 #endif
