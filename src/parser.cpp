@@ -305,7 +305,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
     AST::PrecisionModifier *newNode = new AST::PrecisionModifier(AST::PrecisionModifier::NodeTruncate);
     newNode->m_intBits  = intbits;
     newNode->m_fracBits = fracbits;
-    newNode->right = exprNode;
+    newNode->m_argNode  = exprNode;
 
     return newNode;
 }
@@ -348,7 +348,7 @@ ASTNode* Parser::acceptAssignment(state_t &s)
 
     AST::Assignment *newNode = new AST::Assignment();
     newNode->m_identName = identifier;
-    newNode->right = exprNode;
+    newNode->m_exprNode = exprNode;
 
     return newNode;
 }
@@ -441,8 +441,8 @@ ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
     // acceptExprAccent function
 
     AST::Operation2 *operationNode = new AST::Operation2(AST::Operation2::NodeSub);
-    operationNode->left = leftNode;
-    operationNode->right = rightNode;
+    operationNode->m_left = leftNode;
+    operationNode->m_right = rightNode;
 
     // note: acceptExprAccent will never return NULL
     ASTNode *headNode = acceptExprAccent(s, operationNode);
@@ -475,8 +475,8 @@ ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
     // acceptExprAccent function
 
     AST::Operation2 *operationNode = new AST::Operation2(AST::Operation2::NodeAdd);
-    operationNode->left = leftNode;
-    operationNode->right = rightNode;
+    operationNode->m_left = leftNode;
+    operationNode->m_right = rightNode;
 
     // note: acceptExprAccent will never return NULL
     ASTNode *headNode = acceptExprAccent(s, operationNode);
@@ -567,8 +567,8 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
     // acceptTermAccent function
 
     AST::Operation2 *operationNode = new AST::Operation2(AST::Operation2::NodeMul);
-    operationNode->left = leftNode;
-    operationNode->right = rightNode;
+    operationNode->m_left = leftNode;
+    operationNode->m_right = rightNode;
 
     // note: acceptTermAccent will never return NULL
     ASTNode *headNode = acceptTermAccent(s, operationNode);
@@ -601,8 +601,8 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
     // acceptTermAccent function
 
     AST::Operation2 *operationNode = new AST::Operation2(AST::Operation2::NodeDiv);
-    operationNode->left = leftNode;
-    operationNode->right = rightNode;
+    operationNode->m_left = leftNode;
+    operationNode->m_right = rightNode;
 
     // note: acceptTermAccent will never return NULL
     ASTNode *headNode = acceptTermAccent(s, operationNode);
@@ -749,8 +749,7 @@ ASTNode* Parser::acceptFactor3(state_t &s)
 
     // unary minus node
     AST::Operation1 *exprNode = new AST::Operation1(AST::Operation1::NodeUnaryMinus);
-    exprNode->left = 0;
-    exprNode->right = factorNode;
+    exprNode->m_expr = factorNode;
 
     return exprNode;
 }

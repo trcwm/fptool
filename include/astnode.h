@@ -41,34 +41,17 @@ struct varInfo
 class ASTNode
 {
 public:
-#if 0
-  enum node_t {NodeUnknown, NodeHead,
-               NodeStatement,
-               NodeAssign,
-               NodeInput, NodeCSD,
-               NodeTemp,
-               NodeAdd, NodeSub, NodeMul, NodeDiv,
-               NodeUnaryMinus,
-               NodeIdent,
-               NodeInteger, NodeFloat,
-               NodeTruncate
-              };
-#endif
-
     /** create an AST node */
     ASTNode()
     {
-        left = 0;
-        right = 0;
+        //left = 0;
+        //right = 0;
     }
 
     virtual ~ASTNode() {}
 
     /** accept an AST visitor for iteration */
     virtual void accept(AST::VisitorBase *visitor) = 0;
-
-    ASTNode *left;
-    ASTNode *right;
 };
 
 
@@ -173,9 +156,11 @@ public:
         visitor->visit(this);
     }
 
-    node_t  m_nodeType;
-    int32_t m_fracBits;
-    int32_t m_intBits;
+    ASTNode *m_argNode;         ///< pointer to argument AST.
+
+    node_t  m_nodeType;         ///< type of precision modifier node
+    int32_t m_fracBits;         ///< fractional bits parameter for truncate
+    int32_t m_intBits;          ///< integer bits parameter for truncate
 };
 
 
@@ -191,6 +176,7 @@ public:
         visitor->visit(this);
     }
 
+    ASTNode *m_exprNode;        ///< pointer to expression AST.
     std::string m_identName;    ///< name of output identifier
 };
 
@@ -231,6 +217,8 @@ public:
         visitor->visit(this);
     }
 
+    ASTNode *m_left;    ///< pointer to left expression AST.
+    ASTNode *m_right;   ///< pointer to right expression AST.
     node_t m_nodeType;
 };
 
@@ -252,6 +240,7 @@ public:
         visitor->visit(this);
     }
 
+    ASTNode *m_expr;    ///< pointer to expression AST.
     node_t m_nodeType;
 };
 

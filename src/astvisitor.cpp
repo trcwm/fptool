@@ -142,10 +142,10 @@ void AST::DumpVisitor::visit(const InputDeclaration *node)
 
 void AST::DumpVisitor::visit(const PrecisionModifier *node)
 {
-    if (node->right != NULL)
+    if (node->m_argNode!= NULL)
     {
         m_depth++;
-        node->right->accept(this);
+        node->m_argNode->accept(this);
         m_depth--;
     }
 
@@ -163,10 +163,10 @@ void AST::DumpVisitor::visit(const PrecisionModifier *node)
 
 void AST::DumpVisitor::visit(const Assignment *node)
 {
-    if (node->right != NULL)
+    if (node->m_exprNode != NULL)
     {
         m_depth++;
-        node->right->accept(this);
+        node->m_exprNode->accept(this);
         m_depth--;
     }
 
@@ -176,17 +176,17 @@ void AST::DumpVisitor::visit(const Assignment *node)
 
 void AST::DumpVisitor::visit(const Operation2 *node)
 {
-    if (node->left != NULL)
+    if (node->m_left != NULL)
     {
         m_depth++;
-        node->left->accept(this);
+        node->m_left->accept(this);
         m_depth--;
     }
 
-    if (node->right != NULL)
+    if (node->m_right != NULL)
     {
         m_depth++;
-        node->right->accept(this);
+        node->m_right->accept(this);
         m_depth--;
     }
 

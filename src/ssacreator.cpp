@@ -253,9 +253,9 @@ return true;
 void Creator::visit(const AST::Assignment *node)
 {
     // evaluate RHS expression
-    if (node->right != 0)
+    if (node->m_exprNode != 0)
     {
-        node->right->accept(this);
+        node->m_exprNode->accept(this);
     }
 
     // assign to an output/register
@@ -328,7 +328,7 @@ void Creator::visit(const AST::IntegerConstant *node)
 
 void Creator::visit(const AST::PrecisionModifier *node)
 {
-    node->right->accept(this);
+    node->m_argNode->accept(this);
 
     if (m_opStack.size() < 1)
     {
@@ -363,9 +363,8 @@ void Creator::visit(const AST::Statements *node)
 
 void Creator::visit(const AST::Operation2 *node)
 {
-
-    node->left->accept(this);
-    node->right->accept(this);
+    node->m_left->accept(this);
+    node->m_right->accept(this);
 
     if (m_opStack.size() < 2)
     {
@@ -410,7 +409,7 @@ void Creator::visit(const AST::Operation2 *node)
 
 void Creator::visit(const AST::Operation1 *node)
 {
-    node->right->accept(this);
+    node->m_expr->accept(this);
 
     if (m_opStack.size() < 1)
     {
