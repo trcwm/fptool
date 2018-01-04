@@ -111,17 +111,7 @@ void AST2Graphviz::visit(const AST::PrecisionModifier *node)
     if (node == 0) return;
 
     int32_t thisNodeID = m_count;
-    //int32_t leftNodeID = -1;
     int32_t rightNodeID = -1;
-
-    /*
-    if (node->left != 0)
-    {
-        m_count++;
-        leftNodeID = m_count;
-        node->left->accept(this);
-    }
-    */
 
     if (node->right != 0)
     {
@@ -131,9 +121,9 @@ void AST2Graphviz::visit(const AST::PrecisionModifier *node)
     }
 
     m_os << thisNodeID << " [label=\"";
-    switch(node->type)
+    switch(node->m_nodeType)
     {
-    case ASTNode::NodeTruncate:
+    case AST::PrecisionModifier::NodeTruncate:
         m_os << "TRUNC Q(" << node->m_intBits << "," << node->m_fracBits << ")";
         break;
     default:
@@ -218,18 +208,18 @@ void AST2Graphviz::visit(const AST::Operation2 *node)
     }
 
     m_os << thisNodeID << " [label=\"";
-    switch(node->type)
+    switch(node->m_nodeType)
     {
-    case ASTNode::NodeAdd:
+    case AST::Operation2::NodeAdd:
         m_os << "+";
         break;
-    case ASTNode::NodeSub:
+    case AST::Operation2::NodeSub:
         m_os << "-";
         break;
-    case ASTNode::NodeMul:
+    case AST::Operation2::NodeMul:
         m_os << "*";
         break;
-    case ASTNode::NodeDiv:
+    case AST::Operation2::NodeDiv:
         m_os << "/";
         break;
     default:
@@ -274,9 +264,9 @@ void AST2Graphviz::visit(const AST::Operation1 *node)
     }
 
     m_os << thisNodeID << " [label=\"";
-    switch(node->type)
+    switch(node->m_nodeType)
     {
-    case ASTNode::NodeUnaryMinus:
+    case AST::Operation1::NodeUnaryMinus:
         m_os << "U-";
         break;
     default:

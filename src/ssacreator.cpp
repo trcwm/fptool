@@ -340,9 +340,9 @@ void Creator::visit(const AST::PrecisionModifier *node)
     SharedOpPtr arg1 = PopOperand();
     SSA::SharedOpPtr result;
     SSA::OperationSingle *statement;
-    switch(node->type)
+    switch(node->m_nodeType)
     {
-    case ASTNode::NodeTruncate:
+    case AST::PrecisionModifier::NodeTruncate:
         result = IntermediateOperand::createNewIntermediate();
         statement = new SSA::OpTruncate(arg1, result);
         m_ssa->addStatement(statement);
@@ -379,23 +379,23 @@ void Creator::visit(const AST::Operation2 *node)
 
     SSA::SharedOpPtr result;
     SSA::OperationDual *statement;
-    switch(node->type)
+    switch(node->m_nodeType)
     {
-    case ASTNode::NodeAdd:
+    case AST::Operation2::NodeAdd:
         result = IntermediateOperand::createNewIntermediate();
         statement = new SSA::OpAdd(arg1, arg2, result);
         m_ssa->addStatement(statement);
         m_ssa->addOperand(result);
         PushOperand(result);
         break;
-    case ASTNode::NodeSub:
+    case AST::Operation2::NodeSub:
         result = IntermediateOperand::createNewIntermediate();
         statement = new SSA::OpSub(arg1, arg2, result);
         m_ssa->addStatement(statement);
         m_ssa->addOperand(result);
         PushOperand(result);
         break;
-    case ASTNode::NodeMul:
+    case AST::Operation2::NodeMul:
         result = IntermediateOperand::createNewIntermediate();
         statement = new SSA::OpMul(arg1, arg2, result);
         m_ssa->addStatement(statement);
@@ -422,9 +422,9 @@ void Creator::visit(const AST::Operation1 *node)
     SharedOpPtr arg1 = PopOperand();
     SSA::SharedOpPtr result;
     SSA::OperationSingle *statement;
-    switch(node->type)
+    switch(node->m_nodeType)
     {
-    case ASTNode::NodeUnaryMinus:
+    case AST::Operation1::NodeUnaryMinus:
         result = IntermediateOperand::createNewIntermediate();
         statement = new SSA::OpNegate(arg1, result);
         m_ssa->addStatement(statement);

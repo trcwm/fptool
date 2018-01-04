@@ -302,7 +302,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
         return NULL;
     }
 
-    AST::PrecisionModifier *newNode = new AST::PrecisionModifier(ASTNode::NodeTruncate);
+    AST::PrecisionModifier *newNode = new AST::PrecisionModifier(AST::PrecisionModifier::NodeTruncate);
     newNode->m_intBits  = intbits;
     newNode->m_fracBits = fracbits;
     newNode->right = exprNode;
@@ -440,7 +440,7 @@ ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
     // supply the new head node to the next
     // acceptExprAccent function
 
-    AST::Operation2 *operationNode = new AST::Operation2(ASTNode::NodeSub);
+    AST::Operation2 *operationNode = new AST::Operation2(AST::Operation2::NodeSub);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
@@ -474,7 +474,7 @@ ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
     // supply the new head node to the next
     // acceptExprAccent function
 
-    AST::Operation2 *operationNode = new AST::Operation2(ASTNode::NodeAdd);
+    AST::Operation2 *operationNode = new AST::Operation2(AST::Operation2::NodeAdd);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
@@ -566,7 +566,7 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
     // supply the new head node to the next
     // acceptTermAccent function
 
-    AST::Operation2 *operationNode = new AST::Operation2(ASTNode::NodeMul);
+    AST::Operation2 *operationNode = new AST::Operation2(AST::Operation2::NodeMul);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
@@ -600,7 +600,7 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
     // supply the new head node to the next
     // acceptTermAccent function
 
-    AST::Operation2 *operationNode = new AST::Operation2(ASTNode::NodeDiv);
+    AST::Operation2 *operationNode = new AST::Operation2(AST::Operation2::NodeDiv);
     operationNode->left = leftNode;
     operationNode->right = rightNode;
 
@@ -748,7 +748,7 @@ ASTNode* Parser::acceptFactor3(state_t &s)
     }
 
     // unary minus node
-    AST::Operation1 *exprNode = new AST::Operation1(ASTNode::NodeUnaryMinus);
+    AST::Operation1 *exprNode = new AST::Operation1(AST::Operation1::NodeUnaryMinus);
     exprNode->left = 0;
     exprNode->right = factorNode;
 

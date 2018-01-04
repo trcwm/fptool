@@ -41,6 +41,7 @@ struct varInfo
 class ASTNode
 {
 public:
+#if 0
   enum node_t {NodeUnknown, NodeHead,
                NodeStatement,
                NodeAssign,
@@ -52,22 +53,19 @@ public:
                NodeInteger, NodeFloat,
                NodeTruncate
               };
+#endif
 
     /** create an AST node */
-    ASTNode(node_t nodeType = NodeUnknown)
+    ASTNode()
     {
         left = 0;
         right = 0;
-        type = nodeType;
     }
 
     virtual ~ASTNode() {}
 
     /** accept an AST visitor for iteration */
     virtual void accept(AST::VisitorBase *visitor) = 0;
-
-    node_t  type;   // the type of the node
-    //varInfo info;   // variable related information
 
     ASTNode *left;
     ASTNode *right;
@@ -81,7 +79,7 @@ namespace AST
 class Statements : public ::ASTNode
 {
 public:
-    Statements() : ASTNode(NodeStatement)
+    Statements()
     {
     }
 
@@ -100,7 +98,7 @@ public:
 class Declaration : public ::ASTNode
 {
 public:
-    Declaration(node_t nodeType) : ASTNode(nodeType)
+    Declaration()
     {
     }
 
@@ -111,7 +109,7 @@ public:
 class Identifier : public Declaration
 {
 public:
-    Identifier() : Declaration(NodeIdent)
+    Identifier()
     {
     }
 
@@ -127,7 +125,7 @@ public:
 class InputDeclaration : public Declaration
 {
 public:
-    InputDeclaration() : Declaration(NodeInput) {}
+    InputDeclaration() {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -143,7 +141,7 @@ public:
 class CSDDeclaration : public Declaration
 {
 public:
-    CSDDeclaration() : Declaration(NodeCSD) {}
+    CSDDeclaration() {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -161,7 +159,13 @@ public:
 class PrecisionModifier : public ::ASTNode
 {
 public:
-    PrecisionModifier(node_t nodeType) : ASTNode(nodeType) {}
+    enum node_t
+    {
+        NodeUndefined = 0,
+        NodeTruncate
+    };
+
+    PrecisionModifier(node_t nodeType) : m_nodeType(nodeType) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -169,6 +173,7 @@ public:
         visitor->visit(this);
     }
 
+    node_t  m_nodeType;
     int32_t m_fracBits;
     int32_t m_intBits;
 };
@@ -178,7 +183,7 @@ public:
 class Assignment : public ::ASTNode
 {
 public:
-    Assignment() : ASTNode(NodeAssign) {}
+    Assignment() {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -194,7 +199,7 @@ public:
 class IntegerConstant : public ::ASTNode
 {
 public:
-    IntegerConstant() : ASTNode(NodeInteger) {}
+    IntegerConstant() {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -209,26 +214,45 @@ public:
 class Operation2 : public ::ASTNode
 {
 public:
-    Operation2(node_t nodeType) : ASTNode(nodeType) {}
+    enum node_t
+    {
+        NodeUndefined = 0,
+        NodeAdd,
+        NodeSub,
+        NodeMul,
+        NodeDiv
+    };
+
+    Operation2(node_t nodeType) : m_nodeType(nodeType) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
     {
         visitor->visit(this);
     }
+
+    node_t m_nodeType;
 };
 
 /** unary functions */
 class Operation1 : public ::ASTNode
 {
 public:
-    Operation1(node_t nodeType) : ASTNode(nodeType) {}
+    enum node_t
+    {
+       NodeUndefined = 0,
+       NodeUnaryMinus
+    };
+
+    Operation1(node_t nodeType) : m_nodeType(nodeType) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
     {
         visitor->visit(this);
     }
+
+    node_t m_nodeType;
 };
 
 } // namespace

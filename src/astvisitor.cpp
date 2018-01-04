@@ -150,9 +150,9 @@ void AST::DumpVisitor::visit(const PrecisionModifier *node)
     }
 
     doIndent();
-    switch(node->type)
+    switch(node->m_nodeType)
     {
-    case ASTNode::NodeTruncate:
+    case PrecisionModifier::NodeTruncate:
         m_os << "Truncate to Q(" << node->m_intBits << "," << node->m_fracBits << ")\n";
         break;
     default:
@@ -191,18 +191,18 @@ void AST::DumpVisitor::visit(const Operation2 *node)
     }
 
     doIndent();
-    switch(node->type)
+    switch(node->m_nodeType)
     {
-    case ASTNode::NodeAdd:
+    case Operation2::NodeAdd:
         m_os << " + \n";
         break;
-    case ASTNode::NodeSub:
+    case Operation2::NodeSub:
         m_os << " - \n";
         break;
-    case ASTNode::NodeMul:
+    case Operation2::NodeMul:
         m_os << " * \n";
         break;
-    case ASTNode::NodeDiv:
+    case Operation2::NodeDiv:
         m_os << " / \n";
         break;
     default:
