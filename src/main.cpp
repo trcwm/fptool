@@ -17,6 +17,8 @@
 #include "parser.h"
 #include "ssa.h"
 #include "ssacreator.h"
+#include "ssaprint.h"
+
 //#include "ssaevaluator.h"
 #include "csd.h"
 //#include "pass_addsub.h"
@@ -142,10 +144,7 @@ int main(int argc, char *argv[])
             if (verbose)
             {
                 std::stringstream ss;
-                for(auto statement : ssa.m_statements)
-                {
-                    ss << statement->print() << "\n";
-                }
+                SSA::Printer::print(ssa, ss);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 #if 0

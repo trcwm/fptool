@@ -35,7 +35,6 @@ namespace AST
 class VisitorBase
 {
 public:
-    //virtual void visit(const ASTNode *node) = 0;
     virtual void visit(const Identifier *node) = 0;
     virtual void visit(const IntegerConstant *node) = 0;
     virtual void visit(const CSDDeclaration *node) = 0;

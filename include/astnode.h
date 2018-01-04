@@ -104,15 +104,6 @@ public:
     {
     }
 
-#if 0
-    /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
-    {
-        visitor->visit(this);
-    }
-#endif
-
-
     std::string m_identName;    ///< name of the variable or constant
 };
 

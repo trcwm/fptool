@@ -25,9 +25,8 @@
 namespace SSA
 {
 
-
-class OperationBase; // forward declaration
-
+class OperationBase;            // forward declaration
+class OperationVisitorBase;     // forward declaration
 
 // *****************************************
 // **********   OPERAND CLASSES   **********
@@ -67,6 +66,8 @@ static uint32_t gs_tempIdx = 0;
 class IntermediateOperand : public OperandBase
 {
 public:
+
+    /** create a new named intermediate operand */
     static std::shared_ptr<IntermediateOperand> createNewIntermediate()
     {
         std::shared_ptr<IntermediateOperand> obj = std::make_shared<IntermediateOperand>();
@@ -98,10 +99,8 @@ class OperationBase
 public:
     virtual ~OperationBase() {}
 
-    virtual std::string print() const
-    {
-        return std::string();
-    }
+    /** accept a visitor and call visitor->visit(this); */
+    virtual bool accept(OperationVisitorBase *visitor) = 0;
 };
 
 
@@ -142,13 +141,8 @@ public:
     {
     }
 
-    virtual std::string print() const override
-    {
-        return stringf("%s := ADD %s,%s", m_lhs->m_identName.c_str(),
-                       m_op1->m_identName.c_str(),
-                       m_op2->m_identName.c_str());
-    }
-
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
 };
 
 
@@ -160,12 +154,8 @@ public:
     {
     }
 
-    virtual std::string print() const override
-    {
-        return stringf("%s := SUB %s,%s", m_lhs->m_identName.c_str(),
-                       m_op1->m_identName.c_str(),
-                       m_op2->m_identName.c_str());
-    }
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
 };
 
 
@@ -177,12 +167,8 @@ public:
     {
     }
 
-    virtual std::string print() const override
-    {
-        return stringf("%s := MUL %s,%s", m_lhs->m_identName.c_str(),
-                       m_op1->m_identName.c_str(),
-                       m_op2->m_identName.c_str());
-    }
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
 };
 
 
@@ -194,11 +180,8 @@ public:
     {
     }
 
-    virtual std::string print() const override
-    {
-        return stringf("%s := SUB %s,%s", m_lhs->m_identName.c_str(),
-                       m_op->m_identName.c_str());
-    }
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
 };
 
 class OpTruncate : public OperationSingle
@@ -209,11 +192,8 @@ public:
     {
     }
 
-    virtual std::string print() const override
-    {
-        return stringf("%s := TRUNC(%s,?,?)", m_lhs->m_identName.c_str(),
-                       m_op->m_identName.c_str());
-    }
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
 };
 
 class OpAssign : public OperationSingle
@@ -224,12 +204,26 @@ public:
     {
     }
 
-    virtual std::string print() const override
-    {
-        return stringf("%s := %s", m_lhs->m_identName.c_str(), m_op->m_identName.c_str());
-    }
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
 };
 
+// *****************************************
+// **********  SSA VISITOR CLASS  **********
+// *****************************************
+
+/** Operation visitor base class */
+class OperationVisitorBase
+{
+public:
+    virtual bool visit(const OpAssign *node) = 0;
+    virtual bool visit(const OpMul *node) = 0;
+    virtual bool visit(const OpAdd *node) = 0;
+    virtual bool visit(const OpSub *node) = 0;
+    virtual bool visit(const OpTruncate *node) = 0;
+    virtual bool visit(const OperationSingle *node) = 0;
+    virtual bool visit(const OperationDual *node) = 0;
+};
 
 // *****************************************
 // **********  SSA PROGRAM CLASS  **********
@@ -239,11 +233,13 @@ public:
 class Program
 {
 public:
+    /** convenience function to add a new statement to the list */
     void addStatement(OperationBase *statement)
     {
         m_statements.push_back(statement);
     }
 
+    /** convenience function to add a named operand to the operand list */
     void addOperand(SharedOpPtr operand)
     {
         m_operands.push_back(operand);
