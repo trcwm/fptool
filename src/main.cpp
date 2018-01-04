@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 #include <iomanip>
 
 #include "logging.h"
@@ -15,14 +16,14 @@
 #include "tokenizer.h"
 #include "parser.h"
 #include "ssa.h"
-//#include "ssacreator.h"
-#include "ssaevaluator.h"
+#include "ssacreator.h"
+//#include "ssaevaluator.h"
 #include "csd.h"
-#include "pass_addsub.h"
-#include "pass_truncate.h"
-#include "pass_csdmul.h"
-#include "pass_clean.h"
-#include "vhdlcodegen.h"
+//#include "pass_addsub.h"
+//#include "pass_truncate.h"
+//#include "pass_csdmul.h"
+//#include "pass_clean.h"
+//#include "vhdlcodegen.h"
 #include "astgraphviz.h"
 
 #define __FPTOOLVERSION__ "0.1a"
@@ -131,9 +132,8 @@ int main(int argc, char *argv[])
                 graphvizStream.close();
             }
 
-#if 0
             SSA::Creator ssaCreator;
-            SSAObject ssa;
+            SSA::Program ssa;
             if (!ssaCreator.process(statements, ssa))
             {
                 doLog(LOG_ERROR, "Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
@@ -142,10 +142,13 @@ int main(int argc, char *argv[])
             if (verbose)
             {
                 std::stringstream ss;
-                ssa.dumpStatements(ss);
+                for(auto statement : ssa.m_statements)
+                {
+                    ss << statement->print() << "\n";
+                }
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
-
+#if 0
             SSAObject referenceSSA = ssa;
 
             SSAEvaluator eval;

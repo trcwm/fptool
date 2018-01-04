@@ -12,300 +12,247 @@
 #ifndef ssa_h
 #define ssa_h
 
-#include <string>
-#include <stdint.h>
 #include <list>
-#include <map>
+#include <string>
+#include <memory>   // shared_ptr
 #include <iostream>
-#include "parser.h"
+
+#include "utils.h"
+#include "csd.h"
 #include "fplib.h"
 
-typedef size_t operandIndex;
-
-/** Operand type for SSA */
-struct operand_t
+/** single static assignment namespace */
+namespace SSA
 {
-    enum type_t
-    {
-        TypeInteger,        // integer constant
-        TypeCSD,            // canonical signed digit type
-        TypeInput,          // pre-defined input variable
-        TypeIntermediate,   // intermediate result var
-        TypeOutput,         // output variable (cannot be read)
-        TypeRemoved         // type has been removed
-    };
-
-    type_t  type;
-    varInfo info;           // variable information (copied from Parser)
-};
 
 
-/** Single static assignment node
-
-    Note: nodes can be synthesizable or non-synthesizable.
-    For instance, when we have and Add node:
-
-    var3 = var2 + var1
-
-    ,where var1 and var2 have different Q() sizes,
-    the operation is not synthesizable in that
-    a VHDL or Verilog synthesis tool will not compile
-    or produce erroneous result if the fractional
-    parts of var1 and var2 are not equalized in length.
-    Furthermore, to avoid overflow, an additional bit
-    is needed at the MSB end.
-
-    TODO: make a function to returns 'true' if an SSA node is
-    synthesizable.
-
-*/
-struct SSANode
-{
-    enum operation_t
-    {
-        OP_Undefined,   // Node is undefined
-        OP_Add,         // Add two variables lhs = var1 + var2
-        OP_Sub,         // Subtract two variables lhs = var1 - var2
-        OP_Mul,         // Multiply two variables lhs = var1 * var2
-        //OP_CSDMul,      // Multiply one variable by CSD var3 = csd * var1
-        OP_Div,         // Divide two variables lhs = var1 / var2
-        OP_Negate,      // Sign reverse
-        OP_Assign,      // Assign to an output/register variable
-        OP_Reinterpret, // Reinterpret Q(n1,m2) to Q(n2,m2) where n1-m2 = n2-m2
-        OP_Saturate,    // Saturate lhs = Saturate(var1, bits, fbits)
-        OP_Truncate,    // Truncate lhs = Truncate(var1, bits, fbits)
-        OP_RemoveLSBs,  // Remove bits from the LSB side
-        OP_ExtendLSBs,  // Add bits at the LSB side (zero bits)
-        OP_RemoveMSBs,  // Remove bits at the MSB side
-        OP_ExtendMSBs   // Add bits at the MSB side (sign extend)
-    };
-
-    /** constructor to initialize things to safe defaults */
-    SSANode() : operation(OP_Undefined), op1Idx(0),op2Idx(0),lhsIdx(0),bits(0),fbits(0)
-    {
-    }
-
-    operation_t operation;
-    size_t      op1Idx;     // Index of operand 1
-    size_t      op2Idx;     // Index of operand 2
-    size_t      lhsIdx;     // Index of operand 3 (lhs)
-    int32_t     bits;       // remove/extend/saturate/truncate (integer) bits
-    int32_t     fbits;      // saturate/truncate (fractional) bits
-};
-
-typedef std::list<SSANode> ssaList_t;
-typedef std::vector<operand_t> ssaOperands_t;
-typedef std::list<SSANode>::iterator ssa_iterator;
+class OperationBase; // forward declaration
 
 
-/** SSA object holds variables and a list of SSA node describing operations */
-class SSAObject
+// *****************************************
+// **********   OPERAND CLASSES   **********
+// *****************************************
+
+/** SSA base class for operands */
+class OperandBase
 {
 public:
-    SSAObject() {}
-    virtual ~SSAObject() {}
+    virtual ~OperandBase() {}
 
-    /** create an Add node tmp = s1 + s2, returning the index
-        of the new temp variable.
-        s1 and s2 must be either TypeInput or TypeIntermediate.
-    */
-    operandIndex createAddNode(ssa_iterator where, operandIndex s1, operandIndex s2);
-
-    /** create an Sub node tmp = s1 - s2, returning the index
-        of the new temp variable.
-        s1 and s2 must be either TypeInput or TypeIntermediate.
-    */
-    operandIndex createSubNode(ssa_iterator where, operandIndex s1, operandIndex s2);
-
-    /** create a Mul node tmp = s1*s2, returning the index
-         of the new temp variable.
-         s1 and s2 must either be TypeInput, TypeIntermediate or TypeCSD.
-    */
-    operandIndex createMulNode(ssa_iterator where, operandIndex s1, operandIndex s2);
-
-    /** create a Div node tmp = s1/s2, returning the index
-         of the new temp variable.
-         s1 and s2 must either be TypeInput, TypeIntermediate.
-    */
-    operandIndex createDivNode(ssa_iterator where, operandIndex s1, operandIndex s2);
-
-    /** create a negate node, returning the index
-        of the new temp variable.
-        s1 and s2 must either be TypeInput, TypeIntermediate.
-    */
-    operandIndex createNegateNode(ssa_iterator where, operandIndex s1);
-
-    /** create an assignment node.
-        output must be TypeOutput, s1 must either be TypeInput, TypeIntermediate.
-    */
-    void createAssignNode(ssa_iterator where, operandIndex output, operandIndex s1);
-
-    /** create an extendLSB node.
-        s1 must either be TypeInput, TypeIntermediate.
-    */
-    operandIndex createExtendLSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
-
-    /** create an removeLSB node.
-        s1 must either be TypeInput, TypeIntermediate.
-    */
-    operandIndex createRemoveLSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
-
-    /** create an extendMSB node.
-        s1 must either be TypeInput, TypeIntermediate.
-    */
-    operandIndex createExtendMSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
-
-    /** create an removeMSB node.
-        s1 must either be TypeInput, TypeIntermediate.
-    */
-    operandIndex createRemoveMSBNode(ssa_iterator where, operandIndex s1, int32_t bits);
-
-    /** truncate the number of bits of the s1 expression node */
-    operandIndex createTruncateNode(ssa_iterator where, operandIndex s1, int32_t ibits, int32_t fbits);
-
-    /** create a reinterpret node.
-        s1 must either be TypeInput, TypeIntermediate.
-    */
-    operandIndex createReinterpretNode(ssa_iterator where, operandIndex s1, int32_t intbits, int32_t fracbits);
-
-
-
-
-    /** create a new temporary operand and return its index */
-    operandIndex createNewTemporary(int32_t intbits, int32_t fracbits);
-
-    /** add an operand and check if one already exists with the same name */
-    operandIndex addOperand(operand_t::type_t type, const varInfo &info);
-
-    /** get an operand index by its name. returns true if found, false otherwise. */
-    bool getOperandIndexByName(const std::string &name, operandIndex &index);
-
-    /** get a copy of an operand at a certain index */
-    operand_t getOperand(operandIndex index) const
-    {
-        if (index >= m_operands.size())
-        {
-            throw std::runtime_error("SSAObject::getOperands index out of bounds");
-        }
-        return m_operands[index];
-    }
-
-    /** mark an operand as removed */
-    void markRemoved(operandIndex index)
-    {
-        if (index >= m_operands.size())
-        {
-            throw std::runtime_error("SSAObject::markRemoved index out of bounds");
-        }
-        m_operands[index].type = operand_t::TypeRemoved;
-    }
-
-    /** remove a node, return an iterator to the next item */
-    ssa_iterator removeNode(ssa_iterator where)
-    {
-        return m_list.erase(where);
-    }
-
-    /** return an iterator pointing to the beginning of the operation list */
-    ssa_iterator begin()
-    {
-        return m_list.begin();
-    }
-
-    /** return a const iterator pointing to the beginning of the operation list */
-    std::list<SSANode>::const_iterator begin() const
-    {
-        return m_list.begin();
-    }
-
-    /** return an iterator pointing to the end of the operation list */
-    ssa_iterator end()
-    {
-        return m_list.end();
-    }
-
-    /** return a const iterator pointing to the end of the operation list */
-    std::list<SSANode>::const_iterator end() const
-    {
-        return m_list.end();
-    }
-
-    /** return an iterator pointing to the beginning of the operands list */
-    std::vector<operand_t>::iterator beginOperands()
-    {
-        return m_operands.begin();
-    }
-
-    /** return an iterator pointing to the end of the operands list */
-    std::vector<operand_t>::iterator endOperands()
-    {
-        return m_operands.end();
-    }
-
-    std::vector<operand_t>::const_iterator beginOperands() const
-    {
-        return m_operands.begin();
-    }
-
-    std::vector<operand_t>::const_iterator endOperands() const
-    {
-        return m_operands.end();
-    }
-
-    /** dump statements in human readable form */
-    void dumpStatements(std::ostream &stream);
+    int32_t     m_intBits;
+    int32_t     m_fracBits;
+    std::string m_identName;
 
 protected:
-
-    /** check for the existance of an identifier */
-    bool existsIdent(const std::string &name);
-
-    ssaList_t       m_list;
-    ssaOperands_t   m_operands;
+    OperandBase()
+    {
+    }
 };
 
 
+/** SSA operand that represents an input */
+class InputOperand : public OperandBase
+{
+};
 
 
-#if 0
-/** Create a SSA intermediate language representation from
-    Abstract Syntax Tree */
-class SSACreator
+/** SSA operand that represents an output */
+class OutputOperand : public OperandBase
+{
+};
+
+static uint32_t gs_tempIdx = 0;
+
+/** SSA operand that represents an intermediate variable */
+class IntermediateOperand : public OperandBase
 {
 public:
-    SSACreator() {}
-
-    /** Process a list of AST statements and produce a list of SSA statements,
-        and a list of variables/operands.
-        Returns false if an error occurred.
-    */
-    bool process(const AST::Statements &statements, SSAObject &ssa);
-
-    /** Get a human readable version of the error */
-    std::string getLastError() const
+    static std::shared_ptr<IntermediateOperand> createNewIntermediate()
     {
-        return m_lastError;
+        std::shared_ptr<IntermediateOperand> obj = std::make_shared<IntermediateOperand>();
+        obj->m_identName = stringf("_TMP%d", gs_tempIdx++);
+        return obj;
     }
 
-protected:
-    bool executeASTNode(ASTNode *node, SSAObject &ssa);
-
-    /** determine the Q(n,m) wordlength of a variable */
-    void determineWordlength(const operand_t &var, int32_t &intBits, int32_t &fracBits);
-
-    /** emit an error in human readable form */
-    void error(const std::string &errorstr)
-    {
-        std::cout << errorstr << std::endl;
-        m_lastError = errorstr;
-    }
-
-    //const statements_t  *m_statements;
-
-    std::string         m_lastError;
-    std::vector<uint32_t> m_opStack;
 };
-#endif
 
+
+
+/** SSA operand that represents an input */
+class CSDOperand : public OperandBase
+{
+public:
+    csd_t   m_csd;
+};
+
+
+typedef std::shared_ptr<OperandBase> SharedOpPtr;
+
+// *****************************************
+// **********  OPERATION CLASSES  **********
+// *****************************************
+
+/** SSA operation base class */
+class OperationBase
+{
+public:
+    virtual ~OperationBase() {}
+
+    virtual std::string print() const
+    {
+        return std::string();
+    }
+};
+
+
+/** Operation with two arguments */
+class OperationDual : public OperationBase
+{
+public:
+    OperationDual(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
+        : m_lhs(result), m_op1(op1), m_op2(op2)
+    {
+    }
+
+    SharedOpPtr m_lhs;
+    SharedOpPtr m_op1;
+    SharedOpPtr m_op2;
+};
+
+
+/** Operation with one argument */
+class OperationSingle : public OperationBase
+{
+public:
+    OperationSingle(SharedOpPtr op, SharedOpPtr lhs) :
+        m_op(op), m_lhs(lhs)
+    {
+    }
+
+    SharedOpPtr m_lhs;
+    SharedOpPtr m_op;
+};
+
+
+class OpAdd : public OperationDual
+{
+public:
+    OpAdd(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
+        : OperationDual(op1,op2, result)
+    {
+    }
+
+    virtual std::string print() const override
+    {
+        return stringf("%s := ADD %s,%s", m_lhs->m_identName.c_str(),
+                       m_op1->m_identName.c_str(),
+                       m_op2->m_identName.c_str());
+    }
+
+};
+
+
+class OpSub : public OperationDual
+{
+public:
+    OpSub(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
+        : OperationDual(op1,op2, result)
+    {
+    }
+
+    virtual std::string print() const override
+    {
+        return stringf("%s := SUB %s,%s", m_lhs->m_identName.c_str(),
+                       m_op1->m_identName.c_str(),
+                       m_op2->m_identName.c_str());
+    }
+};
+
+
+class OpMul : public OperationDual
+{
+public:
+    OpMul(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
+        : OperationDual(op1,op2, result)
+    {
+    }
+
+    virtual std::string print() const override
+    {
+        return stringf("%s := MUL %s,%s", m_lhs->m_identName.c_str(),
+                       m_op1->m_identName.c_str(),
+                       m_op2->m_identName.c_str());
+    }
+};
+
+
+class OpNegate : public OperationSingle
+{
+public:
+    OpNegate(SharedOpPtr op, SharedOpPtr result)
+        : OperationSingle(op, result)
+    {
+    }
+
+    virtual std::string print() const override
+    {
+        return stringf("%s := SUB %s,%s", m_lhs->m_identName.c_str(),
+                       m_op->m_identName.c_str());
+    }
+};
+
+class OpTruncate : public OperationSingle
+{
+public:
+    OpTruncate(SharedOpPtr op, SharedOpPtr result)
+        : OperationSingle(op, result)
+    {
+    }
+
+    virtual std::string print() const override
+    {
+        return stringf("%s := TRUNC(%s,?,?)", m_lhs->m_identName.c_str(),
+                       m_op->m_identName.c_str());
+    }
+};
+
+class OpAssign : public OperationSingle
+{
+public:
+    OpAssign(SharedOpPtr op, SharedOpPtr output)
+        : OperationSingle(op, output)
+    {
+    }
+
+    virtual std::string print() const override
+    {
+        return stringf("%s := %s", m_lhs->m_identName.c_str(), m_op->m_identName.c_str());
+    }
+};
+
+
+// *****************************************
+// **********  SSA PROGRAM CLASS  **********
+// *****************************************
+
+/** Collection of SSA statements */
+class Program
+{
+public:
+    void addStatement(OperationBase *statement)
+    {
+        m_statements.push_back(statement);
+    }
+
+    void addOperand(SharedOpPtr operand)
+    {
+        m_operands.push_back(operand);
+    }
+
+    std::list<OperationBase*> m_statements;
+    std::list<SharedOpPtr>    m_operands;
+};
+
+} // namespace
 
 #endif
