@@ -6,92 +6,127 @@
 
 */
 
+#include <memory>
+#include <iostream>
+#include <sstream>
 #include "logging.h"
 #include "csd.h"
+#include "ssaprint.h"
 #include "pass_csdmul.h"
 
+using namespace SSA;
 
-void PassCSDMul::execute(SSAObject &ssa)
+
+bool PassCSDMul::execute(Program &ssa)
 {
     doLog(LOG_INFO, "-----------------------\n");
     doLog(LOG_INFO, "  Running CSDMul pass\n");
     doLog(LOG_INFO, "-----------------------\n");
 
-    auto iter = ssa.begin();
+    PassCSDMul pass(ssa);
 
     // look for CSD * variable, variable * CSD
     // or CSD * CSD
-    while(iter != ssa.end())
+    for(auto operation : ssa.m_statements)
     {
-        SSANode::operation_t operation = iter->operation;
-        if (operation == SSANode::OP_Mul)
+        if (!operation->accept(&pass))
         {
-            // check both operands for CSD
-            operand_t op1 = ssa.getOperand(iter->op1Idx);
-            operand_t op2 = ssa.getOperand(iter->op2Idx);
-
-            if ((op1.type == operand_t::TypeCSD) && (op2.type == operand_t::TypeCSD))
-            {
-                doLog(LOG_WARN, "Both arguments are of type CSD (%s) (%s)\n", op1.info.txt.c_str(), op2.info.txt.c_str());
-                // both operands are CSD!
-                // TODO: think of a better strategy
-                // FIXME: produce a warning
-                // for now, we bail with an error
-                throw std::runtime_error("PassCSDMul: both operands are CSD -- unsupported");
-            }
-
-            doLog(LOG_DEBUG, "Processing (%s) and (%s) for CSD expansion\n", op1.info.txt.c_str(), op2.info.txt.c_str());
-
-            // check if operand 2 is the CSD
-            // if so, swap operands as this
-            // simplifies the code ahead
-            operandIndex varIdx = iter->op2Idx;
-            if (op2.type == operand_t::TypeCSD)
-            {
-                varIdx = iter->op1Idx;
-                std::swap(op1, op2);
-            }
-
-
-            csd_t my_csd;
-            if (op1.type == operand_t::TypeCSD)
-            {                
-                iter = shiftAndAdd(ssa, iter, op1.info.csd, varIdx, iter->lhsIdx);
-
-                // the new iter will now point to the next statement:
-                // we must use continue here to avoid calling the iter++ later on
-                // as this will skip the statement directly following this one.
-                continue;
-            }
-
-            // TODO: check if the final result matches the width of the
-            // destination. If no match, there was a problem
-            // in determining the wordlength earlier in the
-            // process.
+            return false;
         }
-        iter++;
+    }
+
+    ssa.applyPatches(); // integrate the generate OpPatchBlock instructions.
+    return true;
+}
+
+void PassCSDMul::patchNode(const SSA::OperationBase *node, SSA::OpPatchBlock *patch)
+{
+    auto iter = std::find(m_ssa->m_statements.begin(), m_ssa->m_statements.end(), node);
+    if (iter != m_ssa->m_statements.end())
+    {
+        *iter = patch;
+
+        //FIXME: we should get rid of the node
+        //       but we can't do that safely here as there
+        //       could be iterators accessing it.
+        //       perhaps we need a shared pointer?
+        //       for now, we'll just let it leak.
+        //delete node;
     }
 }
 
-ssa_iterator PassCSDMul::shiftAndAdd(SSAObject &ssa,
-                                     ssa_iterator ssa_iter,
-                                     const csd_t &csd,
-                                     uint32_t x_idx,
-                                     uint32_t y_idx)
+bool PassCSDMul::visit(const OpMul *node)
+{
+    // we end up here for each OpMul node in the SSA program
+    if (node->m_op1->isCSD() && node->m_op2->isCSD())
+    {
+        doLog(LOG_WARN, "Both arguments are of type CSD (%s) (%s)\n",
+              node->m_op1->m_identName.c_str(),
+              node->m_op2->m_identName.c_str());
+
+        // both operands are CSD!
+        // TODO: think of a better strategy
+        // FIXME: produce a warning
+        // for now, we bail with an error
+        throw std::runtime_error("PassCSDMul: both operands are CSD -- unsupported");
+    }
+    if (node->m_op1->isCSD())
+    {
+        SSA::CSDOperand *csdOperand = dynamic_cast<SSA::CSDOperand*>(node->m_op1.get());
+        if (csdOperand == NULL)
+        {
+            doLog(LOG_ERROR, "node is not of type CSDOperand!\n");
+            return false;
+        }
+
+        doLog(LOG_INFO, "Expanding CSD %s\n", node->m_op1->m_identName.c_str());
+        OpPatchBlock *patch = new OpPatchBlock(node);
+        std::list<SharedOpPtr> operands;
+        expandCSD(csdOperand->m_csd, node->m_op2, node->m_lhs, patch, operands);
+        patchNode(node, patch); // replace the MUL node.
+    }
+    else if (node->m_op2->isCSD())
+    {
+        SSA::CSDOperand *csdOperand = dynamic_cast<SSA::CSDOperand*>(node->m_op2.get());
+        if (csdOperand == NULL)
+        {
+            doLog(LOG_ERROR, "node is not of type CSDOperand!\n");
+            return false;
+        }
+
+        doLog(LOG_INFO, "Expanding CSD %s\n", node->m_op2->m_identName.c_str());
+        OpPatchBlock *patch = new OpPatchBlock(node);
+        std::list<SharedOpPtr> operands;
+        expandCSD(csdOperand->m_csd, node->m_op1, node->m_lhs, patch, operands);
+        patchNode(node, patch); // replace the MUL node.
+    }
+    else
+    {
+        return true;    // no CSD operands found -> nothing to do.
+    }
+
+    return true;
+}
+
+void PassCSDMul::expandCSD(const csd_t &csd,
+                           const SharedOpPtr input,
+                           const SharedOpPtr output,
+                           SSA::OpPatchBlock *patch,
+                           std::list<SharedOpPtr> &operands)
 {
     // the procedure is as follows:
     //
-    // y = c*x
+    // y = csd*input
     //
     // 1) create the first shift variable
     //    this variable is nothing more
     //    than a re-interpretation of the
-    //    input variable 'x': only the Q(n,m)
+    //    input variable: only the Q(n,m)
     //    changes to Q(n+shift,m+shift)
     //
     //    note that the shift is negative
     //    for multiplication with a fractional
-    //    digit of 'c'.
+    //    digit of 'csd'.
     //
     // 2) create the second shift variable
     //    by the same procedure. Now, we
@@ -108,65 +143,72 @@ ssa_iterator PassCSDMul::shiftAndAdd(SSAObject &ssa,
     // 4) goto 2 while there are still
     //    digits that need processing.
 
-    if (csd.digits.size() < 1)
-    {
-        throw std::runtime_error("PassCSDMul: can't expand a CSD without digits!");
-    }
-
-    // remove the current assigment as we're replacing it.
-    // the iterator now points to the next (unrelated)
-    // operation. We must insert new nodes before this
-    // operation, which is exactly what the 'create'
-    // functions do. :)
-    ssa_iter = ssa.removeNode(ssa_iter);
-
-    // note: the assumption is
-    // that var1 the CSD 'c' and
-    // var2 is 'x'.
+    // If the CSD is negative
+    // make it positive and insert a negation node
+    // at the output, which then can be absorbed
+    // into an addition or subtraction in later
+    // optimization passes.
 
     // get the digit with the smallest
     // power.
-    int32_t idx = static_cast<int32_t>(csd.digits.size()-1);
-    int32_t shift = csd.digits[idx].power;
+    auto digitIter = csd.digits.rbegin();   // start at the last digit (smallest power)
+    if (digitIter == csd.digits.rend())
+    {
+        // CSD has no digits!
+        // FIXME: change handling with error() function
+        //        and log support
+        throw std::runtime_error("CSD has no digits!");
+        return;
+    }
+
+    int32_t shift = digitIter->power;
 
     // create first shifted version of
-    // x and insert it into the operand
-    // list. The assign the value to it.
-
-    // FIXME: what if the first digit is negative?
-    operand_t x = ssa.getOperand(x_idx);
-    operandIndex t1 = ssa.createReinterpretNode(ssa_iter, x_idx, x.info.intBits+shift, x.info.fracBits-shift);
-
-    // check if the first digit is negative
-    // if so, we need to negate it first.
-    //
-    // FIXME: we need to add protection against overflows here
-    // as negating the most negative number cannot be
-    // represented as a positive number in 2's complement
-    // arithmetic!
-    if (csd.digits[idx].sign < 0)
-    {
-        t1 = ssa.createNegateNode(ssa_iter, t1);
-    }
+    // input and insert it into the operand
+    // list.
+    SharedOpPtr result = IntermediateOperand::createNewIntermediate();
+    SSA::OpReinterpret *reinterpret = new SSA::OpReinterpret(input,
+                                                             result,
+                                                             input->m_intBits+shift,
+                                                             input->m_fracBits-shift);
+    patch->m_instructions.push_back(reinterpret);
+    operands.push_back(result);
+    digitIter++;
 
     // while there are digits in CSD
     // keep on adding new terms
-    idx--;
-    while(idx >= 0)
+    SharedOpPtr t1 = result;
+    while(digitIter != csd.digits.rend())
     {
         // create new term
-        shift = csd.digits[idx].power;
-        uint32_t t2 = ssa.createReinterpretNode(ssa_iter, x_idx, x.info.intBits+shift, x.info.fracBits-shift);
+        shift = digitIter->power;
+
+        SharedOpPtr t2 = IntermediateOperand::createNewIntermediate();
+        reinterpret = new SSA::OpReinterpret(input,
+                                             t2,
+                                             input->m_intBits+shift,
+                                             input->m_fracBits-shift);
+        operands.push_back(t2);
+        patch->m_instructions.push_back(reinterpret);
 
         // add the terms
-        if (csd.digits[idx].sign > 0)
-            t1 = ssa.createAddNode(ssa_iter, t1, t2);
+        result = IntermediateOperand::createNewIntermediate();
+        operands.push_back(result);
+        if (digitIter->sign > 0)
+        {
+            SSA::OpAdd *adder = new SSA::OpAdd(t1,t2,result);
+            patch->m_instructions.push_back(adder);
+        }
         else
-            t1 = ssa.createSubNode(ssa_iter, t1, t2);
-
-        idx--;
+        {
+            SSA::OpSub *subber = new SSA::OpSub(t1,t2,result);
+            patch->m_instructions.push_back(subber);
+        }
+        t1 = result;
+        digitIter++;
     }
 
+#if 0
     // sanity check: the output size and temporary
     // variable t1 must match!
     operand_t outputOp = ssa.getOperand(y_idx);
@@ -181,12 +223,9 @@ ssa_iterator PassCSDMul::shiftAndAdd(SSAObject &ssa,
         //       as a work-around we insert a truncate node
         t1 = ssa.createTruncateNode(ssa_iter, t1, outputOp.info.intBits, outputOp.info.fracBits);
     }
+#endif
 
     // make the final assignment
-    ssa.createAssignNode(ssa_iter, y_idx, t1);
-
-
-    return ssa_iter;
+    SSA::OpAssign *assign = new SSA::OpAssign(result, output);
+    patch->m_instructions.push_back(assign);
 }
-
-

@@ -145,11 +145,11 @@ void AST2Graphviz::visit(const AST::Assignment *node)
     int32_t thisNodeID = m_count;
     int32_t exprNodeID = -1;
 
-    if (node->m_exprNode != 0)
+    if (node->m_expr != 0)
     {
         m_count++;
         exprNodeID = m_count;
-        node->m_exprNode->accept(this);
+        node->m_expr->accept(this);
     }
 
     m_os << thisNodeID << " [label=\"";

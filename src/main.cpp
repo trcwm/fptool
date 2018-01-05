@@ -21,9 +21,9 @@
 
 //#include "ssaevaluator.h"
 #include "csd.h"
-//#include "pass_addsub.h"
+#include "pass_addsub.h"
 //#include "pass_truncate.h"
-//#include "pass_csdmul.h"
+#include "pass_csdmul.h"
 //#include "pass_clean.h"
 //#include "vhdlcodegen.h"
 #include "astgraphviz.h"
@@ -192,21 +192,21 @@ int main(int argc, char *argv[])
                 iter++;
                 opIndex++;
             }
+#endif
 
             // ------------------------------------------------------------
             // -- CSD PASS
             // ------------------------------------------------------------
-            PassCSDMul csdmul;
-            csdmul.process(ssa);
+            SSA::PassCSDMul::execute(ssa);
 
             if (verbose)
             {
                 std::stringstream ss;
-                ssa.dumpStatements(ss);
+                SSA::Printer::print(ssa, ss);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
-
+#if 0
             SSAEvaluator eval2;
             // set all inputs for evaluation
             iter = ssa.beginOperands();
@@ -257,20 +257,21 @@ int main(int argc, char *argv[])
                 doLog(LOG_ERROR, "Fuzzer reported an error!\n");
                 return 1;
             }
+#endif
+
 
             // ------------------------------------------------------------
             // -- ADDSUB PASS
             // ------------------------------------------------------------
-            PassAddSub  addsub;
-            addsub.process(ssa);
+            SSA::PassAddSub::execute(ssa);
 
             if (verbose)
             {
                 std::stringstream ss;
-                ssa.dumpStatements(ss);
+                SSA::Printer::print(ssa, ss);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
-
+#if 0
             // ------------------------------------------------------------
             // -- TRUNCATE PASS
             // ------------------------------------------------------------

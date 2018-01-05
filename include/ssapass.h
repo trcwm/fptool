@@ -14,21 +14,26 @@
 #include <sstream>
 #include "ssa.h"
 
+namespace SSA
+{
+
 /** Generic compiler pass interface that processes an SSA tree.
     Errors should be handled through std::runtime_error exceptions.
 */
-class SSAPass
+class TransformPass
 {
 public:
-    void process(SSAObject &ssa)
+    void process(Program &ssa)
     {
         execute(ssa);
     }
 
 protected:
-    virtual void execute(SSAObject &ssa) = 0;
+    virtual void execute(Program &ssa) = 0;
 
 };
+
+} // namespace
 
 #endif
 

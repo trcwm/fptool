@@ -348,7 +348,7 @@ ASTNode* Parser::acceptAssignment(state_t &s)
 
     AST::Assignment *newNode = new AST::Assignment();
     newNode->m_identName = identifier;
-    newNode->m_exprNode = exprNode;
+    newNode->m_expr = exprNode;
 
     return newNode;
 }

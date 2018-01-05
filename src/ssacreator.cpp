@@ -253,9 +253,9 @@ return true;
 void Creator::visit(const AST::Assignment *node)
 {
     // evaluate RHS expression
-    if (node->m_exprNode != 0)
+    if (node->m_expr != 0)
     {
-        node->m_exprNode->accept(this);
+        node->m_expr->accept(this);
     }
 
     // assign to an output/register
@@ -344,7 +344,9 @@ void Creator::visit(const AST::PrecisionModifier *node)
     {
     case AST::PrecisionModifier::NodeTruncate:
         result = IntermediateOperand::createNewIntermediate();
-        statement = new SSA::OpTruncate(arg1, result);
+        statement = new SSA::OpTruncate(arg1, result,
+                                        node->m_intBits,
+                                        node->m_fracBits);
         m_ssa->addStatement(statement);
         m_ssa->addOperand(result);
         PushOperand(result);

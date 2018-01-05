@@ -20,10 +20,6 @@
 #include "tokenizer.h"
 #include "astnode.h"
 
-typedef std::shared_ptr<ASTNode> ASTNodePtr;
-
-//typedef std::vector<ASTNode*> statements_t;
-
 /** Parser to translate token stream from tokenizer/lexer to operation stack. */
 class Parser
 {

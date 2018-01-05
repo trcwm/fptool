@@ -40,7 +40,8 @@ bool SSA::Printer::visit(const OpMul *node)
 bool SSA::Printer::visit(const OpTruncate *node)
 {
     m_s << node->m_lhs->m_identName.c_str() << " := TRUNC(" << node->m_op->m_identName.c_str();
-    m_s << ",?,?)\n";
+    m_s << "," << node->m_intBits;
+    m_s << "," << node->m_fracBits << ")\n";
     return true;
 }
 
@@ -49,6 +50,14 @@ bool SSA::Printer::visit(const OpAssign *node)
 {
     m_s << node->m_lhs->m_identName.c_str() << " := " << node->m_op->m_identName.c_str();
     m_s << "\n";
+    return true;
+}
+
+bool SSA::Printer::visit(const OpReinterpret *node)
+{
+    m_s << node->m_lhs->m_identName.c_str() << " := REINTERPRET(" << node->m_op->m_identName.c_str();
+    m_s << "," << node->m_intBits;
+    m_s << "," << node->m_fracBits << ")\n";
     return true;
 }
 
@@ -64,4 +73,50 @@ bool SSA::Printer::visit(const OperationDual *node)
     // we should never see these nodes as they meant to
     // be base classes.
     return false;
+}
+
+bool SSA::Printer::visit(const OpPatchBlock *node)
+{
+    // special patch node that holds
+    // additional instructions that need
+    // to be patched/integrated into the
+    // top-level instruction stream
+    m_s << "** PATCH BLOCK BEGIN **\n";
+    for(auto smnt : node->m_instructions)
+    {
+        if (!smnt->accept(this))
+        {
+            return false;
+        }
+    }
+    m_s << "** PATCH BLOCK END **\n";
+    return true;
+}
+
+bool SSA::Printer::visit(const OpExtendLSBs *node)
+{
+    m_s << node->m_lhs->m_identName.c_str() << " := EXTENDLSBS(" << node->m_op->m_identName.c_str();
+    m_s << "," << node->m_bits << ")\n";
+    return true;
+}
+
+bool SSA::Printer::visit(const OpExtendMSBs *node)
+{
+    m_s << node->m_lhs->m_identName.c_str() << " := EXTENDMSBS(" << node->m_op->m_identName.c_str();
+    m_s << "," << node->m_bits << ")\n";
+    return true;
+}
+
+bool SSA::Printer::visit(const OpRemoveLSBs *node)
+{
+    m_s << node->m_lhs->m_identName.c_str() << " := REMOVELSBS(" << node->m_op->m_identName.c_str();
+    m_s << "," << node->m_bits << ")\n";
+    return true;
+}
+
+bool SSA::Printer::visit(const OpRemoveMSBs *node)
+{
+    m_s << node->m_lhs->m_identName.c_str() << " := REMOVEMSBS(" << node->m_op->m_identName.c_str();
+    m_s << "," << node->m_bits << ")\n";
+    return true;
 }

@@ -163,10 +163,10 @@ void AST::DumpVisitor::visit(const PrecisionModifier *node)
 
 void AST::DumpVisitor::visit(const Assignment *node)
 {
-    if (node->m_exprNode != NULL)
+    if (node->m_expr != NULL)
     {
         m_depth++;
-        node->m_exprNode->accept(this);
+        node->m_expr->accept(this);
         m_depth--;
     }
 

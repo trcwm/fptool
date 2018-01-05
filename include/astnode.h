@@ -42,11 +42,7 @@ class ASTNode
 {
 public:
     /** create an AST node */
-    ASTNode()
-    {
-        //left = 0;
-        //right = 0;
-    }
+    ASTNode() {}
 
     virtual ~ASTNode() {}
 
@@ -108,7 +104,9 @@ public:
 class InputDeclaration : public Declaration
 {
 public:
-    InputDeclaration() {}
+    InputDeclaration() :
+        m_fracBits(0),
+        m_intBits(0) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -148,7 +146,9 @@ public:
         NodeTruncate
     };
 
-    PrecisionModifier(node_t nodeType) : m_nodeType(nodeType) {}
+    PrecisionModifier(node_t nodeType = NodeUndefined) :
+        m_argNode(NULL),
+        m_nodeType(nodeType) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -168,7 +168,7 @@ public:
 class Assignment : public ::ASTNode
 {
 public:
-    Assignment() {}
+    Assignment() : m_expr(NULL) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -176,7 +176,7 @@ public:
         visitor->visit(this);
     }
 
-    ASTNode *m_exprNode;        ///< pointer to expression AST.
+    ASTNode *m_expr;            ///< pointer to expression AST.
     std::string m_identName;    ///< name of output identifier
 };
 
@@ -209,7 +209,10 @@ public:
         NodeDiv
     };
 
-    Operation2(node_t nodeType) : m_nodeType(nodeType) {}
+    Operation2(node_t nodeType = NodeUndefined) :
+        m_left(NULL),
+        m_right(NULL),
+        m_nodeType(nodeType) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -232,7 +235,9 @@ public:
        NodeUnaryMinus
     };
 
-    Operation1(node_t nodeType) : m_nodeType(nodeType) {}
+    Operation1(node_t nodeType = NodeUndefined) :
+        m_expr(NULL),
+        m_nodeType(nodeType) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
