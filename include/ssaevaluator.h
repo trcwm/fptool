@@ -8,6 +8,7 @@
 
 */
 
+#if 0
 
 #ifndef ssaevaluator_h
 #define ssaevaluator_h
@@ -67,4 +68,5 @@ protected:
 
 bool fuzzer(const SSAObject &reference, const SSAObject &subject, const uint32_t tests);
 
+#endif
 #endif

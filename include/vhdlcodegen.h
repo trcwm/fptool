@@ -25,7 +25,7 @@ public:
     virtual bool visit(const OpMul *node) override  { (void)node; return true; }
     virtual bool visit(const OpAdd *node) override  { (void)node; return true; }
     virtual bool visit(const OpSub *node) override  { (void)node; return true; }
-    virtual bool visit(const OpTruncate *node) { (void)node; return true; }
+    virtual bool visit(const OpTruncate *node) override { (void)node; return true; }
     virtual bool visit(const OpPatchBlock *node) override { (void)node; return true; }
     virtual bool visit(const OpNull *node) override { (void)node; return true; }
 

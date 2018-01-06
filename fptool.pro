@@ -26,7 +26,7 @@ HEADERS += include/cmdline.h \
            include/astvisitor.h \
            include/ssacreator.h \
            include/ssaprint.h \
-           #include/ssaevaluator.h \
+           include/ssaevaluator.h \
            externals/fplib/src/fplib.h
 
 SOURCES += src/cmdline.cpp \
@@ -48,5 +48,5 @@ SOURCES += src/cmdline.cpp \
            src/astvisitor.cpp \
            src/ssacreator.cpp \
            src/ssaprint.cpp \
-           #src/ssaevaluator.cpp \
+           src/ssaevaluator.cpp \
            externals/fplib/src/fplib.cpp

@@ -1,3 +1,4 @@
+#if 0
 
 #include "logging.h"
 #include "ssaevaluator.h"
@@ -246,3 +247,5 @@ void SSAEvaluator::setDebug(bool debug)
 {
     m_debug = debug;
 }
+
+#endif
