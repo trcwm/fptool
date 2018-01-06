@@ -50,7 +50,7 @@ bool PassAddSub::visit(const OpAdd *node)
         // version of op2
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         SSA::OpExtendLSBs *instr = new SSA::OpExtendLSBs(op2, tmp, op1->m_fracBits - op2->m_fracBits);
-        patch->m_instructions.push_back(instr);
+        patch->m_statements.push_back(instr);
         m_ssa->addOperand(tmp);
 
         // replace op2 by this new node in the current SSA node
@@ -63,7 +63,7 @@ bool PassAddSub::visit(const OpAdd *node)
         // version of op1
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         SSA::OpExtendLSBs *instr = new SSA::OpExtendLSBs(op1, tmp, op2->m_fracBits - op1->m_fracBits);
-        patch->m_instructions.push_back(instr);
+        patch->m_statements.push_back(instr);
         m_ssa->addOperand(tmp);
         op1 = tmp;
     }
@@ -80,7 +80,7 @@ bool PassAddSub::visit(const OpAdd *node)
         // version of op1
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op1, tmp, 1);
-        patch->m_instructions.push_back(instr);
+        patch->m_statements.push_back(instr);
         m_ssa->addOperand(tmp);
         op1 = tmp;
     }
@@ -90,7 +90,7 @@ bool PassAddSub::visit(const OpAdd *node)
         // version of op2
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op2, tmp, 1);
-        patch->m_instructions.push_back(instr);
+        patch->m_statements.push_back(instr);
         m_ssa->addOperand(tmp);
         op2 = tmp;
     }
@@ -101,7 +101,7 @@ bool PassAddSub::visit(const OpAdd *node)
     // the patch will replace the add instruction itself
     // so we need to add that instruction in the patch block
 
-    if (patch->m_instructions.size() > 0)
+    if (patch->m_statements.size() > 0)
     {
         // replace the original add instruction
 
@@ -124,7 +124,7 @@ bool PassAddSub::visit(const OpAdd *node)
         node->m_lhs->m_intBits = outIntBits;
         node->m_lhs->m_fracBits = outFracBits;
 
-        patch->m_instructions.push_back(add);
+        patch->m_statements.push_back(add);
         patchNode(node, patch);
     }
     return true;
@@ -149,7 +149,7 @@ bool PassAddSub::visit(const OpSub *node)
         // version of op2
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         SSA::OpExtendLSBs *instr = new SSA::OpExtendLSBs(op2, tmp, op1->m_fracBits - op2->m_fracBits);
-        patch->m_instructions.push_back(instr);
+        patch->m_statements.push_back(instr);
         m_ssa->addOperand(tmp);
 
         // replace op2 by this new node in the current SSA node
@@ -162,7 +162,7 @@ bool PassAddSub::visit(const OpSub *node)
         // version of op1
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         SSA::OpExtendLSBs *instr = new SSA::OpExtendLSBs(op1, tmp, op2->m_fracBits - op1->m_fracBits);
-        patch->m_instructions.push_back(instr);
+        patch->m_statements.push_back(instr);
         m_ssa->addOperand(tmp);
         op1 = tmp;
     }
@@ -179,7 +179,7 @@ bool PassAddSub::visit(const OpSub *node)
         // version of op1
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op1, tmp, 1);
-        patch->m_instructions.push_back(instr);
+        patch->m_statements.push_back(instr);
         m_ssa->addOperand(tmp);
         op1 = tmp;
     }
@@ -189,7 +189,7 @@ bool PassAddSub::visit(const OpSub *node)
         // version of op2
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op2, tmp, 1);
-        patch->m_instructions.push_back(instr);
+        patch->m_statements.push_back(instr);
         m_ssa->addOperand(tmp);
         op2 = tmp;
     }
@@ -200,7 +200,7 @@ bool PassAddSub::visit(const OpSub *node)
     // the patch will replace the add instruction itself
     // so we need to add that instruction in the patch block
 
-    if (patch->m_instructions.size() > 0)
+    if (patch->m_statements.size() > 0)
     {
         // replace the original add instruction
 
@@ -223,7 +223,7 @@ bool PassAddSub::visit(const OpSub *node)
         node->m_lhs->m_intBits = outIntBits;
         node->m_lhs->m_fracBits = outFracBits;
 
-        patch->m_instructions.push_back(sub);
+        patch->m_statements.push_back(sub);
         patchNode(node, patch);
     }
     return true;

@@ -82,7 +82,7 @@ bool SSA::Printer::visit(const OpPatchBlock *node)
     // to be patched/integrated into the
     // top-level instruction stream
     m_s << "** PATCH BLOCK BEGIN **\n";
-    for(auto smnt : node->m_instructions)
+    for(auto smnt : node->m_statements)
     {
         if (!smnt->accept(this))
         {

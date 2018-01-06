@@ -22,7 +22,7 @@
 //#include "ssaevaluator.h"
 #include "csd.h"
 #include "pass_addsub.h"
-//#include "pass_truncate.h"
+#include "pass_truncate.h"
 #include "pass_csdmul.h"
 #include "pass_clean.h"
 //#include "vhdlcodegen.h"
@@ -271,20 +271,18 @@ int main(int argc, char *argv[])
                 SSA::Printer::print(ssa, ss);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
-#if 0
+
             // ------------------------------------------------------------
             // -- TRUNCATE PASS
             // ------------------------------------------------------------
-            PassTruncate truncate;
-            truncate.process(ssa);
+            SSA::PassTruncate::execute(ssa);
 
             if (verbose)
             {
                 std::stringstream ss;
-                ssa.dumpStatements(ss);
+                SSA::Printer::print(ssa, ss);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
-#endif
 
             // ------------------------------------------------------------
             // -- CLEAN PASS

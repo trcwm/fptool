@@ -102,7 +102,7 @@ void SSA::OperationDual::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
 
 void SSA::OpPatchBlock::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
 {
-    for(OperationBase* statement : m_instructions)
+    for(OperationBase* statement : m_statements)
     {
         statement->replaceOperand(op1, op2);
     }
@@ -120,8 +120,8 @@ void SSA::Program::applyPatches()
             OpPatchBlock *patchBlock = dynamic_cast<OpPatchBlock*>(*iter);
             iter = m_statements.erase(iter);
             m_statements.insert(iter,
-                                patchBlock->m_instructions.begin(),
-                                patchBlock->m_instructions.end());
+                                patchBlock->m_statements.begin(),
+                                patchBlock->m_statements.end());
 
             // delete the patch block instruction itself
             if (patchBlock->m_replacedInstruction != NULL)

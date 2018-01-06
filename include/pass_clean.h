@@ -30,21 +30,21 @@ public:
     // supported nodes!
     virtual bool visit(const OpAssign *node) override;
     virtual bool visit(const OpReinterpret *node) override;
-    virtual bool visit(const OpMul *node) override  { return true; }
-    virtual bool visit(const OpAdd *node) override  { return true; }
-    virtual bool visit(const OpSub *node) override  { return true; }
-    virtual bool visit(const OpTruncate *node) override { return true; }
-    virtual bool visit(const OpPatchBlock *node) override { return true; }
-    virtual bool visit(const OpNull *node) override { return true; }
+    virtual bool visit(const OpMul *node) override  { (void)node; return true; }
+    virtual bool visit(const OpAdd *node) override  { (void)node; return true; }
+    virtual bool visit(const OpSub *node) override  { (void)node; return true; }
+    virtual bool visit(const OpTruncate *node) override { (void)node; return true; }
+    virtual bool visit(const OpPatchBlock *node) override { (void)node; return true; }
+    virtual bool visit(const OpNull *node) override { (void)node; return true; }
 
-    virtual bool visit(const OpExtendLSBs *node) override { return true; }
-    virtual bool visit(const OpExtendMSBs *node) override { return true; }
-    virtual bool visit(const OpRemoveLSBs *node) override { return true; }
-    virtual bool visit(const OpRemoveMSBs *node) override { return true; }
+    virtual bool visit(const OpExtendLSBs *node) override { (void)node; return true; }
+    virtual bool visit(const OpExtendMSBs *node) override { (void)node; return true; }
+    virtual bool visit(const OpRemoveLSBs *node) override { (void)node; return true; }
+    virtual bool visit(const OpRemoveMSBs *node) override { (void)node; return true; }
 
     // unsupported nodes!
-    virtual bool visit(const OperationSingle *node) override { return false; }
-    virtual bool visit(const OperationDual *node) override { return false; }
+    virtual bool visit(const OperationSingle *node) override { (void)node; return false; }
+    virtual bool visit(const OperationDual *node) override { (void)node; return false; }
 
 protected:
     /* hide constructor so use can't call it directly */

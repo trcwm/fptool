@@ -396,7 +396,13 @@ public:
     /** replace operand op1 with operand op2, if present */
     virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override;
 
-    std::list<OperationBase*> m_instructions;
+    /** add statement to the instruction list */
+    void addStatement(OperationBase *statement)
+    {
+        m_statements.push_back(statement);
+    }
+
+    std::list<OperationBase*> m_statements;
     const OperationBase *m_replacedInstruction;
 };
 

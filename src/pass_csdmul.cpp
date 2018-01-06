@@ -171,7 +171,7 @@ void PassCSDMul::expandCSD(const csd_t &csd,
                                                              result,
                                                              input->m_intBits+shift,
                                                              input->m_fracBits-shift);
-    patch->m_instructions.push_back(reinterpret);
+    patch->m_statements.push_back(reinterpret);
     operands.push_back(result);
     digitIter++;
 
@@ -189,7 +189,7 @@ void PassCSDMul::expandCSD(const csd_t &csd,
                                              input->m_intBits+shift,
                                              input->m_fracBits-shift);
         operands.push_back(t2);
-        patch->m_instructions.push_back(reinterpret);
+        patch->m_statements.push_back(reinterpret);
 
         // add the terms
         result = IntermediateOperand::createNewIntermediate();
@@ -197,12 +197,12 @@ void PassCSDMul::expandCSD(const csd_t &csd,
         if (digitIter->sign > 0)
         {
             SSA::OpAdd *adder = new SSA::OpAdd(t1,t2,result);
-            patch->m_instructions.push_back(adder);
+            patch->m_statements.push_back(adder);
         }
         else
         {
             SSA::OpSub *subber = new SSA::OpSub(t1,t2,result);
-            patch->m_instructions.push_back(subber);
+            patch->m_statements.push_back(subber);
         }
         t1 = result;
         digitIter++;
@@ -227,5 +227,5 @@ void PassCSDMul::expandCSD(const csd_t &csd,
 
     // make the final assignment
     SSA::OpAssign *assign = new SSA::OpAssign(result, output);
-    patch->m_instructions.push_back(assign);
+    patch->m_statements.push_back(assign);
 }
