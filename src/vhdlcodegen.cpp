@@ -10,6 +10,8 @@
 #include <algorithm>
 #include "vhdlcodegen.h"
 
+#if 0
+
 void VHDLCodeGen::execute(SSAObject &ssa)
 {
     doLog(LOG_INFO, "Running VHDLCodeGen\n");
@@ -264,3 +266,5 @@ void VHDLCodeGen::extendLSBs(std::ostream &os, const std::string &name, uint32_t
         os << "0";
     os << "\"";
 }
+
+#endif

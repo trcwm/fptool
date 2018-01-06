@@ -25,7 +25,7 @@
 #include "pass_truncate.h"
 #include "pass_csdmul.h"
 #include "pass_clean.h"
-//#include "vhdlcodegen.h"
+#include "vhdlcodegen.h"
 #include "astgraphviz.h"
 
 #define __FPTOOLVERSION__ "0.1a"
@@ -296,20 +296,19 @@ int main(int argc, char *argv[])
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
-#if 0
             // ------------------------------------------------------------
             // -- VHDL code generation
             // ------------------------------------------------------------
             if (outstream.bad())
             {
-                VHDLCodeGen codegen(std::cout);
-                codegen.process(ssa);
+                SSA::VHDLCodeGen codegen(std::cout, ssa);
+                //codegen.process(ssa);
             }
             else
             {
-                VHDLCodeGen codegen(outstream);
-                codegen.setEpilog("");
-                codegen.process(ssa);
+                SSA::VHDLCodeGen codegen(outstream, ssa);
+                //codegen.setEpilog("");
+                //codegen.process(ssa);
             }
         }
         else
@@ -318,8 +317,6 @@ int main(int argc, char *argv[])
             doLog(LOG_ERROR, "Line %d pos %d: %s\n", parse.getLastErrorPos().line+1,
                   parse.getLastErrorPos().pos+1,
                   parse.getLastError().c_str());
-        }
-#endif
         }
     }
 
