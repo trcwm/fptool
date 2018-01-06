@@ -36,6 +36,7 @@ public:
     virtual bool visit(const OpTruncate *node) override { return true; }
     virtual bool visit(const OpReinterpret *node) override { return true; }
     virtual bool visit(const OpPatchBlock *node) override { return true; }
+    virtual bool visit(const OpNull *node) override { return true; }
 
     virtual bool visit(const OpExtendLSBs *node) override { return true; }
     virtual bool visit(const OpExtendMSBs *node) override { return true; }

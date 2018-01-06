@@ -56,6 +56,7 @@ protected:
     }
 };
 
+typedef std::shared_ptr<OperandBase> SharedOpPtr;
 
 /** SSA operand that represents an input */
 class InputOperand : public OperandBase
@@ -100,7 +101,7 @@ public:
 };
 
 
-typedef std::shared_ptr<OperandBase> SharedOpPtr;
+
 
 // *****************************************
 // **********  OPERATION CLASSES  **********
@@ -120,6 +121,9 @@ public:
 
     /** accept a visitor and call visitor->visit(this); */
     virtual bool accept(OperationVisitorBase *visitor) = 0;
+
+    /** replace operand op1 with op2 if op1 is present */
+    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) = 0;
 };
 
 
@@ -131,6 +135,9 @@ public:
         : m_lhs(result), m_op1(op1), m_op2(op2)
     {
     }
+
+    /** replace operand op1 with op2 if op1 is present */
+    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override;
 
     SharedOpPtr m_lhs;
     SharedOpPtr m_op1;
@@ -146,6 +153,9 @@ public:
         m_op(op), m_lhs(lhs)
     {
     }
+
+    /** replace operand op1 with operand op2, if present */
+    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override;
 
     SharedOpPtr m_lhs;
     SharedOpPtr m_op;
@@ -221,6 +231,7 @@ public:
     virtual bool accept(OperationVisitorBase *visitor) override;
 };
 
+
 class OpTruncate : public OperationSingle
 {
 public:
@@ -240,6 +251,7 @@ public:
     int32_t m_fracBits;     ///< number of fractional bits to truncate to
 };
 
+
 class OpAssign : public OperationSingle
 {
 public:
@@ -252,7 +264,9 @@ public:
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
 };
+
 
 class OpReinterpret: public OperationSingle
 {
@@ -272,6 +286,7 @@ public:
     int32_t m_intBits;  ///< reinterpret to this integer bits spec
     int32_t m_fracBits; ///< reinterpret to this fractional bits spec
 };
+
 
 class OpExtendLSBs : public OperationSingle
 {
@@ -378,9 +393,29 @@ public:
         return true;
     }
 
+    /** replace operand op1 with operand op2, if present */
+    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override;
 
     std::list<OperationBase*> m_instructions;
     const OperationBase *m_replacedInstruction;
+};
+
+
+/** A special node that represents a no-operation,
+    primarily meant to insert into the SSA program
+    to replace exising instructions in transform
+    passes */
+class OpNull : public OperationBase
+{
+public:
+    OpNull() {}
+
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** replace operand op1 with operand op2, if present */
+    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override {}
+
 };
 
 // *****************************************
@@ -406,6 +441,8 @@ public:
     virtual bool visit(const OperationSingle *node) = 0;
     virtual bool visit(const OperationDual *node) = 0;
     virtual bool visit(const OpPatchBlock *node) = 0;
+    virtual bool visit(const OpNull *node) = 0;
+
 };
 
 // *****************************************
@@ -428,8 +465,9 @@ public:
         m_operands.push_back(operand);
     }
 
-    /** merge the instruction of the OpPatchBlock instructions
-        into the main instruction sequence */
+    /** merge the OpPatchBlock instructions
+        into the main instruction sequence and remove
+        any NULL operations. */
     void applyPatches();
 
     std::list<OperationBase*> m_statements;

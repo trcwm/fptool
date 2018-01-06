@@ -24,7 +24,7 @@
 #include "pass_addsub.h"
 //#include "pass_truncate.h"
 #include "pass_csdmul.h"
-//#include "pass_clean.h"
+#include "pass_clean.h"
 //#include "vhdlcodegen.h"
 #include "astgraphviz.h"
 
@@ -284,20 +284,24 @@ int main(int argc, char *argv[])
                 ssa.dumpStatements(ss);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
+#endif
 
             // ------------------------------------------------------------
             // -- CLEAN PASS
             // ------------------------------------------------------------
-            PassClean  clean;
-            clean.process(ssa);
+            SSA::PassClean::execute(ssa);
 
             if (verbose)
             {
                 std::stringstream ss;
-                ssa.dumpStatements(ss);
+                SSA::Printer::print(ssa, ss);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
+#if 0
+            // ------------------------------------------------------------
+            // -- VHDL code generation
+            // ------------------------------------------------------------
             if (outstream.bad())
             {
                 VHDLCodeGen codegen(std::cout);

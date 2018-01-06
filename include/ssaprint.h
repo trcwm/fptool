@@ -39,6 +39,7 @@ public:
     virtual bool visit(const OpRemoveMSBs *node) override;
 
     virtual bool visit(const OpPatchBlock *node) override;
+    virtual bool visit(const OpNull *node) override;
     virtual bool visit(const OperationSingle *node) override;
     virtual bool visit(const OperationDual *node) override;
 

@@ -42,6 +42,11 @@ bool SSA::OpAssign::accept(SSA::OperationVisitorBase *visitor)
     return visitor->visit(this);
 }
 
+bool SSA::OpNull::accept(SSA::OperationVisitorBase *visitor)
+{
+    return visitor->visit(this);
+}
+
 bool SSA::OpReinterpret::accept(SSA::OperationVisitorBase *visitor)
 {
     return visitor->visit(this);
@@ -72,11 +77,44 @@ bool SSA::OpRemoveMSBs::accept(SSA::OperationVisitorBase *visitor)
     return visitor->visit(this);
 }
 
+
+void SSA::OperationSingle::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
+{
+    if (m_op == op1)
+    {
+        m_op = op2;
+    }
+}
+
+
+void SSA::OperationDual::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
+{
+    if (m_op1 == op1)
+    {
+        m_op1 = op2;
+    }
+    if (m_op2 == op1)
+    {
+        m_op2 = op2;
+    }
+}
+
+
+void SSA::OpPatchBlock::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
+{
+    for(OperationBase* statement : m_instructions)
+    {
+        statement->replaceOperand(op1, op2);
+    }
+}
+
+
 void SSA::Program::applyPatches()
 {
     auto iter = m_statements.begin();
     while(iter != m_statements.end())
     {
+        OpNull *nullPtr = dynamic_cast<OpNull*>(*iter);
         if ((*iter)->isPatchBlock())
         {
             OpPatchBlock *patchBlock = dynamic_cast<OpPatchBlock*>(*iter);
@@ -91,6 +129,13 @@ void SSA::Program::applyPatches()
                 delete patchBlock->m_replacedInstruction;
             }
             delete patchBlock;
+        }
+        else if (nullPtr != NULL)
+        {
+            // we have found a Null operation
+            // -> remove it!
+            iter = m_statements.erase(iter);
+            delete nullPtr;
         }
         else
         {

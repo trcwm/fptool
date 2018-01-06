@@ -120,3 +120,10 @@ bool SSA::Printer::visit(const OpRemoveMSBs *node)
     m_s << "," << node->m_bits << ")\n";
     return true;
 }
+
+bool SSA::Printer::visit(const OpNull *node)
+{
+    m_s << "NOP\n";
+    return true;
+}
+

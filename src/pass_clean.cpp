@@ -2,7 +2,7 @@
 
   FPTOOL - a fixed-point math to VHDL generation tool
 
-  Description:  Clean the SSA list
+  Description:  Clean the SSA list after the CSDMul pass
 
   1) remove re-interpret nodes
   2) remove superluous assignment nodes
@@ -12,86 +12,89 @@
 #include "logging.h"
 #include "pass_clean.h"
 
-// make sure the fractional parts of every
-// addition and subtraction is the same
-void PassClean::execute(SSAObject &ssa)
+using namespace SSA;
+
+bool PassClean::execute(Program &ssa)
 {
     doLog(LOG_INFO, "----------------------\n");
     doLog(LOG_INFO, "  Running Clean pass\n");
     doLog(LOG_INFO, "----------------------\n");
 
+    PassClean pass(ssa);
+
     // remove re-interpreted nodes
-    auto iter = ssa.begin();
-    while(iter != ssa.end())
+    for(auto statement : ssa.m_statements)
     {
-        SSANode::operation_t operation = iter->operation;
-
-        if (operation == SSANode::OP_Reinterpret)
+        if (!statement->accept(&pass))
         {
-            doLog(LOG_DEBUG, "Replacing variable %d (%s)\n", iter->lhsIdx, ssa.getOperand(iter->lhsIdx).info.txt.c_str());
-
-            // replace reinterpreted with original variable
-            substitute(ssa, iter->lhsIdx, iter->op1Idx);
-
-            // mark lhs variable as removed
-            ssa.markRemoved(iter->lhsIdx);
-
-            // remove the reinterpret node
-            iter = ssa.removeNode(iter);
-        }
-        else
-        {
-            iter++;
+            return false;
         }
     }
 
-    // remove superfluous assignments
-    iter = ssa.begin();
-    while(iter != ssa.end())
+    ssa.applyPatches();
+
+
+    return true;
+}
+
+bool PassClean::visit(const OpAssign *node)
+{
+    // remove all superfluous assign nodes
+    // which are <temp var1> := <temp var2>
+
+    IntermediateOperand* lhs = dynamic_cast<IntermediateOperand*>(node->m_lhs.get());
+    IntermediateOperand* op  = dynamic_cast<IntermediateOperand*>(node->m_op.get());
+
+    if ((lhs != NULL) && (op != NULL))
     {
-        SSANode::operation_t operation = iter->operation;
+        doLog(LOG_DEBUG, "Removing assignment %s = %s\n",
+              node->m_lhs->m_identName.c_str(),
+              node->m_op->m_identName.c_str());
 
-        if (operation == SSANode::OP_Assign)
-        {
-            operand_t lhs = ssa.getOperand(iter->lhsIdx);
+        // replace the assigned var with original var
+        substituteOperands(node->m_lhs, node->m_op);
 
-            // preserve output assignments
-            if (lhs.type != operand_t::TypeOutput)
-            {
-                doLog(LOG_DEBUG, "Removing variable %d (%s)\n", iter->lhsIdx, ssa.getOperand(iter->lhsIdx).info.txt.c_str());
+        // replace the assignment node with a Null operation
+        // to disable it.
+        replaceWithNull(node);
+    }
 
-                // replace the assigned var with original var
-                substitute(ssa, iter->lhsIdx, iter->op1Idx);
+    return true;
+}
 
-                // mark lhs variable as removed
-                ssa.markRemoved(iter->lhsIdx);
+bool PassClean::visit(const OpReinterpret *node)
+{
+    // remove all reinterpret nodes
+    // and replace the left-hand side variable with the
+    // original variable.
 
-                // remove the assignment node
-                iter = ssa.removeNode(iter);
-            }
-            else
-            {
-                iter++;
-            }
-        }
-        else
-        {
-            iter++;
-        }
+    doLog(LOG_DEBUG, "Replacing variable (%s)\n", node->m_lhs->m_identName.c_str());
+    substituteOperands(node->m_lhs, node->m_op);
+    replaceWithNull(node);
+    return true;
+}
+
+void PassClean::substituteOperands(const SharedOpPtr op1, SharedOpPtr op2)
+{
+    for(auto statement : m_ssa->m_statements)
+    {
+        statement->replaceOperand(op1,op2);
     }
 }
 
-void PassClean::substitute(SSAObject &ssa, operandIndex idx1, operandIndex idx2)
+void PassClean::replaceWithNull(const OperationBase *node)
 {
-    auto iter = ssa.begin();
-    while(iter != ssa.end())
+    auto iter = m_ssa->m_statements.begin();
+    while(iter != m_ssa->m_statements.end())
     {
-        if (iter->op1Idx == idx1)
-            iter->op1Idx = idx2;
-
-        if (iter->op2Idx == idx1)
-            iter->op2Idx = idx2;
-
+        if ((*iter) == node)
+        {
+            delete (*iter);
+            (*iter) = new OpNull();
+        }
         iter++;
     }
 }
+
+
+
