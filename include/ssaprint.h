@@ -21,13 +21,16 @@ namespace SSA
 class Printer : public OperationVisitorBase
 {
 public:
-    Printer(std::ostream &s) : m_s(s) {}
+    Printer(std::ostream &s, bool printLHSPrecision)
+        : m_printLHSPrecision(printLHSPrecision),
+          m_s(s) {}
 
     /** print the SSA progam data to an output stream */
-    static bool print(const Program &program, std::ostream &s);
+    static bool print(const Program &program, std::ostream &s, bool printLHSPrecision = false);
 
     virtual bool visit(const OpAssign *node) override;
     virtual bool visit(const OpMul *node) override;
+    virtual bool visit(const OpCSDMul *node) override;
     virtual bool visit(const OpAdd *node) override;
     virtual bool visit(const OpSub *node) override;
     virtual bool visit(const OpTruncate *node) override;
@@ -44,6 +47,7 @@ public:
     virtual bool visit(const OperationDual *node) override;
 
 protected:
+    bool m_printLHSPrecision;
     std::ostream &m_s;
 };
 

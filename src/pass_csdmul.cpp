@@ -55,12 +55,24 @@ void PassCSDMul::patchNode(const SSA::OperationBase *node, SSA::OpPatchBlock *pa
     }
 }
 
+bool PassCSDMul::visit(const OpCSDMul *node)
+{
+    doLog(LOG_INFO, "Expanding CSD %s\n", node->m_csdName.c_str());
+
+    OpPatchBlock *patch = new OpPatchBlock(node);
+    std::list<SharedOpPtr> operands;
+    expandCSD(node->m_csd, node->m_op, node->m_lhs, patch, operands);
+    patchNode(node, patch); // replace the MUL node.
+    return true;
+}
+
 bool PassCSDMul::visit(const OpMul *node)
 {
-    // we end up here for each OpMul node in the SSA program
-    if (node->m_op1->isCSD() && node->m_op2->isCSD())
+    // check that there are no MUL nodes that
+    // have a CSD operands
+    if (node->m_op1->isCSD() || node->m_op2->isCSD())
     {
-        doLog(LOG_WARN, "Both arguments are of type CSD (%s) (%s)\n",
+        doLog(LOG_ERROR, "One or more OpMul arguments are of type CSD (%s) (%s)\n",
               node->m_op1->m_identName.c_str(),
               node->m_op2->m_identName.c_str());
 
@@ -68,43 +80,11 @@ bool PassCSDMul::visit(const OpMul *node)
         // TODO: think of a better strategy
         // FIXME: produce a warning
         // for now, we bail with an error
-        throw std::runtime_error("PassCSDMul: both operands are CSD -- unsupported");
-    }
-    if (node->m_op1->isCSD())
-    {
-        SSA::CSDOperand *csdOperand = dynamic_cast<SSA::CSDOperand*>(node->m_op1.get());
-        if (csdOperand == NULL)
-        {
-            doLog(LOG_ERROR, "node is not of type CSDOperand!\n");
-            return false;
-        }
-
-        doLog(LOG_INFO, "Expanding CSD %s\n", node->m_op1->m_identName.c_str());
-        OpPatchBlock *patch = new OpPatchBlock(node);
-        std::list<SharedOpPtr> operands;
-        expandCSD(csdOperand->m_csd, node->m_op2, node->m_lhs, patch, operands);
-        patchNode(node, patch); // replace the MUL node.
-    }
-    else if (node->m_op2->isCSD())
-    {
-        SSA::CSDOperand *csdOperand = dynamic_cast<SSA::CSDOperand*>(node->m_op2.get());
-        if (csdOperand == NULL)
-        {
-            doLog(LOG_ERROR, "node is not of type CSDOperand!\n");
-            return false;
-        }
-
-        doLog(LOG_INFO, "Expanding CSD %s\n", node->m_op2->m_identName.c_str());
-        OpPatchBlock *patch = new OpPatchBlock(node);
-        std::list<SharedOpPtr> operands;
-        expandCSD(csdOperand->m_csd, node->m_op1, node->m_lhs, patch, operands);
-        patchNode(node, patch); // replace the MUL node.
-    }
-    else
-    {
-        return true;    // no CSD operands found -> nothing to do.
+        //throw std::runtime_error("PassCSDMul: both operands are CSD -- unsupported");
+        return false;
     }
 
+    // no CSD operands found -> nothing to do.
     return true;
 }
 

@@ -202,15 +202,58 @@ public:
     OpMul(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
         : OperationDual(op1,op2, result)
     {
-        //FIXME: this is true for signed*signed multiplications
-        //  however, CSDs are sign-magnitude and will have
-        //  even fewer bits to output
         result->m_intBits  = op1->m_intBits + op2->m_intBits - 1;
         result->m_fracBits = op1->m_fracBits + op2->m_fracBits;
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+};
+
+
+class OpCSDMul : public OperationSingle
+{
+public:
+    OpCSDMul(SharedOpPtr op, const csd_t &csd, const std::string &csdName, SharedOpPtr result)
+        : OperationSingle(op, result), m_csd(csd), m_csdName(csdName)
+    {
+        //FIXME: this is true for signed*signed multiplications
+        //  however, CSDs are sign-magnitude and will have
+        //  even fewer bits to output
+        //
+        //  example (2^1 + 2^-3) * x
+        //  where x is Q(n,m)
+        //
+        //  2^1  * x -> Q(n+1,m-1)
+        //  2^-3 * x -> Q(n-3,m+3)
+        //  after addition:
+        //  Q(n+1,m-1) + Q(n-3,m+3) -> Q(n+2,m+3)
+        //
+        //  however: (2^1 - 2^-3) * x
+        //  where x is Q(n,m)
+        //
+        //  2^1  * x -> Q(n+1,m-1)
+        //  2^-3 * x -> Q(n-3,m+3)
+        //  after addition:
+        //  Q(n,m) - Q(n-3,m+3) -> Q(n,m+3)
+        //  because (2^0 - 2^-3) < 2^0
+        //
+
+        int32_t Pmax = csd.digits.front().power;
+        int32_t Pmin = csd.digits.back().power;
+
+        result->m_intBits  = Pmax + op->m_intBits + 1;
+        result->m_fracBits = Pmin + op->m_fracBits;
+
+        //result->m_intBits  = op1->m_intBits + op2->m_intBits - 1;
+        //result->m_fracBits = op1->m_fracBits + op2->m_fracBits;
+    }
+
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
+
+    csd_t m_csd;            ///< multiplication factor / constant
+    std::string m_csdName;  ///< name of CSD factor / constant
 };
 
 
@@ -240,8 +283,8 @@ public:
           m_intBits(intBits),
           m_fracBits(fracBits)
     {
-        result->m_intBits  = op->m_intBits;
-        result->m_fracBits = op->m_fracBits;
+        result->m_intBits  = m_intBits;
+        result->m_fracBits = m_fracBits;
     }
 
     /** accept a visitor */
@@ -297,6 +340,8 @@ public:
     {
         //FIXME:
         //  check that bits >= 0
+        output->m_intBits  = op->m_intBits;
+        output->m_fracBits = op->m_fracBits + bits;
     }
 
     /** accept a visitor */
@@ -316,7 +361,7 @@ public:
     {
         //FIXME:
         //  check that bits >= 0
-        output->m_intBits = op->m_intBits;
+        output->m_intBits  = op->m_intBits;
         output->m_fracBits = op->m_fracBits - bits;
     }
 
@@ -336,7 +381,7 @@ public:
     {
         //FIXME:
         //  check that bits >= 0
-        output->m_intBits = op->m_intBits + bits;
+        output->m_intBits  = op->m_intBits + bits;
         output->m_fracBits = op->m_fracBits;
     }
 
@@ -356,7 +401,7 @@ public:
     {
         //FIXME:
         //  check that bits >= 0
-        output->m_intBits = op->m_intBits - bits;
+        output->m_intBits  = op->m_intBits - bits;
         output->m_fracBits = op->m_fracBits;
     }
 
@@ -436,6 +481,7 @@ public:
     virtual bool visit(const OpMul *node) = 0;
     virtual bool visit(const OpAdd *node) = 0;
     virtual bool visit(const OpSub *node) = 0;
+    virtual bool visit(const OpCSDMul *node) = 0;
     virtual bool visit(const OpTruncate *node) = 0;
     virtual bool visit(const OpReinterpret *node) = 0;
 

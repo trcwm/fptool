@@ -398,8 +398,32 @@ void Creator::visit(const AST::Operation2 *node)
         break;
     case AST::Operation2::NodeMul:
         result = IntermediateOperand::createNewIntermediate();
-        statement = new SSA::OpMul(arg1, arg2, result);
-        m_ssa->addStatement(statement);
+        // create a CSDMul command if one of the arguments is
+        // a CSD, otherwise create a regular MUL command.
+        if (arg1->isCSD())
+        {
+            CSDOperand *csdop = dynamic_cast<CSDOperand *>(arg1.get());
+            SSA::OpCSDMul* mulop = new SSA::OpCSDMul(arg2,
+                                                     csdop->m_csd,
+                                                     arg1->m_identName,
+                                                     result);
+            m_ssa->addStatement(mulop);
+        }
+        else if (arg2->isCSD())
+        {
+            CSDOperand *csdop = dynamic_cast<CSDOperand *>(arg2.get());
+            SSA::OpCSDMul* mulop = new SSA::OpCSDMul(arg1,
+                                                     csdop->m_csd,
+                                                     arg2->m_identName,
+                                                     result);
+            m_ssa->addStatement(mulop);
+        }
+        else
+        {
+            statement = new SSA::OpMul(arg1, arg2, result);
+            m_ssa->addStatement(statement);
+        }
+
         m_ssa->addOperand(result);
         PushOperand(result);
         break;

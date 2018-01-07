@@ -144,7 +144,7 @@ int main(int argc, char *argv[])
             if (verbose)
             {
                 std::stringstream ss;
-                SSA::Printer::print(ssa, ss);
+                SSA::Printer::print(ssa, ss, true);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 #if 0
@@ -202,7 +202,7 @@ int main(int argc, char *argv[])
             if (verbose)
             {
                 std::stringstream ss;
-                SSA::Printer::print(ssa, ss);
+                SSA::Printer::print(ssa, ss, true);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
@@ -268,7 +268,7 @@ int main(int argc, char *argv[])
             if (verbose)
             {
                 std::stringstream ss;
-                SSA::Printer::print(ssa, ss);
+                SSA::Printer::print(ssa, ss, true);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
             if (verbose)
             {
                 std::stringstream ss;
-                SSA::Printer::print(ssa, ss);
+                SSA::Printer::print(ssa, ss, true);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
             if (verbose)
             {
                 std::stringstream ss;
-                SSA::Printer::print(ssa, ss);
+                SSA::Printer::print(ssa, ss, true);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 

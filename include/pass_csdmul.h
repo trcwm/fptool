@@ -29,6 +29,7 @@ public:
     // supported nodes!
     virtual bool visit(const OpAssign *node) override { (void)node; return true; }
     virtual bool visit(const OpMul *node) override;
+    virtual bool visit(const OpCSDMul *node) override;
     virtual bool visit(const OpAdd *node) override { (void)node; return true; }
     virtual bool visit(const OpSub *node) override { (void)node; return true; }
     virtual bool visit(const OpTruncate *node) override { (void)node; return true; }

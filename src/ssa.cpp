@@ -27,6 +27,11 @@ bool SSA::OpMul::accept(SSA::OperationVisitorBase *visitor)
     return visitor->visit(this);
 }
 
+bool SSA::OpCSDMul::accept(SSA::OperationVisitorBase *visitor)
+{
+    return visitor->visit(this);
+}
+
 bool SSA::OpNegate::accept(SSA::OperationVisitorBase *visitor)
 {
     return visitor->visit(this);

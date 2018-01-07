@@ -118,11 +118,12 @@ bool PassAddSub::visit(const OpAdd *node)
         //       for now, we'll just copy the old settings
         //       of the int/frac bits from the original
         //       result as a quick fix.
-        int32_t outIntBits = node->m_lhs->m_intBits;
-        int32_t outFracBits = node->m_lhs->m_fracBits;
+
+        //int32_t outIntBits = node->m_lhs->m_intBits;
+        //int32_t outFracBits = node->m_lhs->m_fracBits;
         SSA::OpAdd *add = new SSA::OpAdd(op1,op2, node->m_lhs);
-        node->m_lhs->m_intBits = outIntBits;
-        node->m_lhs->m_fracBits = outFracBits;
+        //node->m_lhs->m_intBits = outIntBits;
+        //node->m_lhs->m_fracBits = outFracBits;
 
         patch->m_statements.push_back(add);
         patchNode(node, patch);
@@ -217,11 +218,11 @@ bool PassAddSub::visit(const OpSub *node)
         //       for now, we'll just copy the old settings
         //       of the int/frac bits from the original
         //       result as a quick fix.
-        int32_t outIntBits = node->m_lhs->m_intBits;
-        int32_t outFracBits = node->m_lhs->m_fracBits;
+        //int32_t outIntBits = node->m_lhs->m_intBits;
+        //int32_t outFracBits = node->m_lhs->m_fracBits;
         SSA::OpSub *sub = new SSA::OpSub(op1,op2, node->m_lhs);
-        node->m_lhs->m_intBits = outIntBits;
-        node->m_lhs->m_fracBits = outFracBits;
+        //node->m_lhs->m_intBits = outIntBits;
+        //node->m_lhs->m_fracBits = outFracBits;
 
         patch->m_statements.push_back(sub);
         patchNode(node, patch);
