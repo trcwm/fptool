@@ -32,8 +32,7 @@ bool PassClean::execute(Program &ssa)
     }
 
     ssa.applyPatches();
-
-
+    ssa.updateOutputPrecisions();
     return true;
 }
 

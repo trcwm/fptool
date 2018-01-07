@@ -36,6 +36,7 @@ bool PassCSDMul::execute(Program &ssa)
     }
 
     ssa.applyPatches(); // integrate the generate OpPatchBlock instructions.
+    ssa.updateOutputPrecisions();
     return true;
 }
 

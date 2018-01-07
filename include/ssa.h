@@ -124,6 +124,10 @@ public:
 
     /** replace operand op1 with op2 if op1 is present */
     virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) = 0;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const = 0;
 };
 
 
@@ -168,14 +172,20 @@ public:
     OpAdd(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
         : OperationDual(op1,op2, result)
     {
-        //FIXME: with range checking, we could avoid
-        //       additional bits!
-        result->m_intBits  = std::max(op1->m_intBits, op2->m_intBits)+1;
-        result->m_fracBits = std::max(op1->m_fracBits, op2->m_fracBits);
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        m_lhs->m_intBits  = std::max(m_op1->m_intBits, m_op2->m_intBits)+1;
+        m_lhs->m_fracBits = std::max(m_op1->m_fracBits, m_op2->m_fracBits);
+    }
+
 };
 
 
@@ -185,14 +195,19 @@ public:
     OpSub(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
         : OperationDual(op1,op2, result)
     {
-        //FIXME: with range checking, we could avoid
-        //       additional bits!
-        result->m_intBits  = std::max(op1->m_intBits, op2->m_intBits)+1;
-        result->m_fracBits = std::max(op1->m_fracBits, op2->m_fracBits);
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        m_lhs->m_intBits  = std::max(m_op1->m_intBits, m_op2->m_intBits)+1;
+        m_lhs->m_fracBits = std::max(m_op1->m_fracBits, m_op2->m_fracBits);
+    }
 };
 
 
@@ -202,12 +217,19 @@ public:
     OpMul(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
         : OperationDual(op1,op2, result)
     {
-        result->m_intBits  = op1->m_intBits + op2->m_intBits - 1;
-        result->m_fracBits = op1->m_fracBits + op2->m_fracBits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        m_lhs->m_intBits  = m_op1->m_intBits + m_op2->m_intBits - 1;
+        m_lhs->m_fracBits = m_op1->m_fracBits + m_op2->m_fracBits;
+    }
 };
 
 
@@ -216,6 +238,16 @@ class OpCSDMul : public OperationSingle
 public:
     OpCSDMul(SharedOpPtr op, const csd_t &csd, const std::string &csdName, SharedOpPtr result)
         : OperationSingle(op, result), m_csd(csd), m_csdName(csdName)
+    {
+        updateOutputPrecision();
+    }
+
+    /** accept a visitor */
+    virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
     {
         //FIXME: this is true for signed*signed multiplications
         //  however, CSDs are sign-magnitude and will have
@@ -239,18 +271,11 @@ public:
         //  because (2^0 - 2^-3) < 2^0
         //
 
-        int32_t Pmax = csd.digits.front().power;
-        int32_t Pmin = csd.digits.back().power;
-
-        result->m_intBits  = Pmax + op->m_intBits + 1;
-        result->m_fracBits = Pmin + op->m_fracBits;
-
-        //result->m_intBits  = op1->m_intBits + op2->m_intBits - 1;
-        //result->m_fracBits = op1->m_fracBits + op2->m_fracBits;
+        int32_t Pmax = m_csd.digits.front().power;
+        int32_t Pmin = m_csd.digits.back().power;
+        m_lhs->m_intBits  = Pmax + m_op->m_intBits + 1;
+        m_lhs->m_fracBits = Pmin + m_op->m_fracBits;
     }
-
-    /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
 
     csd_t m_csd;            ///< multiplication factor / constant
     std::string m_csdName;  ///< name of CSD factor / constant
@@ -263,15 +288,22 @@ public:
     OpNegate(SharedOpPtr op, SharedOpPtr result)
         : OperationSingle(op, result)
     {
-        // FIXME: this is not correct!
-        // -MAX_VAL does not have an equivalent +value
-        // due to two's complement asymmetry.
-        result->m_intBits  = op->m_intBits;
-        result->m_fracBits = op->m_fracBits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        // FIXME: this is not correct!
+        // -MAX_VAL does not have an equivalent +value
+        // due to two's complement asymmetry.
+        m_lhs->m_intBits  = m_op->m_intBits;
+        m_lhs->m_fracBits = m_op->m_fracBits;
+    }
 };
 
 
@@ -283,12 +315,19 @@ public:
           m_intBits(intBits),
           m_fracBits(fracBits)
     {
-        result->m_intBits  = m_intBits;
-        result->m_fracBits = m_fracBits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        m_lhs->m_intBits  = m_intBits;
+        m_lhs->m_fracBits = m_fracBits;
+    }
 
     int32_t m_intBits;      ///< number of integer bits to truncate to
     int32_t m_fracBits;     ///< number of fractional bits to truncate to
@@ -301,12 +340,19 @@ public:
     OpAssign(SharedOpPtr op, SharedOpPtr output)
         : OperationSingle(op, output)
     {
-        output->m_intBits  = op->m_intBits;
-        output->m_fracBits = op->m_fracBits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        m_lhs->m_intBits  = m_op->m_intBits;
+        m_lhs->m_fracBits = m_op->m_fracBits;
+    }
 
 };
 
@@ -319,12 +365,19 @@ public:
           m_intBits(intBits),
           m_fracBits(fracBits)
     {
-        output->m_intBits = intBits;
-        output->m_intBits = fracBits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        m_lhs->m_intBits = m_intBits;
+        m_lhs->m_fracBits = m_fracBits;
+    }
 
     int32_t m_intBits;  ///< reinterpret to this integer bits spec
     int32_t m_fracBits; ///< reinterpret to this fractional bits spec
@@ -338,14 +391,21 @@ public:
         : OperationSingle(op, output),
           m_bits(bits)
     {
-        //FIXME:
-        //  check that bits >= 0
-        output->m_intBits  = op->m_intBits;
-        output->m_fracBits = op->m_fracBits + bits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        //FIXME:
+        //  check that bits >= 0
+        m_lhs->m_intBits  = m_op->m_intBits;
+        m_lhs->m_fracBits = m_op->m_fracBits + m_bits;
+    }
 
     int32_t m_bits;     ///< number of bits to extend
 };
@@ -359,14 +419,21 @@ public:
         : OperationSingle(op, output),
           m_bits(bits)
     {
-        //FIXME:
-        //  check that bits >= 0
-        output->m_intBits  = op->m_intBits;
-        output->m_fracBits = op->m_fracBits - bits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        //FIXME:
+        //  check that bits >= 0
+        m_lhs->m_intBits  = m_op->m_intBits;
+        m_lhs->m_fracBits = m_op->m_fracBits - m_bits;
+    }
 
     int32_t m_bits;     ///< number of bits to remove
 };
@@ -379,14 +446,21 @@ public:
         : OperationSingle(op, output),
           m_bits(bits)
     {
-        //FIXME:
-        //  check that bits >= 0
-        output->m_intBits  = op->m_intBits + bits;
-        output->m_fracBits = op->m_fracBits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        //FIXME:
+        //  check that bits >= 0
+        m_lhs->m_intBits  = m_op->m_intBits + m_bits;
+        m_lhs->m_fracBits = m_op->m_fracBits;
+    }
 
     int32_t m_bits;     ///< number of bits to extend
 };
@@ -399,14 +473,21 @@ public:
         : OperationSingle(op, output),
           m_bits(bits)
     {
-        //FIXME:
-        //  check that bits >= 0
-        output->m_intBits  = op->m_intBits - bits;
-        output->m_fracBits = op->m_fracBits;
+        updateOutputPrecision();
     }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        //FIXME:
+        //  check that bits >= 0
+        m_lhs->m_intBits  = m_op->m_intBits - m_bits;
+        m_lhs->m_fracBits = m_op->m_fracBits;
+    }
 
     int32_t m_bits;     ///< number of bits to remove
 };
@@ -427,7 +508,10 @@ class OpPatchBlock : public OperationBase
 public:
     OpPatchBlock(const OperationBase *replacedInstruction) :
         m_replacedInstruction(replacedInstruction)
-    {}
+    {
+        //Note: we cannot call updateOutputPrecision here
+        //  as there are no instructions to process yet..
+    }
 
     /** accept a visitor */
     virtual bool accept(OperationVisitorBase *visitor) override;
@@ -445,6 +529,16 @@ public:
     void addStatement(OperationBase *statement)
     {
         m_statements.push_back(statement);
+    }
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override
+    {
+        for(auto statement : m_statements)
+        {
+            statement->updateOutputPrecision();
+        }
     }
 
     std::list<OperationBase*> m_statements;
@@ -466,6 +560,10 @@ public:
 
     /** replace operand op1 with operand op2, if present */
     virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override {}
+
+    /** calculate and set the Q(n,m) precision of the
+        LHS / output operand */
+    virtual void updateOutputPrecision() const override {}
 
 };
 
@@ -521,6 +619,16 @@ public:
         into the main instruction sequence and remove
         any NULL operations. */
     void applyPatches();
+
+    /** calculate and set the Q(n,m) precision of the
+        operands / variables */
+    void updateOutputPrecisions()
+    {
+        for(auto statement : m_statements)
+        {
+            statement->updateOutputPrecision();
+        }
+    }
 
     std::list<OperationBase*> m_statements;
     std::list<SharedOpPtr>    m_operands;
