@@ -17,27 +17,43 @@ namespace SSA {
 class VHDLCodeGen : public OperationVisitorBase
 {
 public:
-    VHDLCodeGen(std::ostream &os, Program &ssa) {}
+    //VHDLCodeGen(std::ostream &os, Program &ssa) {}
+    static void generateCode(std::ostream &os, Program &ssa)
+    {
+        VHDLCodeGen generator(os, ssa);
+    }
 
     // supported nodes!
-    virtual bool visit(const OpAssign *node) override  { (void)node; return true; }
-    virtual bool visit(const OpReinterpret *node) override  { (void)node; return true; }
-    virtual bool visit(const OpMul *node) override  { (void)node; return true; }
-    virtual bool visit(const OpCSDMul *node) override  { (void)node; return true; }
-    virtual bool visit(const OpAdd *node) override  { (void)node; return true; }
-    virtual bool visit(const OpSub *node) override  { (void)node; return true; }
-    virtual bool visit(const OpTruncate *node) override { (void)node; return true; }
-    virtual bool visit(const OpPatchBlock *node) override { (void)node; return true; }
-    virtual bool visit(const OpNull *node) override { (void)node; return true; }
+    virtual bool visit(const OpAssign *node) override;
+    virtual bool visit(const OpMul *node) override;
+    virtual bool visit(const OpAdd *node) override;
+    virtual bool visit(const OpSub *node) override;
+    virtual bool visit(const OpNull *node) override;
 
-    virtual bool visit(const OpExtendLSBs *node) override { (void)node; return true; }
-    virtual bool visit(const OpExtendMSBs *node) override { (void)node; return true; }
-    virtual bool visit(const OpRemoveLSBs *node) override { (void)node; return true; }
-    virtual bool visit(const OpRemoveMSBs *node) override { (void)node; return true; }
+    virtual bool visit(const OpExtendLSBs *node) override;
+    virtual bool visit(const OpExtendMSBs *node) override;
+    virtual bool visit(const OpRemoveLSBs *node) override;
+    virtual bool visit(const OpRemoveMSBs *node) override;
 
     // unsupported nodes!
     virtual bool visit(const OperationSingle *node) override { (void)node; return false; }
     virtual bool visit(const OperationDual *node) override { (void)node; return false; }
+    virtual bool visit(const OpPatchBlock *node) override { (void)node; return false; }
+    virtual bool visit(const OpCSDMul *node) override  { (void)node; return false; }
+    virtual bool visit(const OpTruncate *node) override { (void)node; return false; }
+    virtual bool visit(const OpReinterpret *node) override  { (void)node; return false; }
+
+protected:
+    VHDLCodeGen(std::ostream &os, Program &ssa);
+
+    void genProcessHeader(uint32_t indent);
+    void genIndent(uint32_t indent);
+
+    Program         *m_ssa;
+    std::ostream    &m_os;
+    uint32_t        m_indent;
+    std::string     m_prolog;
+    std::string     m_epilog;
 };
 
 #if 0

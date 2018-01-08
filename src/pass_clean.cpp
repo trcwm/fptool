@@ -32,7 +32,10 @@ bool PassClean::execute(Program &ssa)
     }
 
     ssa.applyPatches();
-    ssa.updateOutputPrecisions();
+    //Note: we should not call updateOutputPrecision
+    //      here as the removed reinterpret nodes
+    //      will cause erronous results.
+    //ssa.updateOutputPrecisions();
     return true;
 }
 

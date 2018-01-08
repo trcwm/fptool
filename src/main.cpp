@@ -301,12 +301,12 @@ int main(int argc, char *argv[])
             // ------------------------------------------------------------
             if (outstream.bad())
             {
-                SSA::VHDLCodeGen codegen(std::cout, ssa);
+                SSA::VHDLCodeGen::generateCode(std::cout, ssa);
                 //codegen.process(ssa);
             }
             else
             {
-                SSA::VHDLCodeGen codegen(outstream, ssa);
+                SSA::VHDLCodeGen::generateCode(outstream, ssa);
                 //codegen.setEpilog("");
                 //codegen.process(ssa);
             }

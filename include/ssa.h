@@ -274,7 +274,7 @@ public:
         int32_t Pmax = m_csd.digits.front().power;
         int32_t Pmin = m_csd.digits.back().power;
         m_lhs->m_intBits  = Pmax + m_op->m_intBits + 1;
-        m_lhs->m_fracBits = Pmin + m_op->m_fracBits;
+        m_lhs->m_fracBits = -Pmin + m_op->m_fracBits;
     }
 
     csd_t m_csd;            ///< multiplication factor / constant

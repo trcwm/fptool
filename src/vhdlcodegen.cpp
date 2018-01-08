@@ -10,6 +10,235 @@
 #include <algorithm>
 #include "vhdlcodegen.h"
 
+using namespace SSA;
+
+VHDLCodeGen::VHDLCodeGen(std::ostream &os, Program &ssa) :
+    m_os(os), m_ssa(&ssa)
+{
+    doLog(LOG_INFO, "Running VHDLCodeGen\n");
+    m_indent = 2;
+
+    m_os << m_prolog;
+
+    genProcessHeader(m_indent);
+
+    m_indent += 2;
+    for(auto statement : ssa.m_statements)
+    {
+        statement->accept(this);
+    }
+    m_indent-=2;
+    genIndent(m_indent);
+    m_os << "end process;\n";
+
+    m_os << m_epilog;
+}
+
+void VHDLCodeGen::genIndent(uint32_t indent)
+{
+    for(uint32_t i=0; i<indent; i++)
+    {
+        m_os << " ";
+    }
+}
+
+void VHDLCodeGen::genProcessHeader(uint32_t indent)
+{
+    //
+    // <input signal documentation>
+    // <output signal documentation>
+    // proc_comb: process( <sensitivity list )
+    //   <variable list>
+    // begin
+    //
+
+    // generate documentation for output signals
+    m_os << "  -- *** OUTPUT SIGNALS ***\n";
+
+#if 0
+    auto iter = ssa.beginOperands();
+    while(iter != ssa.endOperands())
+    {
+
+        switch(iter->type)
+        {
+        case operand_t::TypeOutput:
+            genIndent(os, indent);
+            os << "-- " << iter->info.txt << " Q(" << iter->info.intBits << "," << iter->info.fracBits << ");";
+            os << "  SIGNED(" << iter->info.intBits + iter->info.fracBits-1 << " downto 0);\n";
+            break;
+        }
+        iter++;
+    }
+
+    // generate documentation for input signals
+    os << "\n";
+    os << "  -- *** INPUT SIGNALS ***\n";
+    iter = ssa.beginOperands();
+    while(iter != ssa.endOperands())
+    {
+
+        switch(iter->type)
+        {
+        case operand_t::TypeInput:
+            genIndent(os, indent);
+            os << "-- " << iter->info.txt << " Q(" << iter->info.intBits << "," << iter->info.fracBits << ");";
+            os << "  SIGNED(" << iter->info.intBits + iter->info.fracBits-1 << " downto 0);\n";
+            break;
+        }
+        iter++;
+    }
+#endif
+
+    // generate process header with sensitivity list
+    m_os << "\n";
+    m_os << "  -------------------\n";
+    m_os << "  -- PROCESS BLOCK --\n";
+    m_os << "  -------------------\n";
+
+    genIndent(indent);
+    m_os << "proc_comb: process(";
+#if 0
+    bool isFirst = true;
+    iter = ssa.beginOperands();
+    while(iter != ssa.endOperands())
+    {
+        if (iter->type == operand_t::TypeInput)
+        {
+            // prepend a comma if this is not the first in the sens. list
+            if (!isFirst)
+                os << ",";
+
+            os << iter->info.txt;
+            isFirst = false;
+        }
+        iter++;
+    }
+#endif
+    m_os << ")\n"; // terminate process header
+    m_indent+=2;
+
+#if 0
+    // write the variable list
+    iter = ssa.beginOperands();
+    while(iter != ssa.endOperands())
+    {
+        if (iter->type == operand_t::TypeIntermediate)
+        {
+            genIndent(os, indent);
+            os << "variable " << iter->info.txt << " : SIGNED("<< iter->info.intBits + iter->info.fracBits-1 << " downto 0);";
+            os << "  -- Q(" << iter->info.intBits << "," << iter->info.fracBits << ");\n";
+        }
+        iter++;
+    }
+#endif
+    m_indent-=2;
+    genIndent(m_indent);
+    m_os << "begin\n";
+}
+
+
+bool VHDLCodeGen::visit(const OpAssign *node)
+{
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " <= " << node->m_op->m_identName.c_str() << ";\n";
+    return true;
+}
+
+bool VHDLCodeGen::visit(const OpMul *node)
+{
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " := " << node->m_op1->m_identName.c_str() << " * " << node->m_op2->m_identName.c_str() << ";\n";
+    return true;
+}
+
+bool VHDLCodeGen::visit(const OpAdd *node)
+{
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " := " << node->m_op1->m_identName.c_str() << " + " << node->m_op2->m_identName.c_str() << ";\n";
+    return true;
+}
+
+bool VHDLCodeGen::visit(const OpSub *node)
+{
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " := " << node->m_op1->m_identName.c_str() << " - " << node->m_op2->m_identName.c_str() << ";\n";
+    return true;
+}
+
+#if 0
+case SSANode::OP_RemoveLSBs:
+    op1 = ssa.getOperand(iter->op1Idx);
+    totalOpBits = op1.info.intBits + op1.info.fracBits;
+    os << op1.info.txt << "(" << totalOpBits-1 << " downto " << iter->bits << "); -- remove " << iter->bits << " LSBs\n";
+    break;
+case SSANode::OP_ExtendLSBs:
+    op1 = ssa.getOperand(iter->op1Idx);
+    extendLSBs(os, op1.info.txt, node.bits);
+    os << ";\n";
+    break;
+case SSANode::OP_RemoveMSBs:
+    op1 = ssa.getOperand(iter->op1Idx);
+    totalOpBits = op1.info.intBits + op1.info.fracBits;
+    os << op1.info.txt << "(" << totalOpBits - iter->bits - 1<< " downto 0); -- remove " << iter->bits << " MSBs\n";
+    break;
+case SSANode::OP_ExtendMSBs:
+    op1 = ssa.getOperand(iter->op1Idx);
+    os << "resize(" << op1.info.txt << "," << op1.info.intBits+op1.info.fracBits+node.bits << ");\n";
+#endif
+
+
+bool VHDLCodeGen::visit(const OpNull *node)
+{
+    return true;
+}
+
+
+bool VHDLCodeGen::visit(const OpExtendLSBs *node)
+{
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " := ";
+    m_os << node->m_op->m_identName.c_str() << " & \"";
+    for(uint32_t i=0; i<node->m_bits; i++)
+        m_os << "0";
+    m_os << "\"\n";
+    return true;
+}
+
+
+bool VHDLCodeGen::visit(const OpExtendMSBs *node)
+{
+    int32_t totalOpBits = node->m_op->m_intBits + node->m_op->m_fracBits;
+
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " := ";
+    m_os << "resize(" << node->m_op->m_identName.c_str() << "," << totalOpBits + node->m_bits << ");\n";
+    return true;
+}
+
+
+bool VHDLCodeGen::visit(const OpRemoveLSBs *node)
+{
+    int32_t totalOpBits = node->m_op->m_intBits + node->m_op->m_fracBits;
+
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " := ";
+    m_os << node->m_op->m_identName.c_str() << "(" << totalOpBits-1 << " downto " << node->m_bits << "); -- remove " << node->m_bits << " LSBs\n";
+    return true;
+}
+
+
+bool VHDLCodeGen::visit(const OpRemoveMSBs *node)
+{
+    int32_t totalOpBits = node->m_op->m_intBits + node->m_op->m_fracBits;
+
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " := ";
+    m_os << node->m_op->m_identName << "(" << totalOpBits - node->m_bits - 1 << " downto 0); -- remove " << node->m_bits << " MSBs\n";
+    return true;
+}
+
+
 #if 0
 
 void VHDLCodeGen::execute(SSAObject &ssa)
