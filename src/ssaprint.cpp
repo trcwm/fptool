@@ -83,6 +83,20 @@ bool SSA::Printer::visit(const OpTruncate *node)
 }
 
 
+bool SSA::Printer::visit(const OpNegate *node)
+{
+    if (m_printLHSPrecision)
+    {
+        m_s << "Q(" << node->m_lhs->m_intBits;
+        m_s << "," << node->m_lhs->m_fracBits;
+        m_s << ")\t";
+    }
+    m_s << node->m_lhs->m_identName.c_str() << " := -" << node->m_op->m_identName.c_str();
+    m_s << "\n";
+    return true;
+}
+
+
 bool SSA::Printer::visit(const OpAssign *node)
 {
     if (m_printLHSPrecision)

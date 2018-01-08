@@ -579,6 +579,7 @@ public:
     virtual bool visit(const OpMul *node) = 0;
     virtual bool visit(const OpAdd *node) = 0;
     virtual bool visit(const OpSub *node) = 0;
+    virtual bool visit(const OpNegate *node) = 0;
     virtual bool visit(const OpCSDMul *node) = 0;
     virtual bool visit(const OpTruncate *node) = 0;
     virtual bool visit(const OpReinterpret *node) = 0;

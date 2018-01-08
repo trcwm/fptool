@@ -28,6 +28,7 @@ public:
     virtual bool visit(const OpMul *node) override;
     virtual bool visit(const OpAdd *node) override;
     virtual bool visit(const OpSub *node) override;
+    virtual bool visit(const OpNegate *node) override;
     virtual bool visit(const OpNull *node) override;
 
     virtual bool visit(const OpExtendLSBs *node) override;

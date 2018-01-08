@@ -33,6 +33,7 @@ public:
     virtual bool visit(const OpCSDMul *node) override;
     virtual bool visit(const OpAdd *node) override;
     virtual bool visit(const OpSub *node) override;
+    virtual bool visit(const OpNegate *node) override;
     virtual bool visit(const OpTruncate *node) override;
     virtual bool visit(const OpReinterpret *node) override;
 

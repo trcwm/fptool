@@ -145,6 +145,13 @@ bool VHDLCodeGen::visit(const OpAssign *node)
     return true;
 }
 
+bool VHDLCodeGen::visit(const OpNegate *node)
+{
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " <= -" << node->m_op->m_identName.c_str() << ";\n";
+    return true;
+}
+
 bool VHDLCodeGen::visit(const OpMul *node)
 {
     genIndent(m_indent);
@@ -166,27 +173,6 @@ bool VHDLCodeGen::visit(const OpSub *node)
     return true;
 }
 
-#if 0
-case SSANode::OP_RemoveLSBs:
-    op1 = ssa.getOperand(iter->op1Idx);
-    totalOpBits = op1.info.intBits + op1.info.fracBits;
-    os << op1.info.txt << "(" << totalOpBits-1 << " downto " << iter->bits << "); -- remove " << iter->bits << " LSBs\n";
-    break;
-case SSANode::OP_ExtendLSBs:
-    op1 = ssa.getOperand(iter->op1Idx);
-    extendLSBs(os, op1.info.txt, node.bits);
-    os << ";\n";
-    break;
-case SSANode::OP_RemoveMSBs:
-    op1 = ssa.getOperand(iter->op1Idx);
-    totalOpBits = op1.info.intBits + op1.info.fracBits;
-    os << op1.info.txt << "(" << totalOpBits - iter->bits - 1<< " downto 0); -- remove " << iter->bits << " MSBs\n";
-    break;
-case SSANode::OP_ExtendMSBs:
-    op1 = ssa.getOperand(iter->op1Idx);
-    os << "resize(" << op1.info.txt << "," << op1.info.intBits+op1.info.fracBits+node.bits << ");\n";
-#endif
-
 
 bool VHDLCodeGen::visit(const OpNull *node)
 {
@@ -199,7 +185,7 @@ bool VHDLCodeGen::visit(const OpExtendLSBs *node)
     genIndent(m_indent);
     m_os << node->m_lhs->m_identName.c_str() << " := ";
     m_os << node->m_op->m_identName.c_str() << " & \"";
-    for(uint32_t i=0; i<node->m_bits; i++)
+    for(int32_t i=0; i<node->m_bits; i++)
         m_os << "0";
     m_os << "\"\n";
     return true;
