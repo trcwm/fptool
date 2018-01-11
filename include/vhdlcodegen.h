@@ -18,9 +18,10 @@ class VHDLCodeGen : public OperationVisitorBase
 {
 public:
     //VHDLCodeGen(std::ostream &os, Program &ssa) {}
-    static void generateCode(std::ostream &os, Program &ssa)
+    static bool generateCode(std::ostream &os, Program &ssa)
     {
         VHDLCodeGen generator(os, ssa);
+        return generator.execute();
     }
 
     // supported nodes!
@@ -47,6 +48,7 @@ public:
 protected:
     VHDLCodeGen(std::ostream &os, Program &ssa);
 
+    bool execute();
     void genProcessHeader(uint32_t indent);
     void genIndent(uint32_t indent);
 

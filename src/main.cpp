@@ -314,11 +314,17 @@ int main(int argc, char *argv[])
             // ------------------------------------------------------------
             if (outstream.bad())
             {
-                SSA::VHDLCodeGen::generateCode(std::cout, ssa);
+                if (!SSA::VHDLCodeGen::generateCode(std::cout, ssa))
+                {
+                    doLog(LOG_ERROR, "Error generating VHDL code!\n");
+                }
             }
             else
             {
-                SSA::VHDLCodeGen::generateCode(outstream, ssa);
+                if (!SSA::VHDLCodeGen::generateCode(outstream, ssa))
+                {
+                    doLog(LOG_ERROR, "Error generating VHDL code!\n");
+                }
                 //codegen.setEpilog("");
                 //codegen.process(ssa);
             }

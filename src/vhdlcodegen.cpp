@@ -15,6 +15,11 @@ using namespace SSA;
 VHDLCodeGen::VHDLCodeGen(std::ostream &os, Program &ssa) :
     m_os(os), m_ssa(&ssa)
 {
+
+}
+
+bool VHDLCodeGen::execute()
+{
     doLog(LOG_INFO, "-----------------------\n");
     doLog(LOG_INFO, "  Running VHDLCodeGen\n");
     doLog(LOG_INFO, "-----------------------\n");
@@ -26,15 +31,17 @@ VHDLCodeGen::VHDLCodeGen(std::ostream &os, Program &ssa) :
     genProcessHeader(m_indent);
 
     m_indent += 2;
-    for(auto statement : ssa.m_statements)
+    for(auto statement : m_ssa->m_statements)
     {
-        statement->accept(this);
+        if (!statement->accept(this))
+            return false;
     }
     m_indent-=2;
     genIndent(m_indent);
     m_os << "end process;\n";
 
     m_os << m_epilog;
+    return true;
 }
 
 void VHDLCodeGen::genIndent(uint32_t indent)
