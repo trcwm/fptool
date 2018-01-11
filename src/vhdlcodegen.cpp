@@ -137,13 +137,23 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
 bool VHDLCodeGen::visit(const OpAssign *node)
 {
     genIndent(m_indent);
-    m_os << node->m_lhs->m_identName.c_str() << " <= " << node->m_op->m_identName.c_str() << ";\n";
+    OutputOperand *outOp = dynamic_cast<OutputOperand*>(node->m_lhs.get());
+    if (outOp != NULL)
+    {
+        // signal, so use <=
+        m_os << node->m_lhs->m_identName.c_str() << " <= " << node->m_op->m_identName.c_str() << ";\n";
+    }
+    else
+    {
+        // variable, so use :=
+        m_os << node->m_lhs->m_identName.c_str() << " := " << node->m_op->m_identName.c_str() << ";\n";
+    }
     return true;
 }
 
 bool VHDLCodeGen::visit(const OpNegate *node)
 {
-    genIndent(m_indent);
+    genIndent(m_indent);    
     m_os << node->m_lhs->m_identName.c_str() << " <= -" << node->m_op->m_identName.c_str() << ";\n";
     return true;
 }
