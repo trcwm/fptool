@@ -45,6 +45,7 @@ bool PassRemoveOperands::execute(Program &ssa)
     {
         if ((*iter)->m_usedFlag == false)
         {
+            doLog(LOG_INFO, "Removing %s\n", (*iter)->m_identName.c_str());
             iter = ssa.m_operands.erase(iter);
         }
         else

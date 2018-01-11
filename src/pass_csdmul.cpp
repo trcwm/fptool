@@ -61,8 +61,7 @@ bool PassCSDMul::visit(const OpCSDMul *node)
     doLog(LOG_INFO, "Expanding CSD %s\n", node->m_csdName.c_str());
 
     OpPatchBlock *patch = new OpPatchBlock(node);
-    std::list<SharedOpPtr> operands;
-    expandCSD(node->m_csd, node->m_op, node->m_lhs, patch, operands);
+    expandCSD(node->m_csd, node->m_op, node->m_lhs, patch, m_ssa->m_operands);
     patchNode(node, patch); // replace the MUL node.
     return true;
 }

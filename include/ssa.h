@@ -79,7 +79,6 @@ static uint32_t gs_tempIdx = 0;
 class IntermediateOperand : public OperandBase
 {
 public:
-
     /** create a new named intermediate operand */
     static std::shared_ptr<IntermediateOperand> createNewIntermediate()
     {
@@ -87,7 +86,6 @@ public:
         obj->m_identName = stringf("TMP%d", gs_tempIdx++);
         return obj;
     }
-
 };
 
 

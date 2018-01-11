@@ -126,6 +126,12 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
             m_os << "variable " << op->m_identName.c_str();
             m_os << " : SIGNED(" << op->m_intBits + op->m_fracBits-1 << " downto 0);  --";
             m_os << " Q(" << op->m_intBits << "," << op->m_fracBits << ");\n";
+
+            doLog(LOG_INFO, "Creating variable %s\n", op->m_identName.c_str());
+        }
+        else
+        {
+            doLog(LOG_INFO, "Skipping variable %s\n", operand->m_identName.c_str());
         }
     }
     m_indent-=2;

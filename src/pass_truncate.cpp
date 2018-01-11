@@ -64,6 +64,7 @@ bool PassTruncate::visit(const OpTruncate *node)
         // truncate the LSBs
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         OpRemoveLSBs* instr = new OpRemoveLSBs(inOp, tmp, node->m_op->m_fracBits - node->m_fracBits);
+        m_ssa->addOperand(tmp);
         patch->addStatement(instr);
 
         // replace the input operand with the new temporary output
@@ -74,6 +75,7 @@ bool PassTruncate::visit(const OpTruncate *node)
         // extend the LSBs
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         OpExtendLSBs* instr = new OpExtendLSBs(inOp, tmp, node->m_fracBits - node->m_op->m_fracBits);
+        m_ssa->addOperand(tmp);
         patch->addStatement(instr);
 
         // replace the input operand with the new temporary output
@@ -93,6 +95,7 @@ bool PassTruncate::visit(const OpTruncate *node)
         // truncate the MSBs
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         OpRemoveMSBs* instr = new OpRemoveMSBs(inOp, tmp, node->m_op->m_intBits - node->m_intBits);
+        m_ssa->addOperand(tmp);
         patch->addStatement(instr);
 
         // replace the input operand with the new temporary output
@@ -103,6 +106,7 @@ bool PassTruncate::visit(const OpTruncate *node)
         // extend the MSBs
         SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
         OpExtendMSBs* instr = new OpExtendMSBs(inOp, tmp, node->m_intBits - node->m_op->m_intBits);
+        m_ssa->addOperand(tmp);
         patch->addStatement(instr);
 
         // replace the input operand with the new temporary output
