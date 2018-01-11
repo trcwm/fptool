@@ -24,7 +24,16 @@ bool SSA::Printer::visit(const OpAdd *node)
         m_s << "," << node->m_lhs->m_fracBits;
         m_s << ")\t";
     }
-    m_s << node->m_lhs->m_identName.c_str() << " := ADD " << node->m_op1->m_identName.c_str();
+
+    if (node->m_noExtension)
+    {
+        m_s << node->m_lhs->m_identName.c_str() << " := ADD_NOEX " << node->m_op1->m_identName.c_str();
+    }
+    else
+    {
+        m_s << node->m_lhs->m_identName.c_str() << " := ADD " << node->m_op1->m_identName.c_str();
+    }
+
     m_s << "," << node->m_op2->m_identName.c_str() << "\n";
     return true;
 }
@@ -37,7 +46,16 @@ bool SSA::Printer::visit(const OpSub *node)
         m_s << "," << node->m_lhs->m_fracBits;
         m_s << ")\t";
     }
-    m_s << node->m_lhs->m_identName.c_str() << " := SUB " << node->m_op1->m_identName.c_str();
+
+    if (node->m_noExtension)
+    {
+        m_s << node->m_lhs->m_identName.c_str() << " := SUB_NOEX " << node->m_op1->m_identName.c_str();
+    }
+    else
+    {
+        m_s << node->m_lhs->m_identName.c_str() << " := SUB " << node->m_op1->m_identName.c_str();
+    }
+
     m_s << "," << node->m_op2->m_identName.c_str() << "\n";
     return true;
 }

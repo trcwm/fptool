@@ -161,6 +161,15 @@ bool VHDLCodeGen::visit(const OpMul *node)
 
 bool VHDLCodeGen::visit(const OpAdd *node)
 {
+    // VHDL code generator requires that all ADD/SUB
+    // nodes do not extend the MSB themselves as
+    // this is not part of the VHDL specification
+    // for the + or - operator.
+    if (!node->m_noExtension)
+    {
+        //FIXME: better error reporting.
+        return false;
+    }
     genIndent(m_indent);
     m_os << node->m_lhs->m_identName.c_str() << " := " << node->m_op1->m_identName.c_str() << " + " << node->m_op2->m_identName.c_str() << ";\n";
     return true;
@@ -168,6 +177,15 @@ bool VHDLCodeGen::visit(const OpAdd *node)
 
 bool VHDLCodeGen::visit(const OpSub *node)
 {
+    // VHDL code generator requires that all ADD/SUB
+    // nodes do not extend the MSB themselves as
+    // this is not part of the VHDL specification
+    // for the + or - operator.
+    if (!node->m_noExtension)
+    {
+        //FIXME: better error reporting.
+        return false;
+    }
     genIndent(m_indent);
     m_os << node->m_lhs->m_identName.c_str() << " := " << node->m_op1->m_identName.c_str() << " - " << node->m_op2->m_identName.c_str() << ";\n";
     return true;

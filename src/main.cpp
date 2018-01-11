@@ -297,6 +297,18 @@ int main(int argc, char *argv[])
             }
 
             // ------------------------------------------------------------
+            // -- Remove unused variables
+            // ------------------------------------------------------------
+            doLog(LOG_INFO, "Variables used:\n");
+            for(auto var : ssa.m_operands)
+            {
+                if (var.use_count()>1)
+                {
+                    doLog(LOG_INFO, "%s %d\n", var->m_identName.c_str(), var.use_count());
+                }
+            }
+
+            // ------------------------------------------------------------
             // -- VHDL code generation
             // ------------------------------------------------------------
             if (outstream.bad())

@@ -169,8 +169,14 @@ public:
 class OpAdd : public OperationDual
 {
 public:
-    OpAdd(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
-        : OperationDual(op1,op2, result)
+    /** create an addition operator result = op1 + op2.
+        @param op1 first input operand.
+        @param op2 second input operand.
+        @param result output operand.
+        @param noExtension when true, no extension bit is added to the result.
+        */
+    OpAdd(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result, bool noExtension = false)
+        : OperationDual(op1,op2, result), m_noExtension(noExtension)
     {
         updateOutputPrecision();
     }
@@ -182,18 +188,29 @@ public:
         LHS / output operand */
     virtual void updateOutputPrecision() const override
     {
-        m_lhs->m_intBits  = std::max(m_op1->m_intBits, m_op2->m_intBits)+1;
+        m_lhs->m_intBits  = std::max(m_op1->m_intBits, m_op2->m_intBits);
+        if (!m_noExtension)
+        {
+            m_lhs->m_intBits++;
+        }
         m_lhs->m_fracBits = std::max(m_op1->m_fracBits, m_op2->m_fracBits);
     }
 
+    bool m_noExtension;
 };
 
 
 class OpSub : public OperationDual
 {
 public:
-    OpSub(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
-        : OperationDual(op1,op2, result)
+    /** create an subtraction operator result = op1 - op2.
+    @param op1 first input operand.
+    @param op2 second input operand.
+    @param result output operand.
+    @param noExtension when true, no extension bit is added to the result.
+    */
+    OpSub(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result, bool noExtension = false)
+        : OperationDual(op1,op2, result), m_noExtension(noExtension)
     {
         updateOutputPrecision();
     }
@@ -205,9 +222,15 @@ public:
         LHS / output operand */
     virtual void updateOutputPrecision() const override
     {
-        m_lhs->m_intBits  = std::max(m_op1->m_intBits, m_op2->m_intBits)+1;
+        m_lhs->m_intBits  = std::max(m_op1->m_intBits, m_op2->m_intBits);
+        if (!m_noExtension)
+        {
+            m_lhs->m_intBits++;
+        }
         m_lhs->m_fracBits = std::max(m_op1->m_fracBits, m_op2->m_fracBits);
     }
+
+    bool m_noExtension;
 };
 
 
@@ -270,10 +293,22 @@ public:
         //  Q(n,m) - Q(n-3,m+3) -> Q(n,m+3)
         //  because (2^0 - 2^-3) < 2^0
         //
+        //  if the first digit is positive and
+        //  the second is negative or non-existent,
+        //  the CSD coefficient is smaller or equal
+        //  to the first digit and we don't need
+        //  an additional expansion MSB.
+        //
 
         int32_t Pmax = m_csd.digits.front().power;
         int32_t Pmin = m_csd.digits.back().power;
-        m_lhs->m_intBits  = Pmax + m_op->m_intBits + 1;
+
+        m_lhs->m_intBits = Pmax + m_op->m_intBits;
+        if ((m_csd.digits.size() > 1) && (m_csd.digits[0].sign != m_csd.digits[1].sign))
+        {
+            m_lhs->m_intBits++;
+        }
+
         m_lhs->m_fracBits = -Pmin + m_op->m_fracBits;
     }
 

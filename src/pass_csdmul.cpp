@@ -177,12 +177,18 @@ void PassCSDMul::expandCSD(const csd_t &csd,
         operands.push_back(result);
         if (digitIter->sign > 0)
         {
+            // the sum of t1 and t2 will always be larger in
+            // magnitude so we _do_ need an additional sign extension bit.
             SSA::OpAdd *adder = new SSA::OpAdd(t1,t2,result);
             patch->m_statements.push_back(adder);
         }
         else
         {
-            SSA::OpSub *subber = new SSA::OpSub(t1,t2,result);
+            // the weight of t2 is always smaller than t1
+            // so the result of t1-t2 will always be smaller in
+            // magnitude than t1. As a result, we do not need an addition
+            // sign extension bit.
+            SSA::OpSub *subber = new SSA::OpSub(t1,t2,result, true);
             patch->m_statements.push_back(subber);
         }
         t1 = result;

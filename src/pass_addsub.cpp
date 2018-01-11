@@ -71,29 +71,33 @@ bool PassAddSub::visit(const OpAdd *node)
 
     // **********************************************************************
     //   Extend largest argument by 1 MSB to avoid overflow
+    //   .. but only when the ADD/SUB instruction indicates it needs it
     // **********************************************************************
 
     // if there is no largets argument
     // pick op1.
-    if (op1->m_intBits >= op2->m_intBits)
+    if (!node->m_noExtension)
     {
-        // extend MSBs of op1 by creating a new extended
-        // version of op1
-        SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
-        SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op1, tmp, 1);
-        patch->m_statements.push_back(instr);
-        m_ssa->addOperand(tmp);
-        op1 = tmp;
-    }
-    else
-    {
-        // extend MSBs of op1 by creating a new extended
-        // version of op2
-        SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
-        SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op2, tmp, 1);
-        patch->m_statements.push_back(instr);
-        m_ssa->addOperand(tmp);
-        op2 = tmp;
+        if (op1->m_intBits >= op2->m_intBits)
+        {
+            // extend MSBs of op1 by creating a new extended
+            // version of op1
+            SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
+            SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op1, tmp, 1);
+            patch->m_statements.push_back(instr);
+            m_ssa->addOperand(tmp);
+            op1 = tmp;
+        }
+        else
+        {
+            // extend MSBs of op1 by creating a new extended
+            // version of op2
+            SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
+            SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op2, tmp, 1);
+            patch->m_statements.push_back(instr);
+            m_ssa->addOperand(tmp);
+            op2 = tmp;
+        }
     }
 
     // patch the instruction if there are actually instructions
@@ -120,11 +124,7 @@ bool PassAddSub::visit(const OpAdd *node)
         //       of the int/frac bits from the original
         //       result as a quick fix.
 
-        //int32_t outIntBits = node->m_lhs->m_intBits;
-        //int32_t outFracBits = node->m_lhs->m_fracBits;
-        SSA::OpAdd *add = new SSA::OpAdd(op1,op2, node->m_lhs);
-        //node->m_lhs->m_intBits = outIntBits;
-        //node->m_lhs->m_fracBits = outFracBits;
+        SSA::OpAdd *add = new SSA::OpAdd(op1, op2, node->m_lhs, true);
 
         patch->m_statements.push_back(add);
         patchNode(node, patch);
@@ -175,25 +175,28 @@ bool PassAddSub::visit(const OpSub *node)
 
     // if there is no largets argument
     // pick op1.
-    if (op1->m_intBits >= op2->m_intBits)
+    if (!node->m_noExtension)
     {
-        // extend MSBs of op1 by creating a new extended
-        // version of op1
-        SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
-        SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op1, tmp, 1);
-        patch->m_statements.push_back(instr);
-        m_ssa->addOperand(tmp);
-        op1 = tmp;
-    }
-    else
-    {
-        // extend MSBs of op1 by creating a new extended
-        // version of op2
-        SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
-        SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op2, tmp, 1);
-        patch->m_statements.push_back(instr);
-        m_ssa->addOperand(tmp);
-        op2 = tmp;
+        if (op1->m_intBits >= op2->m_intBits)
+        {
+            // extend MSBs of op1 by creating a new extended
+            // version of op1
+            SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
+            SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op1, tmp, 1);
+            patch->m_statements.push_back(instr);
+            m_ssa->addOperand(tmp);
+            op1 = tmp;
+        }
+        else
+        {
+            // extend MSBs of op1 by creating a new extended
+            // version of op2
+            SharedOpPtr tmp = IntermediateOperand::createNewIntermediate();
+            SSA::OpExtendMSBs *instr = new SSA::OpExtendMSBs(op2, tmp, 1);
+            patch->m_statements.push_back(instr);
+            m_ssa->addOperand(tmp);
+            op2 = tmp;
+        }
     }
 
     // patch the instruction if there are actually instructions
@@ -219,11 +222,8 @@ bool PassAddSub::visit(const OpSub *node)
         //       for now, we'll just copy the old settings
         //       of the int/frac bits from the original
         //       result as a quick fix.
-        //int32_t outIntBits = node->m_lhs->m_intBits;
-        //int32_t outFracBits = node->m_lhs->m_fracBits;
-        SSA::OpSub *sub = new SSA::OpSub(op1,op2, node->m_lhs);
-        //node->m_lhs->m_intBits = outIntBits;
-        //node->m_lhs->m_fracBits = outFracBits;
+
+        SSA::OpSub *sub = new SSA::OpSub(op1,op2, node->m_lhs, true);
 
         patch->m_statements.push_back(sub);
         patchNode(node, patch);
