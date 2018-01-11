@@ -195,7 +195,7 @@ bool VHDLCodeGen::visit(const OpExtendLSBs *node)
     m_os << node->m_op->m_identName.c_str() << " & \"";
     for(int32_t i=0; i<node->m_bits; i++)
         m_os << "0";
-    m_os << "\"\n";
+    m_os << "\";\n";
     return true;
 }
 
