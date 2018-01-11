@@ -15,6 +15,7 @@ HEADERS += include/cmdline.h \
            include/pass_addsub.h \
            include/pass_truncate.h \
            include/pass_clean.h \
+           include/pass_removeoperands.h \
            include/pass_csdmul.h \
            include/astgraphviz.h \
            include/reader.h \
@@ -39,6 +40,7 @@ SOURCES += src/cmdline.cpp \
            src/pass_addsub.cpp \
            src/pass_truncate.cpp \
            src/pass_clean.cpp \
+           src/pass_removeoperands.cpp \
            src/pass_csdmul.cpp \
            src/astgraphviz.cpp \
            src/reader.cpp \

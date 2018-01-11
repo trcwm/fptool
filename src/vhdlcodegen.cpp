@@ -15,7 +15,10 @@ using namespace SSA;
 VHDLCodeGen::VHDLCodeGen(std::ostream &os, Program &ssa) :
     m_os(os), m_ssa(&ssa)
 {
-    doLog(LOG_INFO, "Running VHDLCodeGen\n");
+    doLog(LOG_INFO, "-----------------------\n");
+    doLog(LOG_INFO, "  Running VHDLCodeGen\n");
+    doLog(LOG_INFO, "-----------------------\n");
+
     m_indent = 2;
 
     m_os << m_prolog;
@@ -55,40 +58,32 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
     // generate documentation for output signals
     m_os << "  -- *** OUTPUT SIGNALS ***\n";
 
-#if 0
-    auto iter = ssa.beginOperands();
-    while(iter != ssa.endOperands())
+    for(auto operand : m_ssa->m_operands)
     {
-
-        switch(iter->type)
+        OutputOperand *op = dynamic_cast<OutputOperand*>(operand.get());
+        if (op != NULL)
         {
-        case operand_t::TypeOutput:
-            genIndent(os, indent);
-            os << "-- " << iter->info.txt << " Q(" << iter->info.intBits << "," << iter->info.fracBits << ");";
-            os << "  SIGNED(" << iter->info.intBits + iter->info.fracBits-1 << " downto 0);\n";
-            break;
+            genIndent(m_indent);
+            m_os << "-- signal " << op->m_identName.c_str();
+            m_os << " : SIGNED(" << op->m_intBits + op->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << op->m_intBits << "," << op->m_fracBits << ");\n";
         }
-        iter++;
     }
 
     // generate documentation for input signals
-    os << "\n";
-    os << "  -- *** INPUT SIGNALS ***\n";
-    iter = ssa.beginOperands();
-    while(iter != ssa.endOperands())
+    m_os << "\n";
+    m_os << "  -- *** INPUT SIGNALS ***\n";
+    for(auto operand : m_ssa->m_operands)
     {
-
-        switch(iter->type)
+        InputOperand *op = dynamic_cast<InputOperand*>(operand.get());
+        if (op != NULL)
         {
-        case operand_t::TypeInput:
-            genIndent(os, indent);
-            os << "-- " << iter->info.txt << " Q(" << iter->info.intBits << "," << iter->info.fracBits << ");";
-            os << "  SIGNED(" << iter->info.intBits + iter->info.fracBits-1 << " downto 0);\n";
-            break;
+            genIndent(m_indent);
+            m_os << "-- signal " << op->m_identName.c_str();
+            m_os << " : SIGNED(" << op->m_intBits + op->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << op->m_intBits << "," << op->m_fracBits << ");\n";
         }
-        iter++;
     }
-#endif
 
     // generate process header with sensitivity list
     m_os << "\n";
@@ -98,40 +93,34 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
 
     genIndent(indent);
     m_os << "proc_comb: process(";
-#if 0
-    bool isFirst = true;
-    iter = ssa.beginOperands();
-    while(iter != ssa.endOperands())
-    {
-        if (iter->type == operand_t::TypeInput)
-        {
-            // prepend a comma if this is not the first in the sens. list
-            if (!isFirst)
-                os << ",";
 
-            os << iter->info.txt;
+    bool isFirst = true;
+    for(auto operand : m_ssa->m_operands)
+    {
+        InputOperand *op = dynamic_cast<InputOperand*>(operand.get());
+        if (op != NULL)
+        {
+            if (!isFirst)
+                m_os << ",";
+            m_os << op->m_identName.c_str();
             isFirst = false;
         }
-        iter++;
     }
-#endif
     m_os << ")\n"; // terminate process header
     m_indent+=2;
 
-#if 0
     // write the variable list
-    iter = ssa.beginOperands();
-    while(iter != ssa.endOperands())
+    for(auto operand : m_ssa->m_operands)
     {
-        if (iter->type == operand_t::TypeIntermediate)
+        IntermediateOperand *op = dynamic_cast<IntermediateOperand*>(operand.get());
+        if (op != NULL)
         {
-            genIndent(os, indent);
-            os << "variable " << iter->info.txt << " : SIGNED("<< iter->info.intBits + iter->info.fracBits-1 << " downto 0);";
-            os << "  -- Q(" << iter->info.intBits << "," << iter->info.fracBits << ");\n";
+            genIndent(m_indent);
+            m_os << "variable " << op->m_identName.c_str();
+            m_os << " : SIGNED(" << op->m_intBits + op->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << op->m_intBits << "," << op->m_fracBits << ");\n";
         }
-        iter++;
     }
-#endif
     m_indent-=2;
     genIndent(m_indent);
     m_os << "begin\n";
@@ -194,6 +183,7 @@ bool VHDLCodeGen::visit(const OpSub *node)
 
 bool VHDLCodeGen::visit(const OpNull *node)
 {
+    (void)node;
     return true;
 }
 

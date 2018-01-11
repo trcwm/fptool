@@ -322,6 +322,7 @@ void Creator::visit(const AST::InputDeclaration *node)
 
 void Creator::visit(const AST::IntegerConstant *node)
 {
+    (void)node;
     // not implemented yet
 }
 
@@ -360,7 +361,7 @@ void Creator::visit(const AST::PrecisionModifier *node)
 
 void Creator::visit(const AST::Statements *node)
 {
-
+    (void)node;
 }
 
 void Creator::visit(const AST::Operation2 *node)

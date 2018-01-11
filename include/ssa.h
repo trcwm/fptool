@@ -38,9 +38,10 @@ class OperandBase
 public:
     virtual ~OperandBase() {}
 
-    int32_t     m_intBits;
-    int32_t     m_fracBits;
-    std::string m_identName;
+    bool        m_usedFlag;     ///< flag is used to tell whether this operand is used in a program.
+    int32_t     m_intBits;      ///< number of integer bits of the variable/operand.
+    int32_t     m_fracBits;     ///< number of fractional bits of the variable/operand.
+    std::string m_identName;    ///< name of the variable/operand.
 
     /** check if the operand is a CSD type */
     virtual bool isCSD() const
@@ -52,8 +53,11 @@ protected:
 
     // hide constructor so nobody can make this base class
     OperandBase()
-    {
-    }
+        : m_usedFlag(false),
+          m_intBits(0),
+          m_fracBits(0),
+          m_identName("UNUSED")
+    {}
 };
 
 typedef std::shared_ptr<OperandBase> SharedOpPtr;
@@ -80,7 +84,7 @@ public:
     static std::shared_ptr<IntermediateOperand> createNewIntermediate()
     {
         std::shared_ptr<IntermediateOperand> obj = std::make_shared<IntermediateOperand>();
-        obj->m_identName = stringf("_TMP%d", gs_tempIdx++);
+        obj->m_identName = stringf("TMP%d", gs_tempIdx++);
         return obj;
     }
 

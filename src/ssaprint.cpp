@@ -144,6 +144,7 @@ bool SSA::Printer::visit(const OpReinterpret *node)
 
 bool SSA::Printer::visit(const OperationSingle *node)
 {
+    (void)node;
     // we should never see these nodes as they meant to
     // be base classes.
     return false;
@@ -151,6 +152,7 @@ bool SSA::Printer::visit(const OperationSingle *node)
 
 bool SSA::Printer::visit(const OperationDual *node)
 {
+    (void)node;
     // we should never see these nodes as they meant to
     // be base classes.
     return false;
@@ -228,6 +230,7 @@ bool SSA::Printer::visit(const OpRemoveMSBs *node)
 
 bool SSA::Printer::visit(const OpNull *node)
 {
+    (void)node;
     m_s << "NOP\n";
     return true;
 }

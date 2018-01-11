@@ -25,6 +25,7 @@
 #include "pass_truncate.h"
 #include "pass_csdmul.h"
 #include "pass_clean.h"
+#include "pass_removeoperands.h"
 #include "vhdlcodegen.h"
 #include "astgraphviz.h"
 
@@ -299,22 +300,21 @@ int main(int argc, char *argv[])
             // ------------------------------------------------------------
             // -- Remove unused variables
             // ------------------------------------------------------------
+            SSA::PassRemoveOperands::execute(ssa);
+
+#if 0
             doLog(LOG_INFO, "Variables used:\n");
             for(auto var : ssa.m_operands)
             {
-                if (var.use_count()>1)
-                {
                     doLog(LOG_INFO, "%s %d\n", var->m_identName.c_str(), var.use_count());
-                }
             }
-
+#endif
             // ------------------------------------------------------------
             // -- VHDL code generation
             // ------------------------------------------------------------
             if (outstream.bad())
             {
                 SSA::VHDLCodeGen::generateCode(std::cout, ssa);
-                //codegen.process(ssa);
             }
             else
             {

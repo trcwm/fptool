@@ -4,8 +4,8 @@
 
   Description:  Clean the SSA list after the CSDMul pass
 
-  1) remove re-interpret nodes
-  2) remove superluous assignment nodes
+  1) remove re-interpret nodes.
+  2) remove superfluous assignment nodes.
 
 */
 
