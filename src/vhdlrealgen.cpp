@@ -17,7 +17,7 @@
 
 #include "logging.h"
 #include <algorithm>
-#include "VHDLRealGen.h"
+#include "vhdlrealgen.h"
 
 using namespace SSA;
 
