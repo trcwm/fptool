@@ -127,11 +127,11 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
             m_os << " : SIGNED(" << op->m_intBits + op->m_fracBits-1 << " downto 0);  --";
             m_os << " Q(" << op->m_intBits << "," << op->m_fracBits << ");\n";
 
-            doLog(LOG_INFO, "Creating variable %s\n", op->m_identName.c_str());
+            //doLog(LOG_INFO, "Creating variable %s\n", op->m_identName.c_str());
         }
         else
         {
-            doLog(LOG_INFO, "Skipping variable %s\n", operand->m_identName.c_str());
+            //doLog(LOG_INFO, "Skipping variable %s\n", operand->m_identName.c_str());
         }
     }
     m_indent-=2;
@@ -160,7 +160,7 @@ bool VHDLCodeGen::visit(const OpAssign *node)
 bool VHDLCodeGen::visit(const OpNegate *node)
 {
     genIndent(m_indent);    
-    m_os << node->m_lhs->m_identName.c_str() << " <= -" << node->m_op->m_identName.c_str() << ";\n";
+    m_os << node->m_lhs->m_identName.c_str() << " := -" << node->m_op->m_identName.c_str() << ";\n";
     return true;
 }
 

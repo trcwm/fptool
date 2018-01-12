@@ -23,6 +23,7 @@ HEADERS += include/cmdline.h \
            include/ssapass.h \
            include/tokenizer.h \
            include/vhdlcodegen.h \
+           include/vhdlrealgen.h \
            include/astnode.h \
            include/astvisitor.h \
            include/ssacreator.h \
@@ -47,6 +48,7 @@ SOURCES += src/cmdline.cpp \
            src/ssa.cpp \
            src/tokenizer.cpp \
            src/vhdlcodegen.cpp \
+           src/vhdlrealgen.cpp \
            src/astvisitor.cpp \
            src/ssacreator.cpp \
            src/ssaprint.cpp \

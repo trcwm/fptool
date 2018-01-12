@@ -27,6 +27,7 @@
 #include "pass_clean.h"
 #include "pass_removeoperands.h"
 #include "vhdlcodegen.h"
+#include "vhdlrealgen.h"
 #include "astgraphviz.h"
 
 #define __FPTOOLVERSION__ "0.1a"
@@ -34,17 +35,17 @@
 int main(int argc, char *argv[])
 {
     bool verbose = false;
-    CmdLine cmdline("ogL","dV");
+    CmdLine cmdline("ogL","dVr");
 
     printf("FPTOOL version " __FPTOOLVERSION__ " compiled on " __DATE__ "\n\n");
     if (!cmdline.parseOptions(argc, argv))
     {
-
         printf("\nUsage: fptool <source.fp>\n\n");
         printf("options: \n");
         printf("  -o <outputfile>    Output file for VHDL code.\n");
         printf("  -g <graphvizfile>  Output file for Graphviz/dot program visualisation.\n");
         printf("  -L <logfile>       Write output log to file.\n");
+        printf("  -r                 Generate REAL-based VHDL code.\n");
         printf("  -d                 Enable debug output.\n");
         printf("  -V                 Enable verbose output.\n");
         printf("\n\n");
@@ -148,6 +149,33 @@ int main(int argc, char *argv[])
                 SSA::Printer::print(ssa, ss, true);
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
+
+            // if we require REAL-based VHDL, we should output if now
+            // before the transforms add instructions that are not
+            // supported by the VHDL generator
+            if (cmdline.hasOption('r'))
+            {
+                // ------------------------------------------------------------
+                // -- VHDL code generation
+                // ------------------------------------------------------------
+                if (outstream.bad())
+                {
+                    if (!SSA::VHDLRealGen::generateCode(std::cout, ssa))
+                    {
+                        doLog(LOG_ERROR, "Error generating VHDL code!\n");
+                    }
+                }
+                else
+                {
+                    if (!SSA::VHDLRealGen::generateCode(outstream, ssa))
+                    {
+                        doLog(LOG_ERROR, "Error generating VHDL code!\n");
+                    }
+                }
+                closeLogFile();
+                return 0; // end program!
+            }
+
 #if 0
             SSAObject referenceSSA = ssa;
 
@@ -325,8 +353,6 @@ int main(int argc, char *argv[])
                 {
                     doLog(LOG_ERROR, "Error generating VHDL code!\n");
                 }
-                //codegen.setEpilog("");
-                //codegen.process(ssa);
             }
         }
         else
