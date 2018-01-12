@@ -19,7 +19,7 @@
 #include "ssacreator.h"
 #include "ssaprint.h"
 
-//#include "ssaevaluator.h"
+#include "ssaevaluator.h"
 #include "csd.h"
 #include "pass_addsub.h"
 #include "pass_truncate.h"

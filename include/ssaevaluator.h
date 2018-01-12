@@ -8,10 +8,59 @@
 
 */
 
-#if 0
-
 #ifndef ssaevaluator_h
 #define ssaevaluator_h
+
+#include <map>
+#include <stdint.h>
+#include "logging.h"
+#include "fplib.h"
+#include "ssa.h"
+
+namespace SSA
+{
+
+class Evaluator : public OperationVisitorBase
+{
+public:
+    Evaluator(Program &ssa);
+    virtual ~Evaluator();
+
+    bool runProgram();
+
+    fplib::SFix* valuePtr(const std::string &name);
+
+    virtual bool visit(const OpAssign *node) override;
+    virtual bool visit(const OpMul *node) override;
+    virtual bool visit(const OpAdd *node) override;
+    virtual bool visit(const OpSub *node) override;
+    virtual bool visit(const OpNegate *node) override;
+    virtual bool visit(const OpCSDMul *node) override;
+    virtual bool visit(const OpTruncate *node) override;
+    virtual bool visit(const OpReinterpret *node) override;
+
+    virtual bool visit(const OpExtendLSBs *node) override;
+    virtual bool visit(const OpExtendMSBs *node) override;
+    virtual bool visit(const OpRemoveLSBs *node) override;
+    virtual bool visit(const OpRemoveMSBs *node) override;
+
+    virtual bool visit(const OperationSingle *node) override;
+    virtual bool visit(const OperationDual *node) override;
+    virtual bool visit(const OpPatchBlock *node) override;
+    virtual bool visit(const OpNull *node) override;
+
+protected:
+    /** fill the m_values container */
+    void setupValues();
+
+    Program *m_ssa;
+    std::map<std::string, fplib::SFix> m_values;  ///< values of all operands (owns object)
+};
+
+
+} // namespace
+
+#if 0
 
 #include <map>
 #include <stdint.h>

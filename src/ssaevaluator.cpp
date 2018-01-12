@@ -1,3 +1,167 @@
+
+#include "ssaevaluator.h"
+
+using namespace SSA;
+
+Evaluator::Evaluator(Program &ssa) : m_ssa(&ssa)
+{
+    setupValues();
+}
+
+Evaluator::~Evaluator()
+{
+
+}
+
+void Evaluator::setupValues()
+{
+    for(auto operand : m_ssa->m_operands)
+    {
+        m_values[operand->m_identName] = fplib::SFix(operand->m_intBits, operand->m_fracBits);
+    }
+}
+
+bool Evaluator::runProgram()
+{
+    for(auto statement : m_ssa->m_statements)
+    {
+        if (!statement->accept(this))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+bool Evaluator::visit(const OpAssign *node)
+{
+    fplib::SFix op = m_values[node->m_op->m_identName];
+    m_values[node->m_lhs->m_identName] = op;
+    return true;
+}
+
+bool Evaluator::visit(const OpMul *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op1->m_identName]*m_values[node->m_op2->m_identName];
+    return true;
+}
+
+bool Evaluator::visit(const OpAdd *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op1->m_identName]+m_values[node->m_op2->m_identName];
+    if (node->m_noExtension)
+    {
+        // remove the additional MSB that was created by the
+        // fplib add operator
+        m_values[node->m_lhs->m_identName] = m_values[node->m_lhs->m_identName].removeMSBs(1);
+    }
+    return true;
+}
+
+bool Evaluator::visit(const OpSub *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op1->m_identName]-m_values[node->m_op2->m_identName];
+    if (node->m_noExtension)
+    {
+        // remove the additional MSB that was created by the
+        // fplib add operator
+        m_values[node->m_lhs->m_identName] = m_values[node->m_lhs->m_identName].removeMSBs(1);
+    }
+    return true;
+}
+
+bool Evaluator::visit(const OpNegate *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op->m_identName].negate();
+    return true;
+}
+
+bool Evaluator::visit(const OpCSDMul *node)
+{
+    //fplib::SFix v(node->m_lhs->m_intBits, node->m_lhs->m_fracBits);
+    //m_values[node->m_lhs->m_identName].addPowerOfTwo(// -= m_values[node->m_op->m_identName];
+    return false; // not supported at the moment.
+}
+
+bool Evaluator::visit(const OpTruncate *node)
+{
+    fplib::SFix tmp = m_values[node->m_op->m_identName];
+    if (tmp.intBits() > node->m_intBits)
+    {
+        tmp = tmp.removeMSBs(tmp.intBits() - node->m_intBits);
+    }
+    else if (tmp.intBits() < node->m_intBits)
+    {
+        tmp = tmp.removeMSBs(node->m_intBits - tmp.intBits());
+    }
+    if (tmp.fracBits() > node->m_fracBits)
+    {
+        tmp = tmp.removeMSBs(tmp.fracBits() - node->m_fracBits);
+    }
+    else if (tmp.fracBits() < node->m_fracBits)
+    {
+        tmp = tmp.removeMSBs(node->m_fracBits - tmp.fracBits());
+    }
+    m_values[node->m_lhs->m_identName] = tmp;
+    return true;
+}
+
+bool Evaluator::visit(const OpReinterpret *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op->m_identName].reinterpret(
+                node->m_intBits, node->m_fracBits);
+    return true;
+}
+
+bool Evaluator::visit(const OpExtendLSBs *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op->m_identName].extendLSBs(
+                node->m_bits);
+    return true;
+}
+
+bool Evaluator::visit(const OpExtendMSBs *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op->m_identName].extendMSBs(
+                node->m_bits);
+    return true;
+}
+
+bool Evaluator::visit(const OpRemoveLSBs *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op->m_identName].removeLSBs(
+                node->m_bits);
+    return true;
+}
+
+bool Evaluator::visit(const OpRemoveMSBs *node)
+{
+    m_values[node->m_lhs->m_identName] = m_values[node->m_op->m_identName].removeMSBs(
+                node->m_bits);
+    return true;
+}
+
+bool Evaluator::visit(const OperationSingle *node)
+{
+    return false; // unsupported
+}
+
+bool Evaluator::visit(const OperationDual *node)
+{
+    return false; // unsupported
+}
+
+bool Evaluator::visit(const OpPatchBlock *node)
+{
+    return false; // unsupported
+}
+
+bool Evaluator::visit(const OpNull *node)
+{
+    return false; // unsupported
+}
+
 #if 0
 
 #include "logging.h"
