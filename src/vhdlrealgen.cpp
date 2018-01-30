@@ -15,9 +15,13 @@
 
 */
 
-#include "logging.h"
 #include <algorithm>
+#include <iomanip>
+#include <sstream>
+
+#include "logging.h"
 #include "vhdlrealgen.h"
+
 
 using namespace SSA;
 
@@ -197,7 +201,21 @@ bool VHDLRealGen::visit(const OpSub *node)
 bool VHDLRealGen::visit(const OpCSDMul *node)
 {
     genIndent(m_indent);
-    m_os << node->m_lhs->m_identName.c_str() << " := " << node->m_csd.value << " * " << node->m_op->m_identName.c_str() << ";\n";
+
+    // a VHDL float should always have a decimal point
+    // but ostream won't automatically generate one
+    // if the value is an integer!
+
+    std::stringstream ss;
+    ss << node->m_csd.value;
+    if (ss.str().find('.') == std::string::npos)
+    {
+        // no decimal point found, so we add ".0"
+        // to make sure VHDL doesn't choke.
+        ss << ".0";
+    }
+
+    m_os << node->m_lhs->m_identName.c_str() << " := " << ss.str() << " * " << node->m_op->m_identName.c_str() << ";\n";
     return true;
 }
 
