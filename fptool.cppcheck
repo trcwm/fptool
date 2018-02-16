@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="1">
+    <root name="E:/Programming/fptool"/>
+    <builddir>build_cppcheck</builddir>
+    <analyze-all-vs-configs>true</analyze-all-vs-configs>
+    <includedir>
+        <dir name="include/"/>
+    </includedir>
+    <paths>
+        <dir name="src"/>
+        <dir name="include"/>
+    </paths>
+    <exclude>
+        <path name="externals/"/>
+        <path name="E:/Programming/fptool/.git/"/>
+        <path name="E:/Programming/fptool/.vscode/"/>
+        <path name="build/"/>
+        <path name="doc/"/>
+        <path name="externals/"/>
+        <path name="ghdl/"/>
+    </exclude>
+    <libraries>
+        <library>posix</library>
+        <library>windows</library>
+    </libraries>
+</project>
