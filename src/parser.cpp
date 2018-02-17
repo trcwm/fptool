@@ -16,6 +16,9 @@
 
 Parser::Parser() : m_tokens(NULL)
 {
+    m_lastErrorPos.offset = 0;
+    m_lastErrorPos.line = 0;
+    m_lastErrorPos.pos = 0;
 }
 
 void Parser::error(const state_t &s, const std::string &txt)
@@ -76,7 +79,7 @@ bool Parser::acceptProgram(state_t &s, AST::Statements &statements)
     // productions: definition | assignment | NEWLINE | EOF
 
     bool productionAccepted = true;
-    token_t tok = getToken(s);
+    //token_t tok = getToken(s);
 
     while(productionAccepted == true)
     {
