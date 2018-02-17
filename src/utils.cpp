@@ -8,12 +8,13 @@ std::string vstringf(const char *fmt, va_list ap)
     char *str = NULL;
 
 #ifdef _WIN32
-    int sz = 64, rc;
-    while (1) {
+    int sz = 64;
+    while (1)
+    {
         va_list apc;
         va_copy(apc, ap);
         str = (char*)realloc(str, sz);
-        rc = vsnprintf(str, sz, fmt, apc);
+        int rc = vsnprintf(str, sz, fmt, apc);
         va_end(apc);
         if (rc >= 0 && rc < sz)
             break;

@@ -89,8 +89,8 @@ bool PassCSDMul::visit(const OpMul *node)
 }
 
 void PassCSDMul::expandCSD(const csd_t &csd,
-                           const SharedOpPtr input,
-                           const SharedOpPtr output,
+                           const SharedOpPtr &input,
+                           const SharedOpPtr &output,
                            SSA::OpPatchBlock *patch,
                            std::list<SharedOpPtr> &operands)
 {
@@ -138,7 +138,8 @@ void PassCSDMul::expandCSD(const csd_t &csd,
         // FIXME: change handling with error() function
         //        and log support
         throw std::runtime_error("CSD has no digits!");
-        return;
+
+        //return;
     }
 
     int32_t shift = digitIter->power;

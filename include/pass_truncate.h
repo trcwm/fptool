@@ -48,7 +48,7 @@ public:
     virtual bool visit(const OperationDual *node) override { (void)node; return false; }
 
 protected:
-    PassTruncate(Program &ssa) : m_ssa(&ssa)
+    explicit PassTruncate(Program &ssa) : m_ssa(&ssa)
     {
     }
 

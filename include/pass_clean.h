@@ -50,13 +50,13 @@ public:
 
 protected:
     /* hide constructor so use can't call it directly */
-    PassClean(Program &ssa) : m_ssa(&ssa)
+    explicit PassClean(Program &ssa) : m_ssa(&ssa)
     {
     }
 
     /** substitute op1 with op2 in SSA list
     */
-    void substituteOperands(const SharedOpPtr op1, SharedOpPtr op2);
+    void substituteOperands(const SharedOpPtr &op1, SharedOpPtr op2);
 
     /** replace the node in the program with a null operation */
     void replaceWithNull(const OperationBase *node);

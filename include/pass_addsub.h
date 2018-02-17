@@ -50,7 +50,7 @@ public:
     virtual bool visit(const OperationDual *node) override { (void)node; return false; }
 
 protected:
-    PassAddSub(Program &ssa) : m_ssa(&ssa)
+    explicit PassAddSub(Program &ssa) : m_ssa(&ssa)
     {
     }
 

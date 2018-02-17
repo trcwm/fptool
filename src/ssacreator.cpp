@@ -4,7 +4,7 @@
 
 using namespace SSA;
 
-Creator::Creator()
+Creator::Creator() : m_ssa(0)
 {
 
 }

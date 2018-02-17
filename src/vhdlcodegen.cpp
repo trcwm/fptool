@@ -13,7 +13,7 @@
 using namespace SSA;
 
 VHDLCodeGen::VHDLCodeGen(std::ostream &os, Program &ssa) :
-    m_os(os), m_ssa(&ssa)
+    m_os(os), m_ssa(&ssa), m_indent(0)
 {
 
 }

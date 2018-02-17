@@ -23,7 +23,7 @@ namespace SSA
 class Evaluator : public OperationVisitorBase
 {
 public:
-    Evaluator(Program &ssa);
+    explicit Evaluator(Program &ssa);
     virtual ~Evaluator();
 
     bool runProgram();

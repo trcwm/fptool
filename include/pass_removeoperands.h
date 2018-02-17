@@ -47,7 +47,7 @@ public:
 
 protected:
     /* hide constructor so use can't call it directly */
-    PassRemoveOperands(Program &ssa) : m_ssa(&ssa)
+    explicit PassRemoveOperands(Program &ssa) : m_ssa(&ssa)
     {
     }
 

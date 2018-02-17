@@ -48,7 +48,7 @@ public:
     virtual bool visit(const OperationDual *node) override { (void)node; return false; }
 
 protected:
-    PassCSDMul(Program &ssa) : m_ssa(&ssa)
+    explicit PassCSDMul(Program &ssa) : m_ssa(&ssa)
     {
     }
 
@@ -61,7 +61,7 @@ protected:
         @param[out] patch a patch block that will receive the replacement instructions.
         @param[out] operands a list of additional operands used by the new instructions.
     */
-    void expandCSD(const csd_t &csd, const SharedOpPtr input, const SharedOpPtr output,
+    void expandCSD(const csd_t &csd, const SharedOpPtr &input, const SharedOpPtr &output,
                    SSA::OpPatchBlock *patch,
                    std::list<SharedOpPtr> &operands);
 

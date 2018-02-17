@@ -76,7 +76,7 @@ bool PassClean::visit(const OpReinterpret *node)
     return true;
 }
 
-void PassClean::substituteOperands(const SharedOpPtr op1, SharedOpPtr op2)
+void PassClean::substituteOperands(const SharedOpPtr &op1, SharedOpPtr op2)
 {
     for(auto statement : m_ssa->m_statements)
     {
