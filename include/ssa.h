@@ -125,7 +125,7 @@ public:
     virtual bool accept(OperationVisitorBase *visitor) = 0;
 
     /** replace operand op1 with op2 if op1 is present */
-    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) = 0;
+    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) = 0;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
@@ -143,7 +143,7 @@ public:
     }
 
     /** replace operand op1 with op2 if op1 is present */
-    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override;
+    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
 
     SharedOpPtr m_lhs;
     SharedOpPtr m_op1;
@@ -161,7 +161,7 @@ public:
     }
 
     /** replace operand op1 with operand op2, if present */
-    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override;
+    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
 
     SharedOpPtr m_lhs;
     SharedOpPtr m_op;
@@ -560,7 +560,7 @@ public:
     }
 
     /** replace operand op1 with operand op2, if present */
-    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override;
+    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
 
     /** add statement to the instruction list */
     void addStatement(OperationBase *statement)
@@ -596,7 +596,7 @@ public:
     virtual bool accept(OperationVisitorBase *visitor) override;
 
     /** replace operand op1 with operand op2, if present */
-    virtual void replaceOperand(const SharedOpPtr op1, SharedOpPtr op2) override {}
+    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override {}
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */

@@ -83,7 +83,7 @@ bool SSA::OpRemoveMSBs::accept(SSA::OperationVisitorBase *visitor)
 }
 
 
-void SSA::OperationSingle::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
+void SSA::OperationSingle::replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2)
 {
     if (m_op == op1)
     {
@@ -92,7 +92,7 @@ void SSA::OperationSingle::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2
 }
 
 
-void SSA::OperationDual::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
+void SSA::OperationDual::replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2)
 {
     if (m_op1 == op1)
     {
@@ -105,7 +105,7 @@ void SSA::OperationDual::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
 }
 
 
-void SSA::OpPatchBlock::replaceOperand(const SharedOpPtr op1, SharedOpPtr op2)
+void SSA::OpPatchBlock::replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2)
 {
     for(OperationBase* statement : m_statements)
     {
