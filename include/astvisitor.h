@@ -51,7 +51,7 @@ class DumpVisitor : public VisitorBase
 {
 public:
     /** create an object to dump the AST to a stream */
-    DumpVisitor(std::ostream &os)
+    explicit DumpVisitor(std::ostream &os)
         : m_depth(0),
           m_os(os)
     {}

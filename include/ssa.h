@@ -137,7 +137,7 @@ public:
 class OperationDual : public OperationBase
 {
 public:
-    OperationDual(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
+    OperationDual(const SharedOpPtr &op1, const SharedOpPtr &op2, const SharedOpPtr &result)
         : m_lhs(result), m_op1(op1), m_op2(op2)
     {
     }
@@ -155,7 +155,7 @@ public:
 class OperationSingle : public OperationBase
 {
 public:
-    OperationSingle(SharedOpPtr op, SharedOpPtr lhs) :
+    OperationSingle(const SharedOpPtr &op, const SharedOpPtr &lhs) :
         m_op(op), m_lhs(lhs)
     {
     }
@@ -177,7 +177,8 @@ public:
         @param result output operand.
         @param noExtension when true, no extension bit is added to the result.
         */
-    OpAdd(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result, bool noExtension = false)
+    OpAdd(const SharedOpPtr &op1, const SharedOpPtr &op2,
+          const SharedOpPtr &result, bool noExtension = false)
         : OperationDual(op1,op2, result), m_noExtension(noExtension)
     {
         updateOutputPrecision();
@@ -211,7 +212,8 @@ public:
     @param result output operand.
     @param noExtension when true, no extension bit is added to the result.
     */
-    OpSub(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result, bool noExtension = false)
+    OpSub(const SharedOpPtr &op1, const SharedOpPtr &op2,
+          const SharedOpPtr &result, bool noExtension = false)
         : OperationDual(op1,op2, result), m_noExtension(noExtension)
     {
         updateOutputPrecision();
@@ -239,7 +241,8 @@ public:
 class OpMul : public OperationDual
 {
 public:
-    OpMul(SharedOpPtr op1, SharedOpPtr op2, SharedOpPtr result)
+    OpMul(const SharedOpPtr &op1, const SharedOpPtr &op2,
+          const SharedOpPtr &result)
         : OperationDual(op1,op2, result)
     {
         updateOutputPrecision();
@@ -261,7 +264,8 @@ public:
 class OpCSDMul : public OperationSingle
 {
 public:
-    OpCSDMul(SharedOpPtr op, const csd_t &csd, const std::string &csdName, SharedOpPtr result)
+    OpCSDMul(const SharedOpPtr &op, const csd_t &csd, const std::string &csdName,
+             const SharedOpPtr &result)
         : OperationSingle(op, result), m_csd(csd), m_csdName(csdName)
     {
         updateOutputPrecision();
@@ -322,7 +326,7 @@ public:
 class OpNegate : public OperationSingle
 {
 public:
-    OpNegate(SharedOpPtr op, SharedOpPtr result)
+    OpNegate(const SharedOpPtr &op, const SharedOpPtr &result)
         : OperationSingle(op, result)
     {
         updateOutputPrecision();
@@ -347,7 +351,8 @@ public:
 class OpTruncate : public OperationSingle
 {
 public:
-    OpTruncate(SharedOpPtr op, SharedOpPtr result, int32_t intBits, int32_t fracBits)
+    OpTruncate(const SharedOpPtr &op, const SharedOpPtr &result,
+               int32_t intBits, int32_t fracBits)
         : OperationSingle(op, result),
           m_intBits(intBits),
           m_fracBits(fracBits)
@@ -374,7 +379,7 @@ public:
 class OpAssign : public OperationSingle
 {
 public:
-    OpAssign(SharedOpPtr op, SharedOpPtr output)
+    OpAssign(const SharedOpPtr &op, const SharedOpPtr &output)
         : OperationSingle(op, output)
     {
         updateOutputPrecision();
@@ -397,7 +402,8 @@ public:
 class OpReinterpret: public OperationSingle
 {
 public:
-    OpReinterpret(SharedOpPtr op, SharedOpPtr output, int32_t intBits, int32_t fracBits)
+    OpReinterpret(const SharedOpPtr &op, const SharedOpPtr &output,
+                  int32_t intBits, int32_t fracBits)
         : OperationSingle(op, output),
           m_intBits(intBits),
           m_fracBits(fracBits)
@@ -424,7 +430,7 @@ public:
 class OpExtendLSBs : public OperationSingle
 {
 public:
-    OpExtendLSBs(SharedOpPtr op, SharedOpPtr output, int32_t bits)
+    OpExtendLSBs(const SharedOpPtr &op, const SharedOpPtr &output, int32_t bits)
         : OperationSingle(op, output),
           m_bits(bits)
     {
@@ -452,7 +458,7 @@ public:
 class OpRemoveLSBs : public OperationSingle
 {
 public:
-    OpRemoveLSBs(SharedOpPtr op, SharedOpPtr output, int32_t bits)
+    OpRemoveLSBs(const SharedOpPtr &op, const SharedOpPtr &output, int32_t bits)
         : OperationSingle(op, output),
           m_bits(bits)
     {
@@ -479,7 +485,7 @@ public:
 class OpExtendMSBs : public OperationSingle
 {
 public:
-    OpExtendMSBs(SharedOpPtr op, SharedOpPtr output, int32_t bits)
+    OpExtendMSBs(const SharedOpPtr &op, const SharedOpPtr &output, int32_t bits)
         : OperationSingle(op, output),
           m_bits(bits)
     {
@@ -506,7 +512,7 @@ public:
 class OpRemoveMSBs : public OperationSingle
 {
 public:
-    OpRemoveMSBs(SharedOpPtr op, SharedOpPtr output, int32_t bits)
+    OpRemoveMSBs(const SharedOpPtr &op, const SharedOpPtr &output, int32_t bits)
         : OperationSingle(op, output),
           m_bits(bits)
     {
@@ -543,7 +549,7 @@ public:
 class OpPatchBlock : public OperationBase
 {
 public:
-    OpPatchBlock(const OperationBase *replacedInstruction) :
+    explicit OpPatchBlock(const OperationBase *replacedInstruction) :
         m_replacedInstruction(replacedInstruction)
     {
         //Note: we cannot call updateOutputPrecision here
