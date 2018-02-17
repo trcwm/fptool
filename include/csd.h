@@ -24,6 +24,8 @@ struct csdigit_t
 
 struct csd_t
 {
+    csd_t() : value(0.0), intBits(0), fracBits(0) {}
+
     std::vector<csdigit_t>  digits;     // CSD representation
     double                  value;      // floating-point representation
     int32_t                 intBits;    // integer bits needed

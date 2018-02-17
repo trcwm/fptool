@@ -100,6 +100,7 @@ public:
 
 };
 
+
 /** Input declaration */
 class InputDeclaration : public Declaration
 {
@@ -117,6 +118,7 @@ public:
     int32_t m_fracBits;   // number of factional bits in INPUT definition
     int32_t m_intBits;    // number of integer bits in INPUT defintion
 };
+
 
 /** CSD declaration */
 class CSDDeclaration : public Declaration
@@ -146,9 +148,11 @@ public:
         NodeTruncate
     };
 
-    PrecisionModifier(node_t nodeType = NodeUndefined) :
+    explicit PrecisionModifier(node_t nodeType = NodeUndefined) :
         m_argNode(NULL),
-        m_nodeType(nodeType) {}
+        m_nodeType(nodeType),
+        m_fracBits(0),
+        m_intBits(0) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -185,7 +189,7 @@ public:
 class IntegerConstant : public ::ASTNode
 {
 public:
-    IntegerConstant() {}
+    IntegerConstant() : m_value(0) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
     virtual void accept(AST::VisitorBase *visitor) override
@@ -209,7 +213,7 @@ public:
         NodeDiv
     };
 
-    Operation2(node_t nodeType = NodeUndefined) :
+    explicit Operation2(node_t nodeType = NodeUndefined) :
         m_left(NULL),
         m_right(NULL),
         m_nodeType(nodeType) {}
@@ -235,7 +239,7 @@ public:
        NodeUnaryMinus
     };
 
-    Operation1(node_t nodeType = NodeUndefined) :
+    explicit Operation1(node_t nodeType = NodeUndefined) :
         m_expr(NULL),
         m_nodeType(nodeType) {}
 
