@@ -260,7 +260,7 @@ int main(int argc, char *argv[])
                 if (output != NULL)
                 {
                     fplib::SFix *v1 = eval.getValuePtrByName(op->m_identName);
-                    fplib::SFix *v2 = eval.getValuePtrByName(op->m_identName);
+                    fplib::SFix *v2 = eval2.getValuePtrByName(op->m_identName);
                     if ((v1 == NULL) || (v2 == NULL))
                     {
                         std::stringstream ss;
@@ -269,11 +269,13 @@ int main(int argc, char *argv[])
                     }
                     if (*v1 != *v2)
                     {
-                        printf("Mismatch!\n");
+                        doLog(LOG_ERROR, "Evaluation mismatch for output %s\n", op->m_identName.c_str());
+                        doLog(LOG_ERROR, "  Reference: Q(%d,%d)\n", v1->intBits(), v1->fracBits());
+                        doLog(LOG_ERROR, "  Check    : Q(%d,%d)\n", v2->intBits(), v2->fracBits());
                     }
                     else
                     {
-                        printf("EVAL Ok! %s\n", op->m_identName.c_str());
+                        doLog(LOG_INFO,"Eval ok for output %s\n", op->m_identName.c_str());
                     }
                 }
                 opIndex++;

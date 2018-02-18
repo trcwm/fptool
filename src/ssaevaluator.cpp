@@ -118,15 +118,15 @@ bool Evaluator::visit(const OpTruncate *node)
     }
     else if (tmp.intBits() < node->m_intBits)
     {
-        tmp = tmp.removeMSBs(node->m_intBits - tmp.intBits());
+        tmp = tmp.extendMSBs(node->m_intBits - tmp.intBits());
     }
     if (tmp.fracBits() > node->m_fracBits)
     {
-        tmp = tmp.removeMSBs(tmp.fracBits() - node->m_fracBits);
+        tmp = tmp.removeLSBs(tmp.fracBits() - node->m_fracBits);
     }
     else if (tmp.fracBits() < node->m_fracBits)
     {
-        tmp = tmp.removeMSBs(node->m_fracBits - tmp.fracBits());
+        tmp = tmp.extendLSBs(node->m_fracBits - tmp.fracBits());
     }
     m_values[node->m_lhs->m_identName] = tmp;
     return true;
