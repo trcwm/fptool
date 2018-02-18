@@ -26,6 +26,14 @@
 cmake_minimum_required (VERSION 3.0)
 project (fptool)
 
+message("Using: ${CMAKE_CXX_COMPILER}")
+
+# enable exception unwinding semantics for
+# Visual Studio
+if (CMAKE_CXX_COMPILER MATCHES ".*cl")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc") 
+endif()
+
 # enable C++11 standard
 set(CMAKE_CXX_STANDARD 11)
 

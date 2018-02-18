@@ -3,7 +3,7 @@
     A single static assignment (SSA) expression evaluator class
     meant for fuzzing/comparing different SSA programs.
 
-    Niels A. Moseley 2017
+    Niels A. Moseley 2017, 2018
     23-12-2017
 
 */
@@ -26,9 +26,24 @@ public:
     explicit Evaluator(Program &ssa);
     virtual ~Evaluator();
 
+    /** run/execute the SSA program */
     bool runProgram();
 
-    fplib::SFix* valuePtr(const std::string &name);
+    /** get a pointer to an internal value so we can change it.
+        This is primarily meant to set input variables. */
+    fplib::SFix* getValuePtrByName(const std::string &name)
+    {
+        auto iter = m_values.find(name);
+        if (iter != m_values.end())
+        {
+            return &((*iter).second);
+        }
+        else
+        {
+            // named value not found
+            return NULL;
+        }
+    }
 
     virtual bool visit(const OpAssign *node) override;
     virtual bool visit(const OpMul *node) override;

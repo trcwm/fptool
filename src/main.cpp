@@ -176,52 +176,39 @@ int main(int argc, char *argv[])
                 return 0; // end program!
             }
 
-#if 0
-            SSAObject referenceSSA = ssa;
+            // ------------------------------------------------------------
+            // -- GENERATE A REFERENCE EVALUATOR TO CHECK OUR PASSES
+            // ------------------------------------------------------------
 
-            SSAEvaluator eval;
-            // set all inputs for evaluation
-            auto iter = ssa.beginOperands();
-            uint32_t opIndex = 0;
-            while(iter != ssa.endOperands())
-            {
-                if (iter->type == operand_t::TypeInput)
-                {
-                    doLog(LOG_INFO,"Setting input (var index=%d) %s to zero\n", opIndex, iter->info.txt.c_str());
-                    eval.setInputVariable(opIndex, fplib::SFix(iter->info.intBits, iter->info.fracBits));
-                }
-                if (iter->type == operand_t::TypeCSD)
-                {
-                    doLog(LOG_INFO,"Setting CSD (var index=%d) %s to %f\n", opIndex, iter->info.txt.c_str()
-                          ,iter->info.csdFloat);
-                    eval.createCSDConstant(opIndex, iter->info.csd);
-                }
-                iter++;
-                opIndex++;
-            }
-            eval.process(ssa);
+            SSA::Program referenceSSA = ssa;
+            SSA::Evaluator eval(referenceSSA);
 
-            iter = ssa.beginOperands();
-            opIndex = 0;
-            while(iter != ssa.endOperands())
+            for(auto op : ssa.m_operands)
             {
-                if (iter->type == operand_t::TypeOutput)
+                const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
+                if (inOp != NULL)
                 {
-                    fplib::SFix output;
-                    if (eval.getValue(opIndex, output))
+                    // operand is an input operand; we need to set
+                    // a value
+                    fplib::SFix *vptr = eval.getValuePtrByName(op->m_identName);
+                    if (vptr != NULL)
                     {
-                        doLog(LOG_INFO, "Output (index=%d) %s: Q(%d,%d) %s\n",
-                              opIndex,
-                              iter->info.txt.c_str(),
-                              output.intBits(),
-                              output.fracBits(),
-                              output.toHexString().c_str());
+                        vptr->randomizeValue();
+                    }
+                    else
+                    {
+                        std::stringstream ss;
+                        ss << "Evaluator could not find input variable :" << op->m_identName;
+                        throw std::runtime_error(ss.str());
                     }
                 }
-                iter++;
-                opIndex++;
             }
-#endif
+
+            if (!eval.runProgram())
+            {
+                printf("Error running reference evaluation program!\n");
+                return 1;
+            }
 
             // ------------------------------------------------------------
             // -- CSD PASS
@@ -235,29 +222,65 @@ int main(int argc, char *argv[])
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
-#if 0
-            SSAEvaluator eval2;
-            // set all inputs for evaluation
-            iter = ssa.beginOperands();
-            opIndex = 0;
-            while(iter != ssa.endOperands())
+#if 1
+            // ------------------------------------------------------------
+            // -- GENERATE AN EVALUATOR TO CHECK THE CSD PASS
+            // ------------------------------------------------------------
+            SSA::Evaluator eval2(ssa);
+
+            // set inputs to the same value as the reference evaluator
+            for(auto op : ssa.m_operands)
             {
-                if (iter->type == operand_t::TypeInput)
+                const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
+                if (inOp != NULL)
                 {
-                    doLog(LOG_INFO,"Setting input (var index=%d) %s to zero\n", opIndex, iter->info.txt.c_str());
-                    eval2.setInputVariable(opIndex, fplib::SFix(iter->info.intBits, iter->info.fracBits));
+                    // operand is an input operand; we need to set
+                    // a value
+                    fplib::SFix *vptr = eval2.getValuePtrByName(op->m_identName);
+                    fplib::SFix *vptr_ref = eval.getValuePtrByName(op->m_identName);
+                    if ((vptr != NULL) && (vptr_ref))
+                    {
+                        vptr->copyValueFrom(vptr_ref);
+                    }
+                    else
+                    {
+                        std::stringstream ss;
+                        ss << "Evaluator could not find input variable :" << op->m_identName;
+                        throw std::runtime_error(ss.str());
+                    }
                 }
-                if (iter->type == operand_t::TypeCSD)
+            }
+            eval2.runProgram();
+
+            // compare the output of the evaluators
+            uint32_t opIndex = 0;
+            for(auto op : ssa.m_operands)
+            {
+                SSA::OutputOperand *output = dynamic_cast<SSA::OutputOperand *>(op.get());
+                if (output != NULL)
                 {
-                    doLog(LOG_INFO,"Setting CSD (var index=%d) %s to %f\n", opIndex, iter->info.txt.c_str()
-                          ,iter->info.csdFloat);
-                    eval2.createCSDConstant(opIndex, iter->info.csd);
+                    fplib::SFix *v1 = eval.getValuePtrByName(op->m_identName);
+                    fplib::SFix *v2 = eval.getValuePtrByName(op->m_identName);
+                    if ((v1 == NULL) || (v2 == NULL))
+                    {
+                        std::stringstream ss;
+                        ss << "Evaluator could not find output variable :" << op->m_identName;
+                        throw std::runtime_error(ss.str());
+                    }
+                    if (*v1 != *v2)
+                    {
+                        printf("Mismatch!\n");
+                    }
+                    else
+                    {
+                        printf("EVAL Ok! %s\n", op->m_identName.c_str());
+                    }
                 }
-                iter++;
                 opIndex++;
             }
-            eval2.process(ssa);
+#endif
 
+#if 0
             iter = ssa.beginOperands();
             opIndex = 0;
             while(iter != ssa.endOperands())
@@ -278,8 +301,6 @@ int main(int argc, char *argv[])
                 iter++;
                 opIndex++;
             }
-
-
 
             if (!fuzzer(referenceSSA, ssa, 1))
             {

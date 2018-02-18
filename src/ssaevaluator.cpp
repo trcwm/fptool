@@ -79,9 +79,34 @@ bool Evaluator::visit(const OpNegate *node)
 
 bool Evaluator::visit(const OpCSDMul *node)
 {
+    fplib::SFix result;
+    fplib::SFix opVal = m_values[node->m_op->m_identName];
+    int32_t intBits = node->m_op->m_intBits;
+    int32_t fracBits = node->m_op->m_fracBits;
+    for(auto digit : node->m_csd.digits)
+    {
+        if (digit.sign > 0)
+        {
+            result = result + opVal.reinterpret(intBits+digit.power, fracBits-digit.power);
+        }
+        else
+        {
+            result = result - opVal.reinterpret(intBits+digit.power, fracBits-digit.power);
+        }
+    }
+
+    // chop off any extended bits that will have formed by using
+    // regular adds and subs.
+    if (node->m_lhs->m_intBits > result.intBits())
+    {
+        result = result.removeMSBs(node->m_lhs->m_intBits - result.intBits());
+    }
+
+    m_values[node->m_lhs->m_identName] = result;
+
     //fplib::SFix v(node->m_lhs->m_intBits, node->m_lhs->m_fracBits);
     //m_values[node->m_lhs->m_identName].addPowerOfTwo(// -= m_values[node->m_op->m_identName];
-    return false; // not supported at the moment.
+    return true;
 }
 
 bool Evaluator::visit(const OpTruncate *node)
