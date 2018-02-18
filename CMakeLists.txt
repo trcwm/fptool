@@ -30,7 +30,9 @@ message("Using: ${CMAKE_CXX_COMPILER}")
 
 # enable exception unwinding semantics for
 # Visual Studio
-if (CMAKE_CXX_COMPILER MATCHES ".*cl")
+# enable exception unwinding semantics for
+# Visual Studio
+if (CMAKE_CXX_COMPILER MATCHES ".*Microsoft")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc") 
 endif()
 
