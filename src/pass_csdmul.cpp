@@ -154,6 +154,21 @@ void PassCSDMul::expandCSD(const csd_t &csd,
                                                              input->m_fracBits-shift);
     patch->m_statements.push_back(reinterpret);
     operands.push_back(result);
+
+    // if the first digit is negative, we need to
+    // insert a negation operation becuase the first
+    // digit is always the left operand of the
+    // + or - operation: it will always be
+    // taken as a positive value / input.
+    if (digitIter->sign < 0)
+    {
+        SharedOpPtr insertResult = IntermediateOperand::createNewIntermediate();
+        SSA::OpNegate *negate = new SSA::OpNegate(result, insertResult);
+        patch->m_statements.push_back(negate);
+        operands.push_back(insertResult);
+        result = insertResult;
+    }
+
     digitIter++;
 
     // while there are digits in CSD

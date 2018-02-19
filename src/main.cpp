@@ -313,21 +313,29 @@ int main(int argc, char *argv[])
             SSA::Evaluator eval3(ssa);
             eval3.initInputsFromRefEvaluator(eval);
 
+            doLog(LOG_INFO, "\n\n--== RUNNING VALIDATION ==--\n\n");
             if (!eval3.runProgram())
             {
                 printf("Error running final evaluation program!\n");
                 return 1;
             }
 
-            std::stringstream report;
-            eval3.dumpAllValues(report);
+            std::stringstream report;            
             if (!eval3.compareToRefEvaluator(eval, report))
             {
                 doLog(LOG_INFO, "---=========================---\n");
                 doLog(LOG_INFO, "---=== EVALUATION FAILED ===---\n");
                 doLog(LOG_INFO, "---=========================---\n\n");
+                eval3.dumpAllValues(report);
+            }
+            else
+            {
+                doLog(LOG_INFO, "---*************************---\n");
+                doLog(LOG_INFO, "---*** EVALUATION PASSED ***---\n");
+                doLog(LOG_INFO, "---*************************---\n\n");
             }
             doLog(LOG_INFO, report.str().c_str());
+            doLog(LOG_INFO, "\n\n\n");
 
             // ------------------------------------------------------------
             // -- VHDL code generation

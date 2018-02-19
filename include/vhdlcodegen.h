@@ -37,13 +37,15 @@ public:
     virtual bool visit(const OpRemoveLSBs *node) override;
     virtual bool visit(const OpRemoveMSBs *node) override;
 
+    virtual bool visit(const OpReinterpret *node) override;
+
     // unsupported nodes!
     virtual bool visit(const OperationSingle *node) override { (void)node; return false; }
     virtual bool visit(const OperationDual *node) override { (void)node; return false; }
     virtual bool visit(const OpPatchBlock *node) override { (void)node; return false; }
     virtual bool visit(const OpCSDMul *node) override  { (void)node; return false; }
     virtual bool visit(const OpTruncate *node) override { (void)node; return false; }
-    virtual bool visit(const OpReinterpret *node) override  { (void)node; return false; }
+
 
 protected:
     VHDLCodeGen(std::ostream &os, Program &ssa);

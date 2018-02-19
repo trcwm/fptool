@@ -255,6 +255,13 @@ bool VHDLCodeGen::visit(const OpRemoveMSBs *node)
     return true;
 }
 
+bool VHDLCodeGen::visit(const OpReinterpret *node)
+{
+    genIndent(m_indent);
+    m_os << node->m_lhs->m_identName.c_str() << " := ";
+    m_os << node->m_op->m_identName << ";\n";
+    return true;
+}
 
 #if 0
 
