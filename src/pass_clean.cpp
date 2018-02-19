@@ -66,6 +66,7 @@ bool PassClean::visit(const OpAssign *node)
 
 bool PassClean::visit(const OpReinterpret *node)
 {
+#if 0
     // remove all reinterpret nodes
     // and replace the left-hand side variable with the
     // original variable.
@@ -73,6 +74,7 @@ bool PassClean::visit(const OpReinterpret *node)
     doLog(LOG_DEBUG, "Replacing variable (%s)\n", node->m_lhs->m_identName.c_str());
     substituteOperands(node->m_lhs, node->m_op);
     replaceWithNull(node);
+#endif
     return true;
 }
 

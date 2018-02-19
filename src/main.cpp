@@ -32,6 +32,7 @@
 
 #define __FPTOOLVERSION__ "0.1a"
 
+
 int main(int argc, char *argv[])
 {
     bool verbose = false;
@@ -222,100 +223,36 @@ int main(int argc, char *argv[])
                 doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
-#if 1
+#if 0
             // ------------------------------------------------------------
             // -- GENERATE AN EVALUATOR TO CHECK THE CSD PASS
             // ------------------------------------------------------------
             SSA::Evaluator eval2(ssa);
+            eval2.initInputsFromRefEvaluator(eval);
 
-            // set inputs to the same value as the reference evaluator
-            for(auto op : ssa.m_operands)
+            if (!eval2.runProgram())
             {
-                const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
-                if (inOp != NULL)
-                {
-                    // operand is an input operand; we need to set
-                    // a value
-                    fplib::SFix *vptr = eval2.getValuePtrByName(op->m_identName);
-                    fplib::SFix *vptr_ref = eval.getValuePtrByName(op->m_identName);
-                    if ((vptr != NULL) && (vptr_ref))
-                    {
-                        vptr->copyValueFrom(vptr_ref);
-                    }
-                    else
-                    {
-                        std::stringstream ss;
-                        ss << "Evaluator could not find input variable :" << op->m_identName;
-                        throw std::runtime_error(ss.str());
-                    }
-                }
-            }
-            eval2.runProgram();
-
-            // compare the output of the evaluators
-            uint32_t opIndex = 0;
-            for(auto op : ssa.m_operands)
-            {
-                SSA::OutputOperand *output = dynamic_cast<SSA::OutputOperand *>(op.get());
-                if (output != NULL)
-                {
-                    fplib::SFix *v1 = eval.getValuePtrByName(op->m_identName);
-                    fplib::SFix *v2 = eval2.getValuePtrByName(op->m_identName);
-                    if ((v1 == NULL) || (v2 == NULL))
-                    {
-                        std::stringstream ss;
-                        ss << "Evaluator could not find output variable :" << op->m_identName;
-                        throw std::runtime_error(ss.str());
-                    }
-                    if (*v1 != *v2)
-                    {
-                        doLog(LOG_ERROR, "Evaluation mismatch for output %s\n", op->m_identName.c_str());
-                        doLog(LOG_ERROR, "  Reference: Q(%d,%d)\n", v1->intBits(), v1->fracBits());
-                        doLog(LOG_ERROR, "  Check    : Q(%d,%d)\n", v2->intBits(), v2->fracBits());
-                    }
-                    else
-                    {
-                        doLog(LOG_INFO,"Eval ok for output %s\n", op->m_identName.c_str());
-                    }
-                }
-                opIndex++;
-            }
-#endif
-
-#if 0
-            iter = ssa.beginOperands();
-            opIndex = 0;
-            while(iter != ssa.endOperands())
-            {
-                if (iter->type == operand_t::TypeOutput)
-                {
-                    fplib::SFix output;
-                    if (eval2.getValue(opIndex, output))
-                    {
-                        doLog(LOG_INFO, "Output (index=%d) %s: Q(%d,%d) %s\n",
-                            opIndex,
-                            iter->info.txt.c_str(),
-                            output.intBits(),
-                            output.fracBits(),
-                            output.toHexString().c_str());
-                    }
-                }
-                iter++;
-                opIndex++;
-            }
-
-            if (!fuzzer(referenceSSA, ssa, 1))
-            {
-                doLog(LOG_ERROR, "Fuzzer reported an error!\n");
+                printf("Error running CSD evaluation program!\n");
                 return 1;
             }
-#endif
 
+            std::stringstream report;
+            if (!eval2.compareToRefEvaluator(eval, report))
+            {
+                doLog(LOG_INFO, "---=========================---\n");
+                doLog(LOG_INFO, "---=== EVALUATION FAILED ===---\n");
+                doLog(LOG_INFO, "---=========================---\n\n");
+            }
+            doLog(LOG_INFO, report.str().c_str());
+#endif
 
             // ------------------------------------------------------------
             // -- ADDSUB PASS
             // ------------------------------------------------------------
-            SSA::PassAddSub::execute(ssa);
+            if (!SSA::PassAddSub::execute(ssa))
+            {
+                doLog(LOG_ERROR, "ADDSUB pass failed\n");
+            }
 
             if (verbose)
             {
@@ -327,7 +264,10 @@ int main(int argc, char *argv[])
             // ------------------------------------------------------------
             // -- TRUNCATE PASS
             // ------------------------------------------------------------
-            SSA::PassTruncate::execute(ssa);
+            if (!SSA::PassTruncate::execute(ssa))
+            {
+                doLog(LOG_ERROR, "TRUNCATE pass failed\n");
+            }
 
             if (verbose)
             {
@@ -339,7 +279,10 @@ int main(int argc, char *argv[])
             // ------------------------------------------------------------
             // -- CLEAN PASS
             // ------------------------------------------------------------
-            SSA::PassClean::execute(ssa);
+            if (!SSA::PassClean::execute(ssa))
+            {
+                doLog(LOG_ERROR, "Clean pass failed\n");
+            }
 
             if (verbose)
             {
@@ -351,7 +294,10 @@ int main(int argc, char *argv[])
             // ------------------------------------------------------------
             // -- Remove unused variables
             // ------------------------------------------------------------
-            SSA::PassRemoveOperands::execute(ssa);
+            if (!SSA::PassRemoveOperands::execute(ssa))
+            {
+                doLog(LOG_ERROR, "RemoveOperands pass failed\n");
+            }
 
 #if 0
             doLog(LOG_INFO, "Variables used:\n");
@@ -360,6 +306,29 @@ int main(int argc, char *argv[])
                     doLog(LOG_INFO, "%s %d\n", var->m_identName.c_str(), var.use_count());
             }
 #endif
+
+            // ------------------------------------------------------------
+            // -- GENERATE AN EVALUATOR TO CHECK THE CSD PASS
+            // ------------------------------------------------------------
+            SSA::Evaluator eval3(ssa);
+            eval3.initInputsFromRefEvaluator(eval);
+
+            if (!eval3.runProgram())
+            {
+                printf("Error running final evaluation program!\n");
+                return 1;
+            }
+
+            std::stringstream report;
+            eval3.dumpAllValues(report);
+            if (!eval3.compareToRefEvaluator(eval, report))
+            {
+                doLog(LOG_INFO, "---=========================---\n");
+                doLog(LOG_INFO, "---=== EVALUATION FAILED ===---\n");
+                doLog(LOG_INFO, "---=========================---\n\n");
+            }
+            doLog(LOG_INFO, report.str().c_str());
+
             // ------------------------------------------------------------
             // -- VHDL code generation
             // ------------------------------------------------------------

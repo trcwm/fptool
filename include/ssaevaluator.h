@@ -13,6 +13,7 @@
 
 #include <map>
 #include <stdint.h>
+#include <sstream>
 #include "logging.h"
 #include "fplib.h"
 #include "ssa.h"
@@ -45,6 +46,22 @@ public:
         }
     }
 
+    /** get a pointer to an internal value so we can change it.
+        This is primarily meant to set input variables. */
+    const fplib::SFix* getValuePtrByName(const std::string &name) const
+    {
+        auto iter = m_values.find(name);
+        if (iter != m_values.end())
+        {
+            return &((*iter).second);
+        }
+        else
+        {
+            // named value not found
+            return NULL;
+        }
+    }
+
     virtual bool visit(const OpAssign *node) override;
     virtual bool visit(const OpMul *node) override;
     virtual bool visit(const OpAdd *node) override;
@@ -63,6 +80,23 @@ public:
     virtual bool visit(const OperationDual *node) override;
     virtual bool visit(const OpPatchBlock *node) override;
     virtual bool visit(const OpNull *node) override;
+
+    /** Compare this evaluator to a reference.
+        It compares the precision and values of all the common variables
+        found in the reference and returns true if they match
+    */
+    bool compareToRefEvaluator(const Evaluator &reference,
+                                     std::stringstream &report);
+
+    /** Initialize the inputs to the same values as the reference
+        evaluator */
+    void initInputsFromRefEvaluator(const Evaluator &reference);
+
+    /** Dump the input value to a report stream for debugging */
+    void dumpInputValues(std::stringstream &report) const;
+
+    /** Dump all the values to a report strean for debugging */
+    void dumpAllValues(std::stringstream &report) const;
 
 protected:
     /** fill the m_values container */

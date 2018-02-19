@@ -22,8 +22,7 @@ namespace SSA {
 class PassClean : public OperationVisitorBase
 {
 public:
-    /** equalize the fractional bits of both arguments before
-        each add/sub instruction.
+    /** Remove superfluous assignment nodes.
     */
     static bool execute(Program &ssa);
 

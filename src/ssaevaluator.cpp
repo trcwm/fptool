@@ -97,9 +97,9 @@ bool Evaluator::visit(const OpCSDMul *node)
 
     // chop off any extended bits that will have formed by using
     // regular adds and subs.
-    if (node->m_lhs->m_intBits > result.intBits())
+    if (node->m_lhs->m_intBits < result.intBits())
     {
-        result = result.removeMSBs(node->m_lhs->m_intBits - result.intBits());
+        result = result.removeMSBs(result.intBits() - node->m_lhs->m_intBits);
     }
 
     m_values[node->m_lhs->m_identName] = result;
@@ -185,6 +185,115 @@ bool Evaluator::visit(const OpPatchBlock *node)
 bool Evaluator::visit(const OpNull *node)
 {
     return false; // unsupported
+}
+
+bool Evaluator::compareToRefEvaluator(const Evaluator &reference,
+                                 std::stringstream &report)
+{
+    bool ok = true;
+
+    // walk through all the operands in the reference
+    for(auto refop : reference.m_ssa->m_operands)
+    {
+        const fplib::SFix *refval = reference.getValuePtrByName(refop->m_identName);
+        if (refval == NULL)
+        {
+            throw std::runtime_error("Evaluator::compareToReferenceEvaluator cannot find reference value!");
+        }
+        // check if this evaluator actually has this variable
+        auto opIter = m_values.find(refop->m_identName);
+        if (opIter != m_values.end())
+        {
+            if ((*opIter).second != *refval)
+            {
+                report << "Mismatch " << refop->m_identName << "\n";
+                report << "  ref Q(" << refval->intBits() << "," << refval->fracBits() << ")\n";
+                report << "      Q(" << opIter->second.intBits() << "," << opIter->second.fracBits() << ")\n";
+                report << "  ref " << refval->toHexString() << "\n";
+                report << "      " << (*opIter).second.toHexString() << "\n";
+                ok = false;
+            }
+            else
+            {
+                report << "Matched " << refop->m_identName << "\n";
+            }
+        }
+        else
+        {
+            report << "Skipping " << refop->m_identName << "\n";
+        }
+    }
+    return ok;
+}
+
+void Evaluator::initInputsFromRefEvaluator(const Evaluator &reference)
+{
+    // walk through all the input operands in the reference
+    for(auto op : reference.m_ssa->m_operands)
+    {
+        const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
+        if (inOp != NULL)
+        {
+            // operand is an input operand; we need to set
+            // a value
+            fplib::SFix *vptr = getValuePtrByName(op->m_identName);
+            const fplib::SFix *vptr_ref = reference.getValuePtrByName(op->m_identName);
+            if ((vptr != NULL) && (vptr_ref != NULL))
+            {
+                vptr->copyValueFrom(vptr_ref);
+            }
+            else
+            {
+                std::stringstream ss;
+                ss << "Evaluator could not find input variable :" << op->m_identName;
+                throw std::runtime_error(ss.str());
+            }
+        }
+    }
+}
+
+void Evaluator::dumpInputValues(std::stringstream &report) const
+{
+    report << "Input values:\n";
+
+    // walk through all the input operands
+    for(auto op : m_ssa->m_operands)
+    {
+        const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
+        if (inOp != NULL)
+        {
+            report << "  " << inOp->m_identName << " = " << m_values.at(inOp->m_identName).toHexString() << "\n";
+        }
+    }
+}
+
+void Evaluator::dumpAllValues(std::stringstream &report) const
+{
+    report << "Values:\n";
+
+    // walk through all operands
+    for(auto op : m_ssa->m_operands)
+    {
+        const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
+        const SSA::IntermediateOperand* tmpOp = dynamic_cast<const SSA::IntermediateOperand*>(op.get());
+        const SSA::OutputOperand* outOp = dynamic_cast<const SSA::OutputOperand*>(op.get());
+        if (inOp != NULL)
+        {
+            report << "In   " << inOp->m_identName << " = " << m_values.at(inOp->m_identName).toHexString() << "\n";
+        }
+        else if (tmpOp != NULL)
+        {
+            report << "Tmp  " << tmpOp->m_identName << " = " << m_values.at(tmpOp->m_identName).toHexString() << "\n";
+        }
+        else if (outOp != NULL)
+        {
+            report << "Out  " << outOp->m_identName << " = " << m_values.at(outOp->m_identName).toHexString() << "\n";
+        }
+        else
+        {
+            report << "     " << outOp->m_identName << "\n";
+        }
+    }
 }
 
 #if 0

@@ -147,3 +147,10 @@ bool PassRemoveOperands::visit(const OpRemoveLSBs *node)
     node->m_op->m_usedFlag = true;
     return true;
 }
+
+bool PassRemoveOperands::visit(const OpReinterpret *node)
+{
+    node->m_lhs->m_usedFlag = true;
+    node->m_op->m_usedFlag = true;
+    return true;
+}
