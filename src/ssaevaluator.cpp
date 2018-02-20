@@ -21,10 +21,27 @@ void Evaluator::setupValues()
     }
 }
 
+void Evaluator::randomizeInputValues()
+{
+    for(auto op : m_ssa->m_operands)
+    {
+        const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
+        if (inOp != NULL)
+        {
+            m_values[op->m_identName].randomizeValue();
+        }
+    }
+}
+
 bool Evaluator::runProgram()
 {
     for(auto statement : m_ssa->m_statements)
     {
+        if (statement == NULL)
+        {
+            throw std::runtime_error("Evaluator::runProgram statement == NULL\n");
+        }
+
         if (!statement->accept(this))
         {
             return false;
@@ -112,14 +129,9 @@ bool Evaluator::visit(const OpCSDMul *node)
 bool Evaluator::visit(const OpTruncate *node)
 {
     fplib::SFix tmp = m_values[node->m_op->m_identName];
-    if (tmp.intBits() > node->m_intBits)
-    {
-        tmp = tmp.removeMSBs(tmp.intBits() - node->m_intBits);
-    }
-    else if (tmp.intBits() < node->m_intBits)
-    {
-        tmp = tmp.extendMSBs(node->m_intBits - tmp.intBits());
-    }
+
+    // first remove or add LSBs to avoid problems
+    // with sign extension.
     if (tmp.fracBits() > node->m_fracBits)
     {
         tmp = tmp.removeLSBs(tmp.fracBits() - node->m_fracBits);
@@ -128,6 +140,17 @@ bool Evaluator::visit(const OpTruncate *node)
     {
         tmp = tmp.extendLSBs(node->m_fracBits - tmp.fracBits());
     }
+
+    // remove or add MSBs
+    if (tmp.intBits() > node->m_intBits)
+    {
+        tmp = tmp.removeMSBs(tmp.intBits() - node->m_intBits);
+    }
+    else if (tmp.intBits() < node->m_intBits)
+    {
+        tmp = tmp.extendMSBs(node->m_intBits - tmp.intBits());
+    }
+
     m_values[node->m_lhs->m_identName] = tmp;
     return true;
 }
@@ -200,6 +223,7 @@ bool Evaluator::compareToRefEvaluator(const Evaluator &reference,
         {
             throw std::runtime_error("Evaluator::compareToReferenceEvaluator cannot find reference value!");
         }
+
         // check if this evaluator actually has this variable
         auto opIter = m_values.find(refop->m_identName);
         if (opIter != m_values.end())
@@ -209,8 +233,8 @@ bool Evaluator::compareToRefEvaluator(const Evaluator &reference,
                 report << "Mismatch " << refop->m_identName << "\n";
                 report << "  ref Q(" << refval->intBits() << "," << refval->fracBits() << ")\n";
                 report << "      Q(" << opIter->second.intBits() << "," << opIter->second.fracBits() << ")\n";
-                report << "  ref " << refval->toHexString() << "\n";
-                report << "      " << (*opIter).second.toHexString() << "\n";
+                report << "  ref " << refval->toHexString() << (refval->isNegative() ? "-\n" : "+\n");
+                report << "      " << (*opIter).second.toHexString() << ((*opIter).second.isNegative() ? "-\n" : "+\n");
                 ok = false;
             }
             else
@@ -220,7 +244,7 @@ bool Evaluator::compareToRefEvaluator(const Evaluator &reference,
         }
         else
         {
-            report << "Skipping " << refop->m_identName << "\n";
+            report << "Skipping " << refop->m_identName << " ref = " << refval->toHexString() << " " << (refval->isNegative() ? "-\n" : "+\n");
         }
     }
     return ok;
@@ -262,7 +286,9 @@ void Evaluator::dumpInputValues(std::stringstream &report) const
         const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
         if (inOp != NULL)
         {
-            report << "  " << inOp->m_identName << " = " << m_values.at(inOp->m_identName).toHexString() << "\n";
+            report << "  " << inOp->m_identName << " Q(" << inOp->m_intBits << "," << inOp->m_fracBits << ")";
+            report << " = " << m_values.at(inOp->m_identName).toHexString();
+            report << (m_values.at(inOp->m_identName).isNegative() ? "-\n" : "+\n");
         }
     }
 }
@@ -279,15 +305,21 @@ void Evaluator::dumpAllValues(std::stringstream &report) const
         const SSA::OutputOperand* outOp = dynamic_cast<const SSA::OutputOperand*>(op.get());
         if (inOp != NULL)
         {
-            report << "In   " << inOp->m_identName << " = " << m_values.at(inOp->m_identName).toHexString() << "\n";
+            report << "In   " << inOp->m_identName << " Q(" << inOp->m_intBits << "," << inOp->m_fracBits << ")";
+            report << " = " << m_values.at(inOp->m_identName).toHexString();
+            report << (m_values.at(inOp->m_identName).isNegative() ? "-\n" : "+\n");
         }
         else if (tmpOp != NULL)
         {
-            report << "Tmp  " << tmpOp->m_identName << " = " << m_values.at(tmpOp->m_identName).toHexString() << "\n";
+            report << "Tmp  " << tmpOp->m_identName << " Q(" << tmpOp->m_intBits << "," << tmpOp->m_fracBits << ")";
+            report << " = " << m_values.at(tmpOp->m_identName).toHexString();
+            report << (m_values.at(tmpOp->m_identName).isNegative() ? "-\n" : "+\n");
         }
         else if (outOp != NULL)
         {
-            report << "Out  " << outOp->m_identName << " = " << m_values.at(outOp->m_identName).toHexString() << "\n";
+            report << "Out  " << outOp->m_identName << " Q(" << outOp->m_intBits << "," << outOp->m_fracBits << ")";
+            report << " = " << m_values.at(outOp->m_identName).toHexString();
+            report << (m_values.at(outOp->m_identName).isNegative() ? "-\n" : "+\n");
         }
         else
         {

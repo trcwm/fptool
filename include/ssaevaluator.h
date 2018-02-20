@@ -30,6 +30,9 @@ public:
     /** run/execute the SSA program */
     bool runProgram();
 
+    /** set all inputs to a random value for fuzzing testing */
+    void randomizeInputValues();
+
     /** get a pointer to an internal value so we can change it.
         This is primarily meant to set input variables. */
     fplib::SFix* getValuePtrByName(const std::string &name)

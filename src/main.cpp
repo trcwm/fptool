@@ -184,27 +184,7 @@ int main(int argc, char *argv[])
             SSA::Program referenceSSA = ssa;
             SSA::Evaluator eval(referenceSSA);
 
-            for(auto op : ssa.m_operands)
-            {
-                const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
-                if (inOp != NULL)
-                {
-                    // operand is an input operand; we need to set
-                    // a value
-                    fplib::SFix *vptr = eval.getValuePtrByName(op->m_identName);
-                    if (vptr != NULL)
-                    {
-                        vptr->randomizeValue();
-                    }
-                    else
-                    {
-                        std::stringstream ss;
-                        ss << "Evaluator could not find input variable :" << op->m_identName;
-                        throw std::runtime_error(ss.str());
-                    }
-                }
-            }
-
+            eval.randomizeInputValues();
             if (!eval.runProgram())
             {
                 printf("Error running reference evaluation program!\n");
@@ -336,6 +316,35 @@ int main(int argc, char *argv[])
             }
             doLog(LOG_INFO, report.str().c_str());
             doLog(LOG_INFO, "\n\n\n");
+
+
+            // ------------------------------------------------------------
+            // -- Do more fuzzing
+            // ------------------------------------------------------------
+
+            doLog(LOG_INFO, "\n\n--== FUZZING ==--\n\n");
+            bool fuzzError = false;
+            for(uint32_t i=0; i<1000; i++)
+            {
+                report.clear();
+                eval.randomizeInputValues();
+                //eval.runProgram();
+                eval3.initInputsFromRefEvaluator(eval);
+                eval3.runProgram();
+                if (!eval3.compareToRefEvaluator(eval, report))
+                {
+                    fuzzError = true;
+                }
+            }
+
+            if (fuzzError)
+            {
+                doLog(LOG_ERROR, "Fuzzing reports errors!\n");
+            }
+            else
+            {
+                doLog(LOG_INFO, "Fuzzing tests passed!\n");
+            }
 
             // ------------------------------------------------------------
             // -- VHDL code generation
