@@ -328,7 +328,7 @@ int main(int argc, char *argv[])
             {
                 report.clear();
                 eval.randomizeInputValues();
-                //eval.runProgram();
+                eval.runProgram();
                 eval3.initInputsFromRefEvaluator(eval);
                 eval3.runProgram();
                 if (!eval3.compareToRefEvaluator(eval, report))
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if (!SSA::VHDLCodeGen::generateCode(outstream, ssa))
+                if (!SSA::VHDLCodeGen::generateCode(outstream, ssa, true))
                 {
                     doLog(LOG_ERROR, "Error generating VHDL code!\n");
                 }

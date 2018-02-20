@@ -8,12 +8,13 @@
 
 #include "logging.h"
 #include <algorithm>
+#include "ssaevaluator.h"
 #include "vhdlcodegen.h"
 
 using namespace SSA;
 
-VHDLCodeGen::VHDLCodeGen(std::ostream &os, Program &ssa) :
-    m_os(os), m_ssa(&ssa), m_indent(0)
+VHDLCodeGen::VHDLCodeGen(std::ostream &os, Program &ssa, bool genTestbench) :
+    m_os(os), m_ssa(&ssa), m_indent(0), m_genTestbench(genTestbench)
 {
 
 }
@@ -28,6 +29,11 @@ bool VHDLCodeGen::execute()
 
     m_os << m_prolog;
 
+    if (m_genTestbench)
+    {
+        genTestbenchHeader();
+    }
+
     genProcessHeader(m_indent);
 
     m_indent += 2;
@@ -41,6 +47,12 @@ bool VHDLCodeGen::execute()
     m_os << "end process;\n";
 
     m_os << m_epilog;
+
+    if (m_genTestbench)
+    {
+        genTestbenchFooter();
+    }
+
     return true;
 }
 
@@ -139,6 +151,126 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
     m_os << "begin\n";
 }
 
+void VHDLCodeGen::genTestbenchHeader()
+{
+    doLog(LOG_INFO, "-- generating testbench header\n");
+    m_os << "-- \n";
+    m_os << "-- FPTOOL generated test bench\n";
+    m_os << "-- \n\n";
+
+    m_os << "library ieee;\n";
+    m_os << "use ieee.std_logic_1164.all;\n";
+    m_os << "use ieee.numeric_std.all;\n\n";
+    m_os << "entity tb is\n";
+    m_os << "end tb;\n\n";
+
+    m_os << "architecture behavioral of tb is\n";
+    m_os << "  signal sim_done : std_logic := '0';\n";
+
+    // generate input and output signals of the DUT
+    for(auto operand : m_ssa->m_operands)
+    {
+        InputOperand *inOp  = dynamic_cast<InputOperand*>(operand.get());
+        OutputOperand *outOp = dynamic_cast<OutputOperand*>(operand.get());
+        if (inOp != NULL)
+        {
+            genIndent(m_indent);
+            m_os << "  signal " << inOp->m_identName.c_str();
+            m_os << " : SIGNED(" << inOp->m_intBits + inOp->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << inOp->m_intBits << "," << inOp->m_fracBits << ");\n";
+        }
+        else if (outOp != NULL)
+        {
+            genIndent(m_indent);
+            m_os << "  signal " << outOp->m_identName.c_str();
+            m_os << " : SIGNED(" << outOp->m_intBits + outOp->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << outOp->m_intBits << "," << outOp->m_fracBits << ");\n";
+        }
+    }
+    m_os << "\n\n";
+    m_os << "begin\n\n";
+}
+
+void VHDLCodeGen::genTestbenchFooter()
+{
+    doLog(LOG_INFO, "-- generating testbench footer\n");
+
+    // write the stimulus process
+    m_os << "\n\n";
+    m_os << "  proc_stim: process\n";
+    m_os << "  begin\n";
+
+    SSA::Evaluator eval(*m_ssa);
+    eval.randomizeInputValues();
+    eval.runProgram();
+
+    // set values for all inputs!
+    for(auto operand : m_ssa->m_operands)
+    {
+        InputOperand *inOp  = dynamic_cast<SSA::InputOperand*>(operand.get());
+        if (inOp != NULL)
+        {
+            m_os << "    " << inOp->m_identName.c_str() << " <= ";
+            const fplib::SFix *value = eval.getValuePtrByName(inOp->m_identName);
+            if (value == NULL)
+            {
+                std::stringstream ss;
+                ss << "VHDLCodeGen::genTestbenchFooter cannot find input variable " << inOp->m_identName;
+                throw std::runtime_error(ss.str());
+            }
+            //m_os << chopHexString(value->toHexString(), value->intBits(), value->fracBits()) << "\";\n";
+            m_os << "\"" << value->toBinString() << "\";\n";
+        }
+    }
+    m_os << "    wait for 1 ns;\n";
+
+    // check values for all outputs!
+    for(auto operand : m_ssa->m_operands)
+    {
+        OutputOperand *outOp  = dynamic_cast<SSA::OutputOperand*>(operand.get());
+        if (outOp != NULL)
+        {
+            m_os << "    ";
+            const fplib::SFix *value = eval.getValuePtrByName(outOp->m_identName);
+            if (value == NULL)
+            {
+                std::stringstream ss;
+                ss << "VHDLCodeGen::genTestbenchFooter cannot find output variable " << outOp->m_identName;
+                throw std::runtime_error(ss.str());
+            }
+            m_os << "assert (" << outOp->m_identName << " /= ";
+            m_os << "\"" << value->toBinString() << "\") report \"error: ";
+            m_os << outOp->m_identName;
+            m_os << "\" severity error;\n";
+        }
+    }
+
+    m_os << "    wait;\n";
+    m_os << "  end process proc_stim;\n";
+    m_os << "end behavioral;\n";
+}
+
+std::string VHDLCodeGen::chopHexString(const std::string &hex, int32_t intBits, int32_t fracBits)
+{
+    int32_t nibbles = (intBits + fracBits + 3) / 4;         // minimum number of nibbles
+    std::string v;
+
+    if (nibbles < 1)
+    {
+        throw std::runtime_error("VHDLCodeGen::chopHexString: literal does not contain any information!");
+    }
+
+    if (hex.size() >= static_cast<uint32_t>(nibbles))
+    {
+        v = hex.substr(hex.size() - nibbles);
+    }
+    else
+    {
+        throw std::runtime_error("VHDLCodeGen::chopHexString: hex string does not contain enough characters!");
+    }
+    v = "X\"" + v;
+    return v;
+}
 
 bool VHDLCodeGen::visit(const OpAssign *node)
 {

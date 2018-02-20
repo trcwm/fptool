@@ -130,6 +130,12 @@ public:
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
     virtual void updateOutputPrecision() const = 0;
+
+    /** clone the object */
+    virtual OperationBase* clone() const
+    {
+        throw std::runtime_error("OperationBase::clone() called on abstract base class!");
+    }
 };
 
 
@@ -144,6 +150,12 @@ public:
 
     /** replace operand op1 with op2 if op1 is present */
     virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        throw std::runtime_error("OperationDual::clone() called on abstract base class!");
+    }
 
     SharedOpPtr m_lhs;
     SharedOpPtr m_op1;
@@ -162,6 +174,12 @@ public:
 
     /** replace operand op1 with operand op2, if present */
     virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        throw std::runtime_error("OperationSingle::clone() called on abstract base class!");
+    }
 
     SharedOpPtr m_lhs;
     SharedOpPtr m_op;
@@ -199,6 +217,12 @@ public:
         m_lhs->m_fracBits = std::max(m_op1->m_fracBits, m_op2->m_fracBits);
     }
 
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpAdd(*this);
+    }
+
     bool m_noExtension;
 };
 
@@ -234,6 +258,12 @@ public:
         m_lhs->m_fracBits = std::max(m_op1->m_fracBits, m_op2->m_fracBits);
     }
 
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpSub(*this);
+    }
+
     bool m_noExtension;
 };
 
@@ -257,6 +287,12 @@ public:
     {
         m_lhs->m_intBits  = m_op1->m_intBits + m_op2->m_intBits - 1;
         m_lhs->m_fracBits = m_op1->m_fracBits + m_op2->m_fracBits;
+    }
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpMul(*this);
     }
 };
 
@@ -318,6 +354,12 @@ public:
         m_lhs->m_fracBits = -Pmin + m_op->m_fracBits;
     }
 
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpCSDMul(*this);
+    }
+
     csd_t m_csd;            ///< multiplication factor / constant
     std::string m_csdName;  ///< name of CSD factor / constant
 };
@@ -345,6 +387,12 @@ public:
         m_lhs->m_intBits  = m_op->m_intBits;
         m_lhs->m_fracBits = m_op->m_fracBits;
     }
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpNegate(*this);
+    }
 };
 
 
@@ -369,6 +417,12 @@ public:
     {
         m_lhs->m_intBits  = m_intBits;
         m_lhs->m_fracBits = m_fracBits;
+    }
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpTruncate(*this);
     }
 
     int32_t m_intBits;      ///< number of integer bits to truncate to
@@ -396,6 +450,12 @@ public:
         m_lhs->m_fracBits = m_op->m_fracBits;
     }
 
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpAssign(*this);
+    }
+
 };
 
 
@@ -420,6 +480,12 @@ public:
     {
         m_lhs->m_intBits = m_intBits;
         m_lhs->m_fracBits = m_fracBits;
+    }
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpReinterpret(*this);
     }
 
     int32_t m_intBits;  ///< reinterpret to this integer bits spec
@@ -450,6 +516,12 @@ public:
         m_lhs->m_fracBits = m_op->m_fracBits + m_bits;
     }
 
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpExtendLSBs(*this);
+    }
+
     int32_t m_bits;     ///< number of bits to extend
 };
 
@@ -476,6 +548,12 @@ public:
         //  check that bits >= 0
         m_lhs->m_intBits  = m_op->m_intBits;
         m_lhs->m_fracBits = m_op->m_fracBits - m_bits;
+    }
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpRemoveLSBs(*this);
     }
 
     int32_t m_bits;     ///< number of bits to remove
@@ -505,6 +583,12 @@ public:
         m_lhs->m_fracBits = m_op->m_fracBits;
     }
 
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpExtendMSBs(*this);
+    }
+
     int32_t m_bits;     ///< number of bits to extend
 };
 
@@ -530,6 +614,12 @@ public:
         //  check that bits >= 0
         m_lhs->m_intBits  = m_op->m_intBits - m_bits;
         m_lhs->m_fracBits = m_op->m_fracBits;
+    }
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpRemoveMSBs(*this);
     }
 
     int32_t m_bits;     ///< number of bits to remove
@@ -584,6 +674,12 @@ public:
         }
     }
 
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        throw std::runtime_error("OpPatchBlock::clone() is not suppoted!");
+    }
+
     std::list<OperationBase*> m_statements;
     const OperationBase *m_replacedInstruction;
 };
@@ -607,6 +703,12 @@ public:
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
     virtual void updateOutputPrecision() const override {}
+
+    /** clone the object */
+    virtual OperationBase* clone() const override
+    {
+        return new OpNull(*this);
+    }
 
 };
 
@@ -647,6 +749,8 @@ public:
 class Program
 {
 public:
+    Program() {}
+
     /** convenience function to add a new statement to the list */
     void addStatement(OperationBase *statement)
     {
@@ -671,6 +775,16 @@ public:
         for(auto statement : m_statements)
         {
             statement->updateOutputPrecision();
+        }
+    }
+
+    /** copy constructor to safely duplicate all the statements */
+    Program(const Program &obj)
+    {
+        m_operands = obj.m_operands;
+        for (auto statement : obj.m_statements)
+        {
+            m_statements.push_back(statement->clone());
         }
     }
 
