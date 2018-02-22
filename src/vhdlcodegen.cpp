@@ -218,7 +218,6 @@ void VHDLCodeGen::genTestbenchFooter()
                 ss << "VHDLCodeGen::genTestbenchFooter cannot find input variable " << inOp->m_identName;
                 throw std::runtime_error(ss.str());
             }
-            //m_os << chopHexString(value->toHexString(), value->intBits(), value->fracBits()) << "\";\n";
             m_os << "\"" << value->toBinString() << "\";\n";
         }
     }
@@ -238,9 +237,10 @@ void VHDLCodeGen::genTestbenchFooter()
                 ss << "VHDLCodeGen::genTestbenchFooter cannot find output variable " << outOp->m_identName;
                 throw std::runtime_error(ss.str());
             }
-            m_os << "assert (" << outOp->m_identName << " /= ";
+            m_os << "assert (" << outOp->m_identName << " = ";
             m_os << "\"" << value->toBinString() << "\") report \"error: ";
-            m_os << outOp->m_identName;
+            m_os << outOp->m_identName << " got \" & to_string(" << outOp->m_identName << ") & \"";
+            m_os << "expected: " << value->toBinString();
             m_os << "\" severity error;\n";
         }
     }
