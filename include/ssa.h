@@ -73,6 +73,11 @@ class OutputOperand : public OperandBase
 {
 };
 
+/** SSA operand that represents a register */
+class RegOperand : public OperandBase
+{
+};
+
 static uint32_t gs_tempIdx = 0;
 
 /** SSA operand that represents an intermediate variable */
@@ -101,8 +106,6 @@ public:
 
     csd_t   m_csd;
 };
-
-
 
 
 // *****************************************
@@ -433,10 +436,13 @@ public:
 class OpAssign : public OperationSingle
 {
 public:
-    OpAssign(const SharedOpPtr &op, const SharedOpPtr &output)
+    OpAssign(const SharedOpPtr &op, const SharedOpPtr &output, bool updatePrecision = true)
         : OperationSingle(op, output)
     {
-        updateOutputPrecision();
+        if (updatePrecision)
+        {
+            updateOutputPrecision();
+        }
     }
 
     /** accept a visitor */

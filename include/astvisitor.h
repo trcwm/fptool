@@ -24,6 +24,7 @@ namespace AST
     class Statements;
     class InputDeclaration;
     class CSDDeclaration;
+    class RegDeclaration;
     class PrecisionModifier;
     class Assignment;
     class Operation2;
@@ -38,6 +39,7 @@ public:
     virtual void visit(const Identifier *node) = 0;
     virtual void visit(const IntegerConstant *node) = 0;
     virtual void visit(const CSDDeclaration *node) = 0;
+    virtual void visit(const RegDeclaration *node) = 0;
     virtual void visit(const Statements *node) = 0;
     virtual void visit(const InputDeclaration *node) = 0;
     virtual void visit(const PrecisionModifier *node) = 0;
@@ -60,6 +62,7 @@ public:
     virtual void visit(const Identifier *node);
     virtual void visit(const IntegerConstant *node);
     virtual void visit(const CSDDeclaration *node);
+    virtual void visit(const RegDeclaration *node);
     virtual void visit(const Statements *node);
     virtual void visit(const InputDeclaration *node);
     virtual void visit(const PrecisionModifier *node);

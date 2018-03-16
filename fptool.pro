@@ -29,6 +29,7 @@ HEADERS += include/cmdline.h \
            include/ssacreator.h \
            include/ssaprint.h \
            include/ssaevaluator.h \
+           include/identdb.h \
            externals/fplib/src/fplib.h
 
 SOURCES += src/cmdline.cpp \

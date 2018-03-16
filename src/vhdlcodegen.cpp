@@ -221,7 +221,7 @@ void VHDLCodeGen::genTestbenchFooter()
             m_os << "\"" << value->toBinString() << "\";\n";
         }
     }
-    m_os << "    wait for 1 ns;\n";
+     m_os << "    wait for 1 ns;\n";
 
     // check values for all outputs!
     for(auto operand : m_ssa->m_operands)

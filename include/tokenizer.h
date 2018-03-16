@@ -49,6 +49,7 @@
 #define TOK_CSD     102
 #define TOK_TRUNC   103
 #define TOK_SAT     104
+#define TOK_REG     105
 
 #include <vector>
 #include <string>

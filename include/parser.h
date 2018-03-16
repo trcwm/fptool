@@ -19,6 +19,7 @@
 
 #include "tokenizer.h"
 #include "astnode.h"
+#include "identdb.h"
 
 /** Parser to translate token stream from tokenizer/lexer to operation stack. */
 class Parser
@@ -65,9 +66,10 @@ protected:
     bool acceptProgram(state_t &s, AST::Statements &result);
     ASTNode* acceptDefinition(state_t &s);
 
-    AST::Declaration *acceptDefspec(state_t &s);
-    AST::InputDeclaration *acceptDefspec1(state_t &s);    ///< accept an input declaration
-    AST::CSDDeclaration   *acceptDefspec2(state_t &s);    ///< accept a CSD declaration
+    AST::Declaration *acceptDefspec(state_t &s, const std::string &identifier);
+    AST::InputDeclaration *acceptDefspec1(state_t &s);      ///< accept an input declaration
+    AST::RegDeclaration   *acceptDefspec3(state_t &s);      ///< accept a register declaration
+    AST::CSDDeclaration   *acceptDefspec2(state_t &s);      ///< accept a CSD declaration
 
     // functions
     ASTNode* acceptTruncate(state_t &s);
@@ -84,12 +86,10 @@ protected:
     ASTNode* acceptTermAccent1(state_t &s, ASTNode *leftNode);
     ASTNode* acceptTermAccent2(state_t &s, ASTNode *leftNode);
 
-    ASTNode *acceptFactor(state_t &s);
+    ASTNode* acceptFactor(state_t &s);
     ASTNode* acceptFactor1(state_t &s);
     ASTNode* acceptFactor2(state_t &s);
     ASTNode* acceptFactor3(state_t &s);
-
-
 
     /** match a token, return true if matched and advance the token index. */
     bool match(state_t &s, uint32_t tokenID);
@@ -132,6 +132,8 @@ protected:
 
     std::string   m_lastError;
     Reader::position_info m_lastErrorPos;
+
+    IdentDB                     m_identDB;
     const std::vector<token_t>  *m_tokens;
 };
 

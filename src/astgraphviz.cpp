@@ -106,6 +106,19 @@ void AST2Graphviz::visit(const AST::InputDeclaration *node)
     m_os << "\"];\n";
 }
 
+void AST2Graphviz::visit(const AST::RegDeclaration *node)
+{
+    if (node == 0) return;
+
+    if (m_noInputs) return;
+
+    int32_t thisNodeID = m_count;
+
+    m_os << thisNodeID << " [label=\"";
+    m_os << "REG " << node->m_identName.c_str() << " Q(" << node->m_intBits << "," << node->m_fracBits << ")";
+    m_os << "\"];\n";
+}
+
 void AST2Graphviz::visit(const AST::PrecisionModifier *node)
 {
     if (node == 0) return;

@@ -11,6 +11,8 @@
 */
 
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include "parser.h"
 #include "csd.h"
 
@@ -23,15 +25,22 @@ Parser::Parser() : m_tokens(NULL)
 
 void Parser::error(const state_t &s, const std::string &txt)
 {
+    std::stringstream ss;
     m_lastError = txt;
     m_lastErrorPos = s.tokPos;
-    std::cout << txt.c_str() << std::endl;
+
+    ss << "Line: " << s.tokPos.line << " Col: " << s.tokPos.pos << "  " << txt << std::endl;
+    throw std::runtime_error(ss.str());
 }
 
 void Parser::error(uint32_t dummy, const std::string &txt)
 {
     m_lastError = txt;
-    std::cout << txt.c_str() << std::endl;
+    m_lastErrorPos.line = 0;
+    m_lastErrorPos.offset = 0;
+    m_lastErrorPos.pos = 0;
+
+    throw std::runtime_error(txt);
 }
 
 bool Parser::match(state_t &s, uint32_t tokenID)
@@ -59,19 +68,28 @@ bool Parser::process(const std::vector<token_t> &tokens, AST::Statements &result
 {
     m_lastError.clear();
 
-    if (tokens.size() == 0)
+    bool ok = false;
+    try
     {
-        error(0,"Internal error: token list is empty");
+        if (tokens.size() == 0)
+        {
+            error(0,"Internal error: token list is empty");
+            return false;
+        }
+
+        // prepare for iteration
+        m_tokens = &tokens;
+
+        state_t state;
+        state.tokIdx = 0;
+        ok = acceptProgram(state, result);
+    }
+    catch(std::runtime_error &e)
+    {
         return false;
     }
 
-    // prepare for iteration
-    m_tokens = &tokens;
-
-    state_t state;
-    state.tokIdx = 0;
-
-    return acceptProgram(state, result);
+    return ok;
 }
 
 bool Parser::acceptProgram(state_t &s, AST::Statements &statements)
@@ -137,17 +155,8 @@ ASTNode* Parser::acceptDefinition(state_t &s)
 
     std::string identifier = getToken(s, -2).txt;    // get identifier string
 
-    // create new RHS specification node:
-    //
-    // FIXME: create a special AST::Declaration base node
-    // here, which are actually a CSD node or Input node.
-    //
-    // The actual nodes are created in acceptDefspec1 and
-    // acceptDefspec1.
-    //
-
     AST::Declaration *declNode = 0;
-    if ((declNode=acceptDefspec(s)) == 0)
+    if ((declNode=acceptDefspec(s, identifier)) == 0)
     {
         error(s,"Expected a declaration.");
         s = savestate;
@@ -167,17 +176,39 @@ ASTNode* Parser::acceptDefinition(state_t &s)
     return declNode;
 }
 
-AST::Declaration* Parser::acceptDefspec(state_t &s)
+AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifier)
 {
-    // productions: defspec1 | defspec2
+    // productions: defspec1 | defspec2 | defspec3
 
     AST::Declaration *node = 0;
     if ((node=acceptDefspec1(s)) != NULL)
     {
+        // INPUT node
+        if (!m_identDB.addIdentifier(identifier, IdentDB::info_t::T_INPUT))
+        {
+            error(s, "Identifier already exists!");
+            return NULL;
+        }
         return node;
     }
     else if ((node=acceptDefspec2(s)) != NULL)
     {
+        // CSD node
+        if (!m_identDB.addIdentifier(identifier, IdentDB::info_t::T_CSD))
+        {
+            error(s, "Identifier already exists!");
+            return NULL;
+        }
+        return node;
+    }
+    else if ((node=acceptDefspec3(s)) != NULL)
+    {
+        // REG node
+        if (!m_identDB.addIdentifier(identifier, IdentDB::info_t::T_REG))
+        {
+            error(s, "Identifier already exists!");
+            return NULL;
+        }
         return node;
     }
     return NULL;
@@ -235,6 +266,25 @@ AST::CSDDeclaration *Parser::acceptDefspec2(state_t &s)
     return newNode;
 }
 
+AST::RegDeclaration* Parser::acceptDefspec3(state_t &s)
+{
+    // production: REG LPAREN INTEGER COMMA INTEGER RPAREN
+
+    const uint32_t tokenList[] =
+        {TOK_REG, TOK_LPAREN, TOK_INTEGER, TOK_COMMA, TOK_INTEGER, TOK_RPAREN, 0};
+
+    state_t savestate = s;
+    if (!matchList(s, tokenList))
+    {
+        s=savestate;
+        return NULL;
+    }
+
+    AST::RegDeclaration* newNode = new AST::RegDeclaration();
+    newNode->m_intBits  = atoi(getToken(s, -4).txt.c_str()); // first integer
+    newNode->m_fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
+    return newNode;
+}
 
 ASTNode* Parser::acceptTruncate(state_t &s)
 {
@@ -346,6 +396,17 @@ ASTNode* Parser::acceptAssignment(state_t &s)
         error(s,"Assignments must end with a semicolon.");
         s = savestate;
         delete exprNode;
+        return NULL;
+    }
+
+    // do type checking here.
+    // we can only accept assignments to an output,
+    // register or temporary variable.
+
+    if (m_identDB.identIsType(identifier, IdentDB::info_t::T_INPUT))
+    {
+        // cannot assign to type input
+        error(s,"Cannot assign to input variables.");
         return NULL;
     }
 

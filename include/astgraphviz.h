@@ -33,6 +33,7 @@ public:
     virtual void visit(const AST::Identifier *node) override;
     virtual void visit(const AST::IntegerConstant *node) override;
     virtual void visit(const AST::CSDDeclaration *node) override;
+    virtual void visit(const AST::RegDeclaration *node) override;
     virtual void visit(const AST::Statements *node) override;
     virtual void visit(const AST::InputDeclaration *node) override;
     virtual void visit(const AST::PrecisionModifier *node) override;

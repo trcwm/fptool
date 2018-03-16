@@ -18,6 +18,7 @@
 #include "astnode.h"
 #include "astvisitor.h"
 #include "ssa.h"
+#include "identdb.h"
 
 namespace SSA
 {
@@ -33,6 +34,7 @@ public:
     virtual void visit(const AST::Identifier *node) override;
     virtual void visit(const AST::IntegerConstant *node) override;
     virtual void visit(const AST::CSDDeclaration *node) override;
+    virtual void visit(const AST::RegDeclaration *node) override;
     virtual void visit(const AST::Statements *node) override;
     virtual void visit(const AST::InputDeclaration *node) override;
     virtual void visit(const AST::PrecisionModifier *node) override;
@@ -60,6 +62,7 @@ protected:
     SSA::Program                *m_ssa;         ///< SSA program statements
     std::string                 m_lastError;    ///< last generated error
     std::list<SharedOpPtr>      m_opStack;      ///< operand stack
+    IdentDB                     m_identDB;      ///< identifier database
 };
 
 } // namespace

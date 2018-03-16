@@ -140,6 +140,12 @@ void AST::DumpVisitor::visit(const InputDeclaration *node)
     m_os << "Input " << node->m_identName.c_str() << " Q(" << node->m_intBits << "," << node->m_fracBits << ")\n";
 }
 
+void AST::DumpVisitor::visit(const RegDeclaration *node)
+{
+    doIndent();
+    m_os << "Register " << node->m_identName.c_str() << " Q(" << node->m_intBits << "," << node->m_fracBits << ")\n";
+}
+
 void AST::DumpVisitor::visit(const PrecisionModifier *node)
 {
     if (node->m_argNode!= NULL)

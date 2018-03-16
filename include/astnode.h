@@ -119,6 +119,23 @@ public:
     int32_t m_intBits;    // number of integer bits in INPUT defintion
 };
 
+/** Register declaration */
+class RegDeclaration : public Declaration
+{
+public:
+    RegDeclaration() :
+        m_fracBits(0),
+        m_intBits(0) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(AST::VisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    int32_t m_fracBits;   // number of factional bits in REGISTER definition
+    int32_t m_intBits;    // number of integer bits in REGISTER defintion
+};
 
 /** CSD declaration */
 class CSDDeclaration : public Declaration
@@ -134,6 +151,7 @@ public:
 
     csd_t m_csd;
 };
+
 
 
 /** Precision modification node: RemoveLSB, ExtendLSB, RemoveMSB, ExtendMSB,
