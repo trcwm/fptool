@@ -33,6 +33,16 @@ bool VHDLCodeGen::execute()
     {
         genTestbenchHeader();
     }
+    else
+    {
+        genEntity();
+
+        m_os << "architecture rtl of fptool is\n";
+
+        genArchitectureSignals();
+
+        m_os << "begin\n";
+    }
 
     genProcessHeader(m_indent);
 
@@ -46,15 +56,22 @@ bool VHDLCodeGen::execute()
     genIndent(m_indent);
     m_os << "end process;\n";
 
+    genClockedProcess();
+
     m_os << m_epilog;
 
     if (m_genTestbench)
     {
         genTestbenchFooter();
     }
+    else
+    {
+        m_os << "end rtl;\n";
+    }
 
     return true;
 }
+
 
 void VHDLCodeGen::genIndent(uint32_t indent)
 {
@@ -63,6 +80,7 @@ void VHDLCodeGen::genIndent(uint32_t indent)
         m_os << " ";
     }
 }
+
 
 void VHDLCodeGen::genProcessHeader(uint32_t indent)
 {
@@ -74,6 +92,7 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
     // begin
     //
 
+#if 0
     // generate documentation for output signals
     m_os << "  -- *** OUTPUT SIGNALS ***\n";
 
@@ -104,11 +123,8 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
         }
     }
 
+#endif
     // generate process header with sensitivity list
-    m_os << "\n";
-    m_os << "  -------------------\n";
-    m_os << "  -- PROCESS BLOCK --\n";
-    m_os << "  -------------------\n";
 
     genIndent(indent);
     m_os << "proc_comb: process(";
@@ -116,12 +132,20 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
     bool isFirst = true;
     for(auto operand : m_ssa->m_operands)
     {
-        InputOperand *op = dynamic_cast<InputOperand*>(operand.get());
+        InputOperand *op  = dynamic_cast<InputOperand*>(operand.get());
+        RegOperand *regOp = dynamic_cast<RegOperand*>(operand.get());
         if (op != NULL)
         {
             if (!isFirst)
                 m_os << ",";
             m_os << op->m_identName.c_str();
+            isFirst = false;
+        }
+        else if (regOp != NULL)
+        {
+            if (!isFirst)
+                m_os << ",";
+            m_os << regOp->m_identName.c_str();
             isFirst = false;
         }
     }
@@ -151,6 +175,127 @@ void VHDLCodeGen::genProcessHeader(uint32_t indent)
     m_os << "begin\n";
 }
 
+
+void VHDLCodeGen::genClockedProcess()
+{
+    doLog(LOG_INFO, "-- generating clocked process\n");
+
+    m_os << "\n";
+    m_os << "  proc_clk: process(clk, rst_n)\n";
+    m_os << "  begin\n";
+    m_os << "    if (rising_edge(clk)) then\n";
+    m_os << "      if (rst_n = '0') then\n";
+
+    // generate reset value for registered signals
+    for(auto operand : m_ssa->m_operands)
+    {
+        RegOperand *regOp = dynamic_cast<RegOperand*>(operand.get());
+        if (regOp != NULL)
+        {
+            genIndent(m_indent);
+            m_os << "      " << regOp->m_identName.c_str() << " <= (others=>'0');\n";
+        }
+    }
+    m_os << "      else\n";
+    // generate update assignmet for registered signals
+    for(auto operand : m_ssa->m_operands)
+    {
+        RegOperand *regOp = dynamic_cast<RegOperand*>(operand.get());
+        if (regOp != NULL)
+        {
+            genIndent(m_indent);
+            m_os << "      " << regOp->m_identName.c_str() << " <= " << regOp->m_identName.c_str() << "_next;\n";
+        }
+    }
+    m_os << "      end if;\n";
+    m_os << "    end if;\n";
+    m_os << "  end process proc_clk;\n";
+}
+
+void VHDLCodeGen::genEntity()
+{
+    m_os << "entity fptool is\n";
+    m_os << "  port(\n";
+    m_indent += 2;
+
+    // generate input, output and register signals of the DUT
+    bool firstEntry = true;
+    for(auto operand : m_ssa->m_operands)
+    {
+        InputOperand *inOp  = dynamic_cast<InputOperand*>(operand.get());
+        OutputOperand *outOp = dynamic_cast<OutputOperand*>(operand.get());
+
+        if (inOp != NULL)
+        {
+            if (!firstEntry)
+            {
+                m_os << ";\n";
+            }
+            firstEntry = false;
+            genIndent(m_indent);
+            m_os << inOp->m_identName.c_str() << " : in SIGNED(" << inOp->m_intBits + inOp->m_fracBits-1 << " downto 0)";
+        }
+        else if (outOp != NULL)
+        {
+            if (!firstEntry)
+            {
+                m_os << ";\n";
+            }
+            firstEntry = false;
+            genIndent(m_indent);
+            m_os << outOp->m_identName.c_str() << " : out SIGNED(" << outOp->m_intBits + outOp->m_fracBits-1 << " downto 0)";
+        }
+    }
+    if (!firstEntry)
+    {
+        m_os << "\n";
+    };
+    m_indent -= 2;
+    m_os << "  );\n";
+    m_os << "end fptool;\n\n";
+}
+
+void VHDLCodeGen::genArchitectureSignals()
+{
+    // generate input, output and register signals of the DUT
+    for(auto operand : m_ssa->m_operands)
+    {
+        //InputOperand *inOp  = dynamic_cast<InputOperand*>(operand.get());
+        //OutputOperand *outOp = dynamic_cast<OutputOperand*>(operand.get());
+        RegOperand *regOp = dynamic_cast<RegOperand*>(operand.get());
+
+#if 0
+        if (inOp != NULL)
+        {
+            genIndent(m_indent);
+            m_os << "signal " << inOp->m_identName.c_str();
+            m_os << " : SIGNED(" << inOp->m_intBits + inOp->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << inOp->m_intBits << "," << inOp->m_fracBits << ");\n";
+        }
+        else if (outOp != NULL)
+        {
+            genIndent(m_indent);
+            m_os << "signal " << outOp->m_identName.c_str();
+            m_os << " : SIGNED(" << outOp->m_intBits + outOp->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << outOp->m_intBits << "," << outOp->m_fracBits << ");\n";
+        }
+#endif
+        if (regOp != NULL)
+        {
+            genIndent(m_indent);
+            m_os << "signal " << regOp->m_identName.c_str();
+            m_os << " : SIGNED(" << regOp->m_intBits + regOp->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << regOp->m_intBits << "," << regOp->m_fracBits << ");\n";
+            genIndent(m_indent);
+            m_os << "signal " << regOp->m_identName.c_str() << "_next";
+            m_os << " : SIGNED(" << regOp->m_intBits + regOp->m_fracBits-1 << " downto 0);  --";
+            m_os << " Q(" << regOp->m_intBits << "," << regOp->m_fracBits << ");\n";
+        }
+    }
+    m_os << "\n";
+}
+
+
 void VHDLCodeGen::genTestbenchHeader()
 {
     doLog(LOG_INFO, "-- generating testbench header\n");
@@ -165,29 +310,10 @@ void VHDLCodeGen::genTestbenchHeader()
     m_os << "end tb;\n\n";
 
     m_os << "architecture behavioral of tb is\n";
-    m_os << "  signal sim_done : std_logic := '0';\n";
+    m_os << "    signal sim_done : std_logic := '0';\n";
 
-    // generate input and output signals of the DUT
-    for(auto operand : m_ssa->m_operands)
-    {
-        InputOperand *inOp  = dynamic_cast<InputOperand*>(operand.get());
-        OutputOperand *outOp = dynamic_cast<OutputOperand*>(operand.get());
-        if (inOp != NULL)
-        {
-            genIndent(m_indent);
-            m_os << "  signal " << inOp->m_identName.c_str();
-            m_os << " : SIGNED(" << inOp->m_intBits + inOp->m_fracBits-1 << " downto 0);  --";
-            m_os << " Q(" << inOp->m_intBits << "," << inOp->m_fracBits << ");\n";
-        }
-        else if (outOp != NULL)
-        {
-            genIndent(m_indent);
-            m_os << "  signal " << outOp->m_identName.c_str();
-            m_os << " : SIGNED(" << outOp->m_intBits + outOp->m_fracBits-1 << " downto 0);  --";
-            m_os << " Q(" << outOp->m_intBits << "," << outOp->m_fracBits << ");\n";
-        }
-    }
-    m_os << "\n\n";
+    genArchitectureSignals();
+
     m_os << "begin\n\n";
 }
 
@@ -221,7 +347,7 @@ void VHDLCodeGen::genTestbenchFooter()
             m_os << "\"" << value->toBinString() << "\";\n";
         }
     }
-     m_os << "    wait for 1 ns;\n";
+    m_os << "    wait for 1 ns;\n";
 
     // check values for all outputs!
     for(auto operand : m_ssa->m_operands)
@@ -276,10 +402,16 @@ bool VHDLCodeGen::visit(const OpAssign *node)
 {
     genIndent(m_indent);
     OutputOperand *outOp = dynamic_cast<OutputOperand*>(node->m_lhs.get());
+    RegOperand *regOp = dynamic_cast<RegOperand*>(node->m_lhs.get());
     if (outOp != NULL)
     {
-        // signal, so use <=
+        // output signal, so use <=
         m_os << node->m_lhs->m_identName.c_str() << " <= " << node->m_op->m_identName.c_str() << ";\n";
+    }
+    else if (regOp != NULL)
+    {
+        // register signal, so use <=
+        m_os << node->m_lhs->m_identName.c_str() << "_next <= " << node->m_op->m_identName.c_str() << ";\n";
     }
     else
     {

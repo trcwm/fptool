@@ -54,6 +54,9 @@ protected:
     void genProcessHeader(uint32_t indent);
     void genIndent(uint32_t indent);
 
+    void genEntity();
+    void genArchitectureSignals();
+    void genClockedProcess();
     void genTestbenchHeader();
     void genTestbenchFooter();
 

@@ -374,7 +374,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if (!SSA::VHDLCodeGen::generateCode(outstream, ssa, true))
+                if (!SSA::VHDLCodeGen::generateCode(outstream, ssa, false))
                 {
                     doLog(LOG_ERROR, "Error generating VHDL code!\n");
                 }

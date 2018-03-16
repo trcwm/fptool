@@ -80,9 +80,12 @@ void Creator::visit(const AST::Assignment *node)
         result = std::make_shared<RegOperand>();
         result->m_identName = node->m_identName;
         result->m_intBits   = m_identDB.m_identifiers[node->m_identName].m_intBits;
-        result->m_fracBits  = m_identDB.m_identifiers[node->m_identName].m_fracBits;        
+        result->m_fracBits  = m_identDB.m_identifiers[node->m_identName].m_fracBits;
+
+        //Note: do not add the result to the operand stack here
+        //      it was already created in the definition node.
     }
-    else if (m_identDB.identIsType(node->m_identName, IdentDB::info_t::T_OUTPUT))
+    else if (!m_identDB.identIsType(node->m_identName, IdentDB::info_t::T_INPUT))
     {
         result = std::make_shared<OutputOperand>();
 
@@ -92,6 +95,10 @@ void Creator::visit(const AST::Assignment *node)
         result->m_identName = node->m_identName;
         result->m_intBits   = arg1->m_intBits;
         result->m_fracBits  = arg1->m_fracBits;
+
+        //Note: we must add the result to the operand list
+        //      because there is no define for outputs
+        m_ssa->addOperand(result);
     }
     else
     {
@@ -102,7 +109,6 @@ void Creator::visit(const AST::Assignment *node)
 
     SSA::OpAssign *assign = new SSA::OpAssign(arg1, result, lockPrecision);
     m_ssa->addStatement(assign);
-    m_ssa->addOperand(result);
 }
 
 void Creator::visit(const AST::CSDDeclaration *node)
