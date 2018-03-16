@@ -60,21 +60,27 @@ void Creator::visit(const AST::Assignment *node)
     SharedOpPtr arg1 = PopOperand();
 
     SSA::SharedOpPtr result;
-    bool updatePrecision = true;
+    bool lockPrecision = false;
 
     // Check if the result is an output or reg operand
     if (m_identDB.identIsType(node->m_identName, IdentDB::info_t::T_REG))
     {
         // the precision of the register is already
-        // set by the user. We need to check if the
+        // set by the user so we need to lock it.
+
+        // We need to check if the
         // expression will lose precision when
         // assigning it to the output register.
+        //
+        // If so, we produce a warning.
+        //
+        // TODO: produce a warning
 
-        updatePrecision = false;
+        lockPrecision = true;
         result = std::make_shared<RegOperand>();
         result->m_identName = node->m_identName;
         result->m_intBits   = m_identDB.m_identifiers[node->m_identName].m_intBits;
-        result->m_fracBits  = m_identDB.m_identifiers[node->m_identName].m_fracBits;
+        result->m_fracBits  = m_identDB.m_identifiers[node->m_identName].m_fracBits;        
     }
     else if (m_identDB.identIsType(node->m_identName, IdentDB::info_t::T_OUTPUT))
     {
@@ -94,7 +100,7 @@ void Creator::visit(const AST::Assignment *node)
     }
 
 
-    SSA::OpAssign *assign = new SSA::OpAssign(arg1, result, updatePrecision);
+    SSA::OpAssign *assign = new SSA::OpAssign(arg1, result, lockPrecision);
     m_ssa->addStatement(assign);
     m_ssa->addOperand(result);
 }

@@ -22,6 +22,7 @@
 #include "ssaevaluator.h"
 #include "csd.h"
 #include "pass_addsub.h"
+#include "pass_regtrunc.h"
 #include "pass_truncate.h"
 #include "pass_csdmul.h"
 #include "pass_clean.h"
@@ -175,6 +176,21 @@ int main(int argc, char *argv[])
                 }
                 closeLogFile();
                 return 0; // end program!
+            }
+
+            // ------------------------------------------------------------
+            // -- INSERT TRUNCATE NODES FOR REG ASSIGNMENTS
+            // ------------------------------------------------------------
+            if (!SSA::PassRegTrunc::execute(ssa))
+            {
+                doLog(LOG_ERROR, "REGTRUNC pass failed\n");
+            }
+
+            if (verbose)
+            {
+                std::stringstream ss;
+                SSA::Printer::print(ssa, ss, true);
+                doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
             // ------------------------------------------------------------
