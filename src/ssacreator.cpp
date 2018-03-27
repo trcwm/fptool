@@ -107,6 +107,14 @@ void Creator::visit(const AST::Assignment *node)
         result->m_identName = node->m_identName;
         result->m_intBits   = arg1->m_intBits;
         result->m_fracBits  = arg1->m_fracBits;
+
+        // Note: we must add the result to the operand list
+        //       because there is no define for outputs
+        // TODO: check if the operand already exists in
+        //       case of multiple assignments.
+        //       this is an error as you can only
+        //       assign to an output var _once_.
+        m_ssa->addOperand(result);
         break;
     case IdentDB::info_t::T_INPUT:
         // we cannot assign to inputs!
