@@ -108,7 +108,8 @@ int main(int argc, char *argv[])
 
         Parser parse;
         AST::Statements statements;
-        if (parse.process(tokens, statements))
+        IdentDB         symbolTable;
+        if (parse.process(tokens, statements, symbolTable))
         {
             doLog(LOG_INFO, "Parse OK!\n");
 
@@ -140,9 +141,11 @@ int main(int argc, char *argv[])
 
             SSA::Creator ssaCreator;
             SSA::Program ssa;
-            if (!ssaCreator.process(statements, ssa))
+
+            if (!ssaCreator.process(statements, symbolTable, ssa))
             {
                 doLog(LOG_ERROR, "Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
+                return 1;
             }
 
             if (verbose)

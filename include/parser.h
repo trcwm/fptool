@@ -32,7 +32,7 @@ public:
         When an error occurs, call getLastError() to get
         a human-readable string of the error.
     */
-    bool process(const std::vector<token_t> &tokens, AST::Statements &result);
+    bool process(const std::vector<token_t> &tokens, AST::Statements &statements, IdentDB &symbols);
 
     /** Return a description of the last parse error that occurred. */
     std::string getLastError() const
@@ -133,7 +133,7 @@ protected:
     std::string   m_lastError;
     Reader::position_info m_lastErrorPos;
 
-    IdentDB                     m_identDB;
+    IdentDB                     *m_identDB;
     const std::vector<token_t>  *m_tokens;
 };
 

@@ -15,6 +15,8 @@
 
 #include <string>
 #include <iostream>
+#include <stdexcept>
+
 #include "astnode.h"
 #include "astvisitor.h"
 #include "ssa.h"
@@ -29,7 +31,11 @@ public:
     Creator();
     virtual ~Creator();
 
-    bool process(AST::Statements &statements, SSA::Program &ssa);
+    /** create a single-static assignment list of statements,
+        based on the abstract syntax tree and the symbol table. */
+    bool process(const AST::Statements &statements,
+                 const IdentDB &symbols,
+                 SSA::Program &ssa);
 
     virtual void visit(const AST::Identifier *node) override;
     virtual void visit(const AST::IntegerConstant *node) override;
@@ -55,14 +61,15 @@ protected:
     /** emit an error in human readable form */
     void error(const std::string &errorstr)
     {
-        std::cout << errorstr << std::endl;
+        //std::cout << errorstr << std::endl;
         m_lastError = errorstr;
+        throw std::runtime_error(errorstr);
     }
 
     SSA::Program                *m_ssa;         ///< SSA program statements
     std::string                 m_lastError;    ///< last generated error
     std::list<SharedOpPtr>      m_opStack;      ///< operand stack
-    IdentDB                     m_identDB;      ///< identifier database
+    const IdentDB               *m_identDB;     ///< identifier database
 };
 
 } // namespace

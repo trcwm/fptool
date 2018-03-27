@@ -64,9 +64,16 @@ bool Parser::matchList(state_t &s, const uint32_t *tokenIDlist)
     return true;
 }
 
-bool Parser::process(const std::vector<token_t> &tokens, AST::Statements &result)
+bool Parser::process(const std::vector<token_t> &tokens,
+                     AST::Statements &result,
+                     IdentDB &symbols)
 {
     m_lastError.clear();
+
+    // clear the database in case it wasn't empty.
+    symbols.clear();
+
+    m_identDB = &symbols;
 
     bool ok = false;
     try
@@ -184,7 +191,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     if ((node=acceptDefspec1(s)) != NULL)
     {
         // INPUT node
-        if (!m_identDB.addIdentifier(identifier, IdentDB::info_t::T_INPUT))
+        if (!m_identDB->addIdentifier(identifier, IdentDB::info_t::T_INPUT))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -194,7 +201,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     else if ((node=acceptDefspec2(s)) != NULL)
     {
         // CSD node
-        if (!m_identDB.addIdentifier(identifier, IdentDB::info_t::T_CSD))
+        if (!m_identDB->addIdentifier(identifier, IdentDB::info_t::T_CSD))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -204,7 +211,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     else if ((node=acceptDefspec3(s)) != NULL)
     {
         // REG node
-        if (!m_identDB.addIdentifier(identifier, IdentDB::info_t::T_REG))
+        if (!m_identDB->addIdentifier(identifier, IdentDB::info_t::T_REG))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -399,11 +406,21 @@ ASTNode* Parser::acceptAssignment(state_t &s)
         return NULL;
     }
 
+    // if the identifier is unknown, it must be an
+    // output variable as these are the only ones
+    // not declared by the user.
+
+    if (!m_identDB->hasIdentifier(identifier))
+    {
+        // no need to specify the precision as this will be
+        // determined later on.
+        m_identDB->addIdentifier(identifier, IdentDB::info_t::T_OUTPUT);
+    }
+
     // do type checking here.
     // we can only accept assignments to an output,
     // register or temporary variable.
-
-    if (m_identDB.identIsType(identifier, IdentDB::info_t::T_INPUT))
+    if (m_identDB->identIsType(identifier, IdentDB::info_t::T_INPUT))
     {
         // cannot assign to type input
         error(s,"Cannot assign to input variables.");

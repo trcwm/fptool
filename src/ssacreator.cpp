@@ -1,6 +1,18 @@
+/*
+
+  FPTOOL - a fixed-point math to VHDL generation tool
+
+  Description:  Create a single-static assignment data structure
+                from tha abstract syntax tree.
+
+  Author: Niels A. Moseley
+
+*/
+
+#include <sstream>
+#include <memory>
 
 #include "ssacreator.h"
-#include <memory>
 
 using namespace SSA;
 
@@ -26,18 +38,27 @@ void Creator::PushOperand(SharedOpPtr operand)
     m_opStack.push_back(operand);
 }
 
-bool Creator::process(AST::Statements &statements, SSA::Program &ssa)
+bool Creator::process(const AST::Statements &statements, const IdentDB &symbols, SSA::Program &ssa)
 {
     m_ssa = &ssa;
+    m_identDB = &symbols;
 
-    for(ASTNode *node : statements.m_statements)
+    try
     {
-        if (node != NULL)
+        for(ASTNode *node : statements.m_statements)
         {
-            node->accept(this);
+            if (node != NULL)
+            {
+                node->accept(this);
+            }
         }
+        return true;
     }
-    return true;
+    catch(std::runtime_error &e)
+    {
+        std::cout << e.what() << "\n";
+        return false;
+    }
 }
 
 void Creator::visit(const AST::Assignment *node)
@@ -61,51 +82,51 @@ void Creator::visit(const AST::Assignment *node)
 
     SSA::SharedOpPtr result;
     bool lockPrecision = false;
+    std::stringstream ss;   // for error handling..
 
-    // Check if the result is an output or reg operand
-    if (m_identDB.identIsType(node->m_identName, IdentDB::info_t::T_REG))
+    switch(m_identDB->getType(node->m_identName))
     {
-        // the precision of the register is already
-        // set by the user so we need to lock it.
-
-        // We need to check if the
-        // expression will lose precision when
-        // assigning it to the output register.
-        //
-        // If so, we produce a warning.
-        //
-        // TODO: produce a warning
-
+    case IdentDB::info_t::T_NOTFOUND:
+        ss << "Identifier "<< node->m_identName << " not found";
+        error(ss.str());
+        break;
+    case IdentDB::info_t::T_REG:
+        // registers have a user defined precision, so
+        // copy that.
         lockPrecision = true;
         result = std::make_shared<RegOperand>();
         result->m_identName = node->m_identName;
-        result->m_intBits   = m_identDB.m_identifiers[node->m_identName].m_intBits;
-        result->m_fracBits  = m_identDB.m_identifiers[node->m_identName].m_fracBits;
-
-        //Note: do not add the result to the operand stack here
-        //      it was already created in the definition node.
-    }
-    else if (!m_identDB.identIsType(node->m_identName, IdentDB::info_t::T_INPUT))
-    {
-        result = std::make_shared<OutputOperand>();
-
+        result->m_intBits   = m_identDB->m_identifiers.at(node->m_identName).m_intBits;
+        result->m_fracBits  = m_identDB->m_identifiers.at(node->m_identName).m_fracBits;
+        break;
+    case IdentDB::info_t::T_OUTPUT:
         // the precision of the output operands are
         // determined by the expression
         // so we need to set it here..
+        result = std::make_shared<OutputOperand>();
         result->m_identName = node->m_identName;
         result->m_intBits   = arg1->m_intBits;
         result->m_fracBits  = arg1->m_fracBits;
-
-        //Note: we must add the result to the operand list
-        //      because there is no define for outputs
-        m_ssa->addOperand(result);
-    }
-    else
-    {
-        // cannot assign to anything else!
-        error("Cannot assign to INPUT identifier!");
-    }
-
+        break;
+    case IdentDB::info_t::T_INPUT:
+        // we cannot assign to inputs!
+        ss << "Cannot assign to INPUT identifier " << node->m_identName;
+        error(ss.str());
+        break;
+    case IdentDB::info_t::T_TMP:
+        // temporaries should not exist yet..
+        ss << "Cannot assign to TMP identifier " << node->m_identName << ". This is probably an internal error.";
+        error(ss.str());
+        break;
+    case IdentDB::info_t::T_CSD:
+        // we cannot assign to CSDs!
+        ss << "Cannot assign to CSD identifier " << node->m_identName;
+        error(ss.str());
+        break;
+    default:
+        error("Internal error");
+        break;
+    };
 
     SSA::OpAssign *assign = new SSA::OpAssign(arg1, result, lockPrecision);
     m_ssa->addStatement(assign);
@@ -113,7 +134,15 @@ void Creator::visit(const AST::Assignment *node)
 
 void Creator::visit(const AST::CSDDeclaration *node)
 {
-    // create an input variable
+    // CSD should already exist.. check this
+    std::stringstream ss;
+    if (!m_identDB->hasIdentifier(node->m_identName))
+    {
+        ss << "CSD identifier "<< node->m_identName << " not found, but should have been.";
+        error(ss.str());
+    }
+
+    // create a CSD constant
     std::shared_ptr<CSDOperand> csdop = std::make_shared<CSDOperand>();
     csdop->m_csd = node->m_csd;
     csdop->m_identName = node->m_identName;
@@ -121,7 +150,6 @@ void Creator::visit(const AST::CSDDeclaration *node)
     csdop->m_fracBits = 0;
 
     m_ssa->addOperand(csdop);
-    m_identDB.addIdentifier(node->m_identName, IdentDB::info_t::T_CSD);
 }
 
 void Creator::visit(const AST::Identifier *node)
@@ -144,27 +172,39 @@ void Creator::visit(const AST::Identifier *node)
 
 void Creator::visit(const AST::InputDeclaration *node)
 {
+    // INPUT should already exist.. check this
+    std::stringstream ss;
+    if (!m_identDB->hasIdentifier(node->m_identName))
+    {
+        ss << "INPUT identifier "<< node->m_identName << " not found, but should have been.";
+        error(ss.str());
+    }
+
     // create an input variable
     SSA::SharedOpPtr result = std::make_shared<InputOperand>();
     result->m_intBits   = node->m_intBits;
     result->m_fracBits  = node->m_fracBits;
     result->m_identName = node->m_identName;
     m_ssa->addOperand(result);
-    m_identDB.addIdentifier(node->m_identName, IdentDB::info_t::T_INPUT,
-                            node->m_intBits, node->m_fracBits);
 }
 
 
 void Creator::visit(const AST::RegDeclaration *node)
 {
-    // create an input variable
+    // REG should already exist.. check this
+    std::stringstream ss;
+    if (!m_identDB->hasIdentifier(node->m_identName))
+    {
+        ss << "REG identifier "<< node->m_identName << " not found, but should have been.";
+        error(ss.str());
+    }
+
+    // create a register variable
     SSA::SharedOpPtr result = std::make_shared<RegOperand>();
     result->m_intBits   = node->m_intBits;
     result->m_fracBits  = node->m_fracBits;
     result->m_identName = node->m_identName;
     m_ssa->addOperand(result);
-    m_identDB.addIdentifier(node->m_identName, IdentDB::info_t::T_REG,
-                            node->m_intBits, node->m_fracBits );
 }
 
 void Creator::visit(const AST::IntegerConstant *node)
