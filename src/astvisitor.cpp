@@ -125,7 +125,7 @@ void AST::DumpVisitor::visit(const CSDDeclaration *node)
 void AST::DumpVisitor::visit(const Statements *node)
 {
     m_os << "Statements";
-    for(ASTNode *stmt : node->m_statements)
+    for(ASTNodeBase *stmt : node->m_statements)
     {
         if (stmt != NULL)
         {

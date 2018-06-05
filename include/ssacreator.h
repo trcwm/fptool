@@ -25,7 +25,7 @@
 namespace SSA
 {
 
-class Creator : public AST::VisitorBase
+class Creator : public AST::ASTVisitorBase
 {
 public:
     Creator();
@@ -34,7 +34,7 @@ public:
     /** create a single-static assignment list of statements,
         based on the abstract syntax tree and the symbol table. */
     bool process(const AST::Statements &statements,
-                 const IdentDB &symbols,
+                 const SymbolTable &symbols,
                  SSA::Program &ssa);
 
     virtual void visit(const AST::Identifier *node) override;
@@ -69,7 +69,7 @@ protected:
     SSA::Program                *m_ssa;         ///< SSA program statements
     std::string                 m_lastError;    ///< last generated error
     std::list<SharedOpPtr>      m_opStack;      ///< operand stack
-    const IdentDB               *m_identDB;     ///< identifier database
+    const SymbolTable               *m_identDB;     ///< identifier database
 };
 
 } // namespace

@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
 
         Parser parse;
         AST::Statements statements;
-        IdentDB         symbolTable;
+        SymbolTable         symbolTable;
         if (parse.process(tokens, statements, symbolTable))
         {
             doLog(LOG_INFO, "Parse OK!\n");
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
             {
                 // dump the AST
                 AST::DumpVisitor ASTdumper(std::cout);
-                for(ASTNode *node : statements.m_statements)
+                for(AST::ASTNodeBase *node : statements.m_statements)
                 {
                     if (node != NULL)
                     {
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
             {
                 AST2Graphviz graphviz(graphvizStream, true);
                 graphviz.writeProlog();
-                for(ASTNode *node : statements.m_statements)
+                for(AST::ASTNodeBase *node : statements.m_statements)
                 {
                     graphviz.addStatement(node);
                 }
@@ -386,9 +386,7 @@ int main(int argc, char *argv[])
         else
         {
             doLog(LOG_ERROR, "Parse Failed!\n");
-            doLog(LOG_ERROR, "Line %d pos %d: %s\n", parse.getLastErrorPos().line+1,
-                  parse.getLastErrorPos().pos+1,
-                  parse.getLastError().c_str());
+            doLog(LOG_ERROR, parse.formatErrors().c_str());
         }
     }
 

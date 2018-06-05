@@ -15,41 +15,12 @@
 
 #include <ostream>
 #include <stdint.h>
+#include "astnode.h"
 
 namespace AST
 {
-    // pre-declarations
-    class Identifier;
-    class IntegerConstant;
-    class Statements;
-    class InputDeclaration;
-    class CSDDeclaration;
-    class RegDeclaration;
-    class PrecisionModifier;
-    class Assignment;
-    class Operation2;
-    class Operation1;
 
-/** Visitor class for ASTNodes
-    See: "Design Patterns: Elements of Reusable Object-Oriented Software"
-*/
-class VisitorBase
-{
-public:
-    virtual void visit(const Identifier *node) = 0;
-    virtual void visit(const IntegerConstant *node) = 0;
-    virtual void visit(const CSDDeclaration *node) = 0;
-    virtual void visit(const RegDeclaration *node) = 0;
-    virtual void visit(const Statements *node) = 0;
-    virtual void visit(const InputDeclaration *node) = 0;
-    virtual void visit(const PrecisionModifier *node) = 0;
-    virtual void visit(const Assignment *node) = 0;
-    virtual void visit(const Operation2 *node) = 0;
-    virtual void visit(const Operation1 *node) = 0;
-};
-
-
-class DumpVisitor : public VisitorBase
+class DumpVisitor : public ASTVisitorBase
 {
 public:
     /** create an object to dump the AST to a stream */

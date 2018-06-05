@@ -23,7 +23,7 @@ void AST2Graphviz::writeEpilog()
     m_os << "}\n";
 }
 
-void AST2Graphviz::addStatement(ASTNode *node)
+void AST2Graphviz::addStatement(AST::ASTNodeBase *node)
 {
     if (node != NULL)
     {
@@ -75,7 +75,7 @@ void AST2Graphviz::visit(const AST::Statements *node)
 
     // iterate over all child nodes
     std::vector<int32_t> m_cnodeNums; // child node indeces.
-    for(ASTNode *cnode : node->m_statements)
+    for(AST::ASTNodeBase *cnode : node->m_statements)
     {
         m_count++;
         m_cnodeNums.push_back(m_count);

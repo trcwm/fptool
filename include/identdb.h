@@ -15,11 +15,11 @@
 #include <string>
 #include <stdint.h>
 
-class IdentDB
+class SymbolTable
 {
 public:
-    IdentDB() {}
-    virtual ~IdentDB() {}
+    SymbolTable() {}
+    virtual ~SymbolTable() {}
 
     /** identifier types for type checking */
     struct info_t

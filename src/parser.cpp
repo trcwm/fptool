@@ -18,29 +18,36 @@
 
 Parser::Parser() : m_tokens(NULL)
 {
-    m_lastErrorPos.offset = 0;
-    m_lastErrorPos.line = 0;
-    m_lastErrorPos.pos = 0;
+    m_errors.clear();
 }
 
 void Parser::error(const state_t &s, const std::string &txt)
 {
-    std::stringstream ss;
-    m_lastError = txt;
-    m_lastErrorPos = s.tokPos;
-
-    ss << "Line: " << s.tokPos.line << " Col: " << s.tokPos.pos << "  " << txt << std::endl;
-    throw std::runtime_error(ss.str());
+    error_t *description = new error_t;
+    description->m_errstr = txt;
+    description->m_pos    = s.tokPos;
+    m_errors.push_back(description);
 }
 
 void Parser::error(uint32_t dummy, const std::string &txt)
 {
-    m_lastError = txt;
-    m_lastErrorPos.line = 0;
-    m_lastErrorPos.offset = 0;
-    m_lastErrorPos.pos = 0;
+    error_t *description = new error_t;
+    description->m_errstr = txt;
+    description->m_pos.line = 0;
+    description->m_pos.offset = 0;
+    description->m_pos.pos = 0;
+    m_errors.push_back(description);
+}
 
-    throw std::runtime_error(txt);
+std::string Parser::formatErrors() const
+{
+    std::stringstream ss;
+    for(auto error : m_errors)
+    {
+        ss << "Line " << error->m_pos.line << " offset " << error->m_pos.offset << " ";
+        ss << error->m_errstr << "\n";
+    }
+    return ss.str();
 }
 
 bool Parser::match(state_t &s, uint32_t tokenID)
@@ -66,10 +73,8 @@ bool Parser::matchList(state_t &s, const uint32_t *tokenIDlist)
 
 bool Parser::process(const std::vector<token_t> &tokens,
                      AST::Statements &result,
-                     IdentDB &symbols)
+                     SymbolTable &symbols)
 {
-    m_lastError.clear();
-
     // clear the database in case it wasn't empty.
     symbols.clear();
 
@@ -110,7 +115,7 @@ bool Parser::acceptProgram(state_t &s, AST::Statements &statements)
     {
         productionAccepted = false;
         
-        ASTNode *node = 0;
+        AST::ASTNodeBase *node = 0;
         if ((node=acceptDefinition(s)) != 0)
         {
             productionAccepted = true;
@@ -135,7 +140,7 @@ bool Parser::acceptProgram(state_t &s, AST::Statements &statements)
 }
 
 
-ASTNode* Parser::acceptDefinition(state_t &s)
+AST::ASTNodeBase* Parser::acceptDefinition(state_t &s)
 {
     // production: DEFINE IDENT EQUAL declspec SEMICOL
 
@@ -191,7 +196,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     if ((node=acceptDefspec1(s)) != NULL)
     {
         // INPUT node
-        if (!m_identDB->addIdentifier(identifier, IdentDB::info_t::T_INPUT))
+        if (!m_identDB->addIdentifier(identifier, SymbolTable::info_t::T_INPUT))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -201,7 +206,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     else if ((node=acceptDefspec2(s)) != NULL)
     {
         // CSD node
-        if (!m_identDB->addIdentifier(identifier, IdentDB::info_t::T_CSD))
+        if (!m_identDB->addIdentifier(identifier, SymbolTable::info_t::T_CSD))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -211,7 +216,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     else if ((node=acceptDefspec3(s)) != NULL)
     {
         // REG node
-        if (!m_identDB->addIdentifier(identifier, IdentDB::info_t::T_REG))
+        if (!m_identDB->addIdentifier(identifier, SymbolTable::info_t::T_REG))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -293,7 +298,7 @@ AST::RegDeclaration* Parser::acceptDefspec3(state_t &s)
     return newNode;
 }
 
-ASTNode* Parser::acceptTruncate(state_t &s)
+AST::ASTNodeBase* Parser::acceptTruncate(state_t &s)
 {
     // production: TRUNCATE LPAREN EXPR COMMA INTEGER COMMA INTEGER RPAREN
     state_t savestate = s;
@@ -311,7 +316,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
         return NULL;
     }
 
-    ASTNode* exprNode = Parser::acceptExpr(s);
+    AST::ASTNodeBase* exprNode = Parser::acceptExpr(s);
     if (!exprNode)
     {
         error(s,"Expression expected");
@@ -370,7 +375,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
     return newNode;
 }
 
-ASTNode* Parser::acceptAssignment(state_t &s)
+AST::ASTNodeBase* Parser::acceptAssignment(state_t &s)
 {
     // production: IDENT EQUAL expr SEMICOL
     state_t savestate = s;
@@ -390,7 +395,7 @@ ASTNode* Parser::acceptAssignment(state_t &s)
 
     std::string identifier = getToken(s, -2).txt;
 
-    ASTNode *exprNode = 0;
+    AST::ASTNodeBase *exprNode = 0;
     if ((exprNode=acceptExpr(s)) == 0)
     {
         error(s,"Expression expected");
@@ -414,13 +419,13 @@ ASTNode* Parser::acceptAssignment(state_t &s)
     {
         // no need to specify the precision as this will be
         // determined later on.
-        m_identDB->addIdentifier(identifier, IdentDB::info_t::T_OUTPUT);
+        m_identDB->addIdentifier(identifier, SymbolTable::info_t::T_OUTPUT);
     }
 
     // do type checking here.
     // we can only accept assignments to an output,
     // register or temporary variable.
-    if (m_identDB->identIsType(identifier, IdentDB::info_t::T_INPUT))
+    if (m_identDB->identIsType(identifier, SymbolTable::info_t::T_INPUT))
     {
         // cannot assign to type input
         error(s,"Cannot assign to input variables.");
@@ -434,7 +439,7 @@ ASTNode* Parser::acceptAssignment(state_t &s)
     return newNode;
 }
 
-ASTNode* Parser::acceptExpr(state_t &s)
+AST::ASTNodeBase* Parser::acceptExpr(state_t &s)
 {
     // productions: term expr'
     //
@@ -445,7 +450,7 @@ ASTNode* Parser::acceptExpr(state_t &s)
 
     state_t savestate = s;
 
-    ASTNode *leftNode = 0;
+    AST::ASTNodeBase *leftNode = 0;
     if ((leftNode=acceptTerm(s)) != NULL)
     {
         // the term is the left-hand size of the expr'
@@ -455,14 +460,14 @@ ASTNode* Parser::acceptExpr(state_t &s)
         // note, exprAccentNode is never NULL
         // because of it's epsilon solution
         //
-        ASTNode *exprAccentNode = acceptExprAccent(s, leftNode);
+        AST::ASTNodeBase *exprAccentNode = acceptExprAccent(s, leftNode);
         return exprAccentNode;
     }
     s = savestate;
     return NULL;
 }
 
-ASTNode* Parser::acceptExprAccent(state_t &s, ASTNode *leftNode)
+AST::ASTNodeBase* Parser::acceptExprAccent(state_t &s, AST::ASTNodeBase *leftNode)
 {
     // production: - term expr' | + term expr' | epsilon
     //
@@ -477,7 +482,7 @@ ASTNode* Parser::acceptExprAccent(state_t &s, ASTNode *leftNode)
 
     state_t savestate = s;
 
-    ASTNode *topNode = 0;
+    AST::ASTNodeBase *topNode = 0;
     if ((topNode = acceptExprAccent1(s, leftNode)) != 0)
     {
         return topNode;
@@ -496,7 +501,7 @@ ASTNode* Parser::acceptExprAccent(state_t &s, ASTNode *leftNode)
     return leftNode;
 }
 
-ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
+AST::ASTNodeBase* Parser::acceptExprAccent1(state_t &s, AST::ASTNodeBase *leftNode)
 {
     // production: - term expr'
     state_t savestate = s;
@@ -506,7 +511,7 @@ ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
         return NULL;
     }
 
-    ASTNode *rightNode = 0;
+    AST::ASTNodeBase *rightNode = 0;
     if ((rightNode=acceptTerm(s)) == NULL)
     {
         s = savestate;
@@ -526,11 +531,11 @@ ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
     operationNode->m_right = rightNode;
 
     // note: acceptExprAccent will never return NULL
-    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    AST::ASTNodeBase *headNode = acceptExprAccent(s, operationNode);
     return headNode;
 }
 
-ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
+AST::ASTNodeBase* Parser::acceptExprAccent2(state_t &s, AST::ASTNodeBase *leftNode)
 {
     // production: + term expr'
     state_t savestate = s;
@@ -540,7 +545,7 @@ ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
         return NULL;
     }
 
-    ASTNode *rightNode = 0;
+    AST::ASTNodeBase *rightNode = 0;
     if ((rightNode=acceptTerm(s)) == NULL)
     {
         s = savestate;
@@ -560,17 +565,17 @@ ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
     operationNode->m_right = rightNode;
 
     // note: acceptExprAccent will never return NULL
-    ASTNode *headNode = acceptExprAccent(s, operationNode);
+    AST::ASTNodeBase *headNode = acceptExprAccent(s, operationNode);
     return headNode;
 }
 
 
-ASTNode* Parser::acceptTerm(state_t &s)
+AST::ASTNodeBase* Parser::acceptTerm(state_t &s)
 {
     // production: factor term'
     state_t savestate = s;
 
-    ASTNode *leftNode = 0;
+    AST::ASTNodeBase *leftNode = 0;
     if ((leftNode=acceptFactor(s)) != NULL)
     {
         // the term is the left-hand size of the term'
@@ -580,7 +585,7 @@ ASTNode* Parser::acceptTerm(state_t &s)
         // note, termAccentNode is never NULL
         // because of it's epsilon solution
         //
-        ASTNode *termAccentNode = acceptTermAccent(s, leftNode);
+        AST::ASTNodeBase *termAccentNode = acceptTermAccent(s, leftNode);
         return termAccentNode;
     }
 
@@ -588,7 +593,7 @@ ASTNode* Parser::acceptTerm(state_t &s)
     return NULL;
 }
 
-ASTNode* Parser::acceptTermAccent(state_t &s, ASTNode *leftNode)
+AST::ASTNodeBase* Parser::acceptTermAccent(state_t &s, AST::ASTNodeBase *leftNode)
 {
     // production: * factor term' | / factor term' | epsilon
     //
@@ -603,7 +608,7 @@ ASTNode* Parser::acceptTermAccent(state_t &s, ASTNode *leftNode)
 
     state_t savestate = s;
 
-    ASTNode *topNode = 0;
+    AST::ASTNodeBase *topNode = 0;
     if ((topNode=acceptTermAccent1(s, leftNode)) != NULL)
     {
         return topNode;
@@ -622,7 +627,7 @@ ASTNode* Parser::acceptTermAccent(state_t &s, ASTNode *leftNode)
     return leftNode;
 }
 
-ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
+AST::ASTNodeBase* Parser::acceptTermAccent1(state_t &s, AST::ASTNodeBase *leftNode)
 {
     // production: * factor term'
     state_t savestate = s;
@@ -632,7 +637,7 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
         return NULL;
     }
 
-    ASTNode *rightNode = 0;
+    AST::ASTNodeBase *rightNode = 0;
     if ((rightNode=acceptFactor(s)) == NULL)
     {
         s = savestate;
@@ -652,11 +657,11 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
     operationNode->m_right = rightNode;
 
     // note: acceptTermAccent will never return NULL
-    ASTNode *headNode = acceptTermAccent(s, operationNode);
+    AST::ASTNodeBase *headNode = acceptTermAccent(s, operationNode);
     return headNode;
 }
 
-ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
+AST::ASTNodeBase* Parser::acceptTermAccent2(state_t &s, AST::ASTNodeBase *leftNode)
 {
     // production: / factor term'
     state_t savestate = s;
@@ -666,7 +671,7 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
         return NULL;
     }
 
-    ASTNode *rightNode = 0;
+    AST::ASTNodeBase *rightNode = 0;
     if ((rightNode=acceptFactor(s)) == NULL)
     {
         s = savestate;
@@ -686,17 +691,17 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
     operationNode->m_right = rightNode;
 
     // note: acceptTermAccent will never return NULL
-    ASTNode *headNode = acceptTermAccent(s, operationNode);
+    AST::ASTNodeBase *headNode = acceptTermAccent(s, operationNode);
     return headNode;
 }
 
 
-ASTNode* Parser::acceptFactor(state_t &s)
+AST::ASTNodeBase* Parser::acceptFactor(state_t &s)
 {
     state_t savestate = s;
 
     // FUNCTION ( expr )
-    ASTNode *factorNode = 0;
+    AST::ASTNodeBase *factorNode = 0;
 
     if ((factorNode=acceptFactor1(s)) != NULL)
     {
@@ -723,11 +728,6 @@ ASTNode* Parser::acceptFactor(state_t &s)
     {
         AST::IntegerConstant* newNode = new AST::IntegerConstant();
         newNode->m_value = atoi(getToken(s, -1).txt.c_str());
-
-        // FIXME: remove this
-        // calculate the int and frac bits for the integer
-        //factorNode->info.intBits = static_cast<int32_t>(pow(2.0f,ceil(log10((float)factorNode->info.intVal)/log10(2.0f))))+1;
-        //factorNode->info.fracBits = 0;
         return newNode;
     }
 
@@ -753,11 +753,11 @@ ASTNode* Parser::acceptFactor(state_t &s)
     return NULL;
 }
 
-ASTNode* Parser::acceptFactor1(state_t &s)
+AST::ASTNodeBase* Parser::acceptFactor1(state_t &s)
 {    
     // production: FUNCTION ( expr )
 
-    ASTNode *node = NULL;
+    AST::ASTNodeBase *node = NULL;
     if ((node=acceptTruncate(s)) != NULL)
     {
         return node;
@@ -786,7 +786,7 @@ ASTNode* Parser::acceptFactor1(state_t &s)
 #endif
 }
 
-ASTNode* Parser::acceptFactor2(state_t &s)
+AST::ASTNodeBase* Parser::acceptFactor2(state_t &s)
 {
     // ( expr )
 
@@ -796,7 +796,7 @@ ASTNode* Parser::acceptFactor2(state_t &s)
         s = savestate;
         return NULL;
     }
-    ASTNode *exprNode = 0;
+    AST::ASTNodeBase *exprNode = 0;
     if ((exprNode=acceptExpr(s)) == NULL)
     {
         s = savestate;
@@ -811,7 +811,7 @@ ASTNode* Parser::acceptFactor2(state_t &s)
     return exprNode;
 }
 
-ASTNode* Parser::acceptFactor3(state_t &s)
+AST::ASTNodeBase* Parser::acceptFactor3(state_t &s)
 {
     // production: - factor
     state_t savestate = s;
@@ -821,7 +821,7 @@ ASTNode* Parser::acceptFactor3(state_t &s)
         return NULL;
     }
 
-    ASTNode *factorNode = 0;
+    AST::ASTNodeBase *factorNode = 0;
     if ((factorNode=acceptFactor(s)) == NULL)
     {
         s = savestate;

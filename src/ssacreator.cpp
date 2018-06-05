@@ -38,14 +38,14 @@ void Creator::PushOperand(SharedOpPtr operand)
     m_opStack.push_back(operand);
 }
 
-bool Creator::process(const AST::Statements &statements, const IdentDB &symbols, SSA::Program &ssa)
+bool Creator::process(const AST::Statements &statements, const SymbolTable &symbols, SSA::Program &ssa)
 {
     m_ssa = &ssa;
     m_identDB = &symbols;
 
     try
     {
-        for(ASTNode *node : statements.m_statements)
+        for(AST::ASTNodeBase *node : statements.m_statements)
         {
             if (node != NULL)
             {
@@ -86,11 +86,11 @@ void Creator::visit(const AST::Assignment *node)
 
     switch(m_identDB->getType(node->m_identName))
     {
-    case IdentDB::info_t::T_NOTFOUND:
+    case SymbolTable::info_t::T_NOTFOUND:
         ss << "Identifier "<< node->m_identName << " not found";
         error(ss.str());
         break;
-    case IdentDB::info_t::T_REG:
+    case SymbolTable::info_t::T_REG:
         // registers have a user defined precision, so
         // copy that.
         lockPrecision = true;
@@ -99,7 +99,7 @@ void Creator::visit(const AST::Assignment *node)
         result->m_intBits   = m_identDB->m_identifiers.at(node->m_identName).m_intBits;
         result->m_fracBits  = m_identDB->m_identifiers.at(node->m_identName).m_fracBits;
         break;
-    case IdentDB::info_t::T_OUTPUT:
+    case SymbolTable::info_t::T_OUTPUT:
         // the precision of the output operands are
         // determined by the expression
         // so we need to set it here..
@@ -116,17 +116,17 @@ void Creator::visit(const AST::Assignment *node)
         //       assign to an output var _once_.
         m_ssa->addOperand(result);
         break;
-    case IdentDB::info_t::T_INPUT:
+    case SymbolTable::info_t::T_INPUT:
         // we cannot assign to inputs!
         ss << "Cannot assign to INPUT identifier " << node->m_identName;
         error(ss.str());
         break;
-    case IdentDB::info_t::T_TMP:
+    case SymbolTable::info_t::T_TMP:
         // temporaries should not exist yet..
         ss << "Cannot assign to TMP identifier " << node->m_identName << ". This is probably an internal error.";
         error(ss.str());
         break;
-    case IdentDB::info_t::T_CSD:
+    case SymbolTable::info_t::T_CSD:
         // we cannot assign to CSDs!
         ss << "Cannot assign to CSD identifier " << node->m_identName;
         error(ss.str());

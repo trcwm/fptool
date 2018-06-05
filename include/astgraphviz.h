@@ -16,7 +16,7 @@
 #include "astnode.h"
 #include "astvisitor.h"
 
-class AST2Graphviz : public AST::VisitorBase
+class AST2Graphviz : public AST::ASTVisitorBase
 {
 public:
     /** create an object to dump the AST to a stream */
@@ -27,7 +27,7 @@ public:
     {}
 
     void writeProlog();
-    void addStatement(ASTNode *node);
+    void addStatement(AST::ASTNodeBase *node);
     void writeEpilog();
 
     virtual void visit(const AST::Identifier *node) override;
