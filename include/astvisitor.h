@@ -30,16 +30,21 @@ public:
     {}
 
     /** dump a specific node */
-    virtual void visit(const Identifier *node);
-    virtual void visit(const IntegerConstant *node);
-    virtual void visit(const CSDDeclaration *node);
-    virtual void visit(const RegDeclaration *node);
-    virtual void visit(const Statements *node);
-    virtual void visit(const InputDeclaration *node);
-    virtual void visit(const PrecisionModifier *node);
-    virtual void visit(const Assignment *node);
-    virtual void visit(const Operation2 *node);
-    virtual void visit(const Operation1 *node);
+    //virtual void visit(const Identifier *node);
+    virtual void visit(const IntegerConstant *node) override;
+    virtual void visit(const CSDDeclaration *node) override;
+    virtual void visit(const RegDeclaration *node) override;
+    virtual void visit(const Statements *node) override;
+    virtual void visit(const InputDeclaration *node) override;
+    virtual void visit(const PrecisionModifier *node) override;
+    virtual void visit(const Assignment *node) override;
+    virtual void visit(const Operation2 *node) override;
+    virtual void visit(const Operation1 *node) override;
+
+    virtual void visit(const InputVariable *node) override;
+    virtual void visit(const OutputVariable *node) override;
+    virtual void visit(const CSDConstant *node) override;
+    virtual void visit(const Register *node) override;
 
 protected:
     void doIndent();

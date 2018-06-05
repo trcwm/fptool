@@ -37,7 +37,7 @@ public:
                  const SymbolTable &symbols,
                  SSA::Program &ssa);
 
-    virtual void visit(const AST::Identifier *node) override;
+    //virtual void visit(const AST::Identifier *node) override;
     virtual void visit(const AST::IntegerConstant *node) override;
     virtual void visit(const AST::CSDDeclaration *node) override;
     virtual void visit(const AST::RegDeclaration *node) override;
@@ -47,6 +47,10 @@ public:
     virtual void visit(const AST::Assignment *node) override;
     virtual void visit(const AST::Operation2 *node) override;
     virtual void visit(const AST::Operation1 *node) override;
+    virtual void visit(const AST::InputVariable *node) override;
+    virtual void visit(const AST::OutputVariable *node) override;
+    virtual void visit(const AST::CSDConstant *node) override;
+    virtual void visit(const AST::Register *node) override;
 
     std::string getLastError() const
     {

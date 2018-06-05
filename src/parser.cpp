@@ -78,7 +78,7 @@ bool Parser::process(const std::vector<token_t> &tokens,
     // clear the database in case it wasn't empty.
     symbols.clear();
 
-    m_identDB = &symbols;
+    m_symTable = &symbols;
 
     bool ok = false;
     try
@@ -196,7 +196,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     if ((node=acceptDefspec1(s)) != NULL)
     {
         // INPUT node
-        if (!m_identDB->addIdentifier(identifier, SymbolTable::info_t::T_INPUT))
+        if (!m_symTable->addIdentifier(identifier, SymbolTable::info_t::T_INPUT))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -206,7 +206,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     else if ((node=acceptDefspec2(s)) != NULL)
     {
         // CSD node
-        if (!m_identDB->addIdentifier(identifier, SymbolTable::info_t::T_CSD))
+        if (!m_symTable->addIdentifier(identifier, SymbolTable::info_t::T_CSD))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -216,7 +216,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     else if ((node=acceptDefspec3(s)) != NULL)
     {
         // REG node
-        if (!m_identDB->addIdentifier(identifier, SymbolTable::info_t::T_REG))
+        if (!m_symTable->addIdentifier(identifier, SymbolTable::info_t::T_REG))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -415,17 +415,17 @@ AST::ASTNodeBase* Parser::acceptAssignment(state_t &s)
     // output variable as these are the only ones
     // not declared by the user.
 
-    if (!m_identDB->hasIdentifier(identifier))
+    if (!m_symTable->hasIdentifier(identifier))
     {
         // no need to specify the precision as this will be
         // determined later on.
-        m_identDB->addIdentifier(identifier, SymbolTable::info_t::T_OUTPUT);
+        m_symTable->addIdentifier(identifier, SymbolTable::info_t::T_OUTPUT);
     }
 
     // do type checking here.
     // we can only accept assignments to an output,
     // register or temporary variable.
-    if (m_identDB->identIsType(identifier, SymbolTable::info_t::T_INPUT))
+    if (m_symTable->identIsType(identifier, SymbolTable::info_t::T_INPUT))
     {
         // cannot assign to type input
         error(s,"Cannot assign to input variables.");
@@ -736,16 +736,46 @@ AST::ASTNodeBase* Parser::acceptFactor(state_t &s)
     {
         error(s, "literal floats are not supported!");
         return NULL;
-        //newNode->type = ASTNode::NodeIdent;
-        //newNode->info.txt = getToken(s, -1).txt;
-        //return true;    // IDENT
     }
 
     // IDENTIFIER
     if (match(s, TOK_IDENT))
     {
-        AST::Identifier *newNode = new AST::Identifier();
-        newNode->m_identName = getToken(s, -1).txt;
+        AST::ASTNodeBase* newNode = NULL;
+
+        std::string identName = getToken(s, -1).txt;
+        // link an identifier to a symbol in the symbol table
+        auto itype = m_symTable->getType(identName);
+        switch(itype)
+        {
+        case SymbolTable::info_t::T_NOTFOUND:
+            {
+                std::stringstream ss;
+                ss << "Identifier not found: " << identName;
+                error(s, ss.str());
+                return NULL;
+            }
+        case SymbolTable::info_t::T_INPUT:
+            newNode = new AST::InputVariable(identName);
+            break;
+        case SymbolTable::info_t::T_OUTPUT:
+            newNode = new AST::OutputVariable(identName);
+            break;
+        case SymbolTable::info_t::T_REG:
+            newNode = new AST::Register(identName);
+            break;
+        case SymbolTable::info_t::T_CSD:
+            newNode = new AST::CSDConstant(identName);
+            break;
+        case SymbolTable::info_t::T_TMP:
+        case SymbolTable::info_t::T_UNINIT:
+            error(s, "Internal error: temporary or uninitialized variables should not exist at this stage!");
+            break;
+        default:
+            error(s, "Internal error: unknown identifier type");
+            break;
+        }
+
         return newNode; // IDENT
     }
 

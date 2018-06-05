@@ -160,6 +160,7 @@ void Creator::visit(const AST::CSDDeclaration *node)
     m_ssa->addOperand(csdop);
 }
 
+#if 0
 void Creator::visit(const AST::Identifier *node)
 {
     // lookup the identifier and store it in
@@ -176,7 +177,67 @@ void Creator::visit(const AST::Identifier *node)
     // if we end up here, the identifier was not found
     // FIXME: return an error / throw exception
 }
+#endif
 
+void Creator::visit(const AST::InputVariable *node)
+{
+    // lookup the identifier and store it in
+    // the available variable list
+
+    for(auto ptr : m_ssa->m_operands)
+    {
+        if (ptr->m_identName == node->m_name)
+        {
+            PushOperand(ptr);
+            return;
+        }
+    }
+}
+
+void Creator::visit(const AST::OutputVariable *node)
+{
+    // lookup the identifier and store it in
+    // the available variable list
+
+    for(auto ptr : m_ssa->m_operands)
+    {
+        if (ptr->m_identName == node->m_name)
+        {
+            PushOperand(ptr);
+            return;
+        }
+    }
+}
+
+void Creator::visit(const AST::CSDConstant *node)
+{
+    // lookup the identifier and store it in
+    // the available variable list
+
+    for(auto ptr : m_ssa->m_operands)
+    {
+        if (ptr->m_identName == node->m_name)
+        {
+            PushOperand(ptr);
+            return;
+        }
+    }
+}
+
+void Creator::visit(const AST::Register *node)
+{
+    // lookup the identifier and store it in
+    // the available variable list
+
+    for(auto ptr : m_ssa->m_operands)
+    {
+        if (ptr->m_identName == node->m_name)
+        {
+            PushOperand(ptr);
+            return;
+        }
+    }
+}
 
 void Creator::visit(const AST::InputDeclaration *node)
 {

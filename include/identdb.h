@@ -2,7 +2,7 @@
 
   FPTOOL - a fixed-point math to VHDL generation tool
 
-  Description:  Identifier database class
+  Description:  Symbol table
 
   Author: Niels A. Moseley 2018
 
@@ -31,7 +31,8 @@ public:
 
         }
 
-        enum type_t {
+        enum type_t
+        {
             T_UNINIT  = 0,      ///< uninitialized variable
             T_INPUT   = 1,      ///< input variable
             T_OUTPUT  = 2,      ///< output variable
@@ -39,8 +40,10 @@ public:
             T_REG     = 4,      ///< register variable
             T_TMP     = 5,      ///< temporary/intermediate variable
             T_NOTFOUND = 9999   ///< special return variable for lookups: identifier not found.
-        } m_type;
+        };
 
+        std::string m_name; ///< symbol name
+        type_t  m_type;     ///< type of symbol
         int32_t m_intBits;  ///< input or register precision (integer bits).
         int32_t m_fracBits; ///< input or register precision (fractional bits).
     };
@@ -75,6 +78,7 @@ public:
         if (!hasIdentifier(ident))
         {
             info_t it;
+            it.m_name = ident;
             it.m_type = t;
             it.m_intBits = m_intBits;
             it.m_fracBits = m_fracBits;

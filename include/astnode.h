@@ -15,6 +15,7 @@
 #include <list>
 #include <stdint.h>
 #include "csd.h"
+#include "identdb.h"
 
 namespace AST
 {
@@ -30,6 +31,10 @@ class PrecisionModifier;
 class Assignment;
 class Operation2;
 class Operation1;
+class InputVariable;
+class OutputVariable;
+class CSDConstant;
+class Register;
 
 
 /** Visitor class for ASTNodes
@@ -38,7 +43,7 @@ class Operation1;
 class ASTVisitorBase
 {
 public:
-    virtual void visit(const Identifier *node) = 0;
+    //virtual void visit(const Identifier *node) = 0;
     virtual void visit(const IntegerConstant *node) = 0;
     virtual void visit(const CSDDeclaration *node) = 0;
     virtual void visit(const RegDeclaration *node) = 0;
@@ -48,6 +53,11 @@ public:
     virtual void visit(const Assignment *node) = 0;
     virtual void visit(const Operation2 *node) = 0;
     virtual void visit(const Operation1 *node) = 0;
+
+    virtual void visit(const InputVariable *node) = 0;
+    virtual void visit(const OutputVariable *node) = 0;
+    virtual void visit(const CSDConstant *node) = 0;
+    virtual void visit(const Register *node) = 0;
 };
 
 /** Abstract Syntax Tree Node with visitor pattern support */
@@ -95,6 +105,7 @@ public:
     std::string m_identName;    ///< name of the variable or constant
 };
 
+#if 0
 /** Identifier node */
 class Identifier : public Declaration
 {
@@ -110,6 +121,7 @@ public:
     }
 
 };
+#endif
 
 
 /** Input declaration */
@@ -228,6 +240,71 @@ public:
 
     int32_t m_value;    ///< constant value
 };
+
+
+/** Input variable node */
+class InputVariable : public ASTNodeBase
+{
+public:
+    InputVariable(const std::string &name) : m_name(name) {};
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_name;     ///< name of variable
+};
+
+
+/** Output variable node */
+class OutputVariable : public ASTNodeBase
+{
+public:
+    OutputVariable(const std::string &name) : m_name(name) {};
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_name;     ///< name of variable
+};
+
+
+/** Register node */
+class Register : public ASTNodeBase
+{
+public:
+    Register(const std::string &name) : m_name(name) {};
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_name;     ///< name of variable
+};
+
+
+/** CSD constant node */
+class CSDConstant : public ASTNodeBase
+{
+public:
+    CSDConstant(const std::string &name) : m_name(name) {};
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_name;     ///< name of variable
+};
+
 
 /** operation with two operands */
 class Operation2 : public ASTNodeBase

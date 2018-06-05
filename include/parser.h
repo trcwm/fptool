@@ -34,20 +34,7 @@ public:
     */
     bool process(const std::vector<token_t> &tokens, AST::Statements &statements, SymbolTable &symbols);
 
-#if 0
-    /** Return a description of the last parse error that occurred. */
-    std::string getLastError() const
-    {
-        return m_lastError;
-    }
-
-    /** Get the position in the source code where the last error occurred. */
-    Reader::position_info getLastErrorPos() const
-    {
-        return m_lastErrorPos;
-    }
-#endif
-
+    /** check if the parser produced any errors */
     bool hasErrors() const
     {
         return !m_errors.empty();
@@ -150,7 +137,7 @@ protected:
     void error(const state_t &s, const std::string &txt);
     void error(uint32_t dummy, const std::string &txt);
 
-    typedef struct error_t
+    struct error_t
     {
         std::string             m_errstr;   ///< human readable error string
         Reader::position_info   m_pos;      ///< error position in the source
@@ -158,7 +145,7 @@ protected:
 
     std::list<error_t*>         m_errors;   ///< list of errors
 
-    SymbolTable                     *m_identDB;
+    SymbolTable                 *m_symTable; ///< the symbol table
     const std::vector<token_t>  *m_tokens;
 };
 
