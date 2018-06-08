@@ -44,6 +44,7 @@ Reader* Reader::open(const char *filename)
 
     if (bytes == 0)
     {
+        fclose(f);
         return NULL;
     }
 
