@@ -26,6 +26,7 @@ Tokenizer::Tokenizer()
     m_keywords.push_back("csd");
     m_keywords.push_back("truncate");
     m_keywords.push_back("saturate");
+    m_keywords.push_back("reg");
 }
 
 bool Tokenizer::isDigit(char c) const
@@ -537,20 +538,23 @@ void Tokenizer::dumpTokens(std::ostream &stream, const std::vector<token_t> &tok
         case TOK_EOF:
             stream << "\nEOF\n";
             break;
-        case 100:
+        case TOK_DEFINE:
             stream << "DEFINE";
             break;
-        case 101:
+        case TOK_INPUT:
             stream << "INPUT";
             break;
-        case 102:
+        case TOK_CSD:
             stream << "CSD";
             break;
-        case 103:
+        case TOK_TRUNC:
             stream << "TRUNCATE";
             break;
-        case 104:
+        case TOK_SAT:
             stream << "SATURATE";
+            break;
+        case TOK_REG:
+            stream << "REG";
             break;
         }
     }

@@ -19,6 +19,7 @@
 
 #include "tokenizer.h"
 #include "astnode.h"
+#include "identdb.h"
 
 /** Parser to translate token stream from tokenizer/lexer to operation stack. */
 class Parser
@@ -31,21 +32,28 @@ public:
         When an error occurs, call getLastError() to get
         a human-readable string of the error.
     */
-    bool process(const std::vector<token_t> &tokens, AST::Statements &result);
+    bool process(const std::vector<token_t> &tokens, AST::Statements &statements, SymbolTable &symbols);
 
-    /** Return a description of the last parse error that occurred. */
-    std::string getLastError() const
+    /** check if the parser produced any errors */
+    bool hasErrors() const
     {
-        return m_lastError;
+        return !m_errors.empty();
     }
 
-    /** Get the position in the source code where the last error occurred. */
-    Reader::position_info getLastErrorPos() const
-    {
-        return m_lastErrorPos;
-    }
+    /** return all errors as one big formatted string */
+    std::string formatErrors() const;
 
 protected:
+    void clearErrors()
+    {
+        for(auto error: m_errors)
+        {
+            delete error;
+        }
+        m_errors.clear();
+    }
+
+
     struct state_t
     {
         size_t        tokIdx;
@@ -63,33 +71,32 @@ protected:
     */
 
     bool acceptProgram(state_t &s, AST::Statements &result);
-    ASTNode* acceptDefinition(state_t &s);
+    AST::ASTNodeBase* acceptDefinition(state_t &s);
 
-    AST::Declaration *acceptDefspec(state_t &s);
-    AST::InputDeclaration *acceptDefspec1(state_t &s);    ///< accept an input declaration
-    AST::CSDDeclaration   *acceptDefspec2(state_t &s);    ///< accept a CSD declaration
+    AST::Declaration *acceptDefspec(state_t &s, const std::string &identifier);
+    AST::InputDeclaration *acceptDefspec1(state_t &s, int32_t &intBits, int32_t &fracBits);      ///< accept an input declaration
+    AST::RegDeclaration   *acceptDefspec3(state_t &s, int32_t &intBits, int32_t &fracBits);      ///< accept a register declaration
+    AST::CSDDeclaration   *acceptDefspec2(state_t &s, int32_t &intBits, int32_t &fracBits);      ///< accept a CSD declaration
 
     // functions
-    ASTNode* acceptTruncate(state_t &s);
+    AST::ASTNodeBase* acceptTruncate(state_t &s);
 
-    ASTNode *acceptAssignment(state_t &s);
+    AST::ASTNodeBase* acceptAssignment(state_t &s);
 
-    ASTNode* acceptExpr(state_t &s);
-    ASTNode* acceptExprAccent(state_t &s, ASTNode *leftNode);
-    ASTNode* acceptExprAccent1(state_t &s, ASTNode *leftNode);
-    ASTNode* acceptExprAccent2(state_t &s, ASTNode *leftNode);
+    AST::ASTNodeBase* acceptExpr(state_t &s);
+    AST::ASTNodeBase* acceptExprAccent(state_t &s, AST::ASTNodeBase *leftNode);
+    AST::ASTNodeBase* acceptExprAccent1(state_t &s, AST::ASTNodeBase *leftNode);
+    AST::ASTNodeBase* acceptExprAccent2(state_t &s, AST::ASTNodeBase *leftNode);
 
-    ASTNode* acceptTerm(state_t &s);
-    ASTNode* acceptTermAccent(state_t &s, ASTNode *leftNode);
-    ASTNode* acceptTermAccent1(state_t &s, ASTNode *leftNode);
-    ASTNode* acceptTermAccent2(state_t &s, ASTNode *leftNode);
+    AST::ASTNodeBase* acceptTerm(state_t &s);
+    AST::ASTNodeBase* acceptTermAccent(state_t &s, AST::ASTNodeBase *leftNode);
+    AST::ASTNodeBase* acceptTermAccent1(state_t &s, AST::ASTNodeBase *leftNode);
+    AST::ASTNodeBase* acceptTermAccent2(state_t &s, AST::ASTNodeBase *leftNode);
 
-    ASTNode *acceptFactor(state_t &s);
-    ASTNode* acceptFactor1(state_t &s);
-    ASTNode* acceptFactor2(state_t &s);
-    ASTNode* acceptFactor3(state_t &s);
-
-
+    AST::ASTNodeBase* acceptFactor(state_t &s);
+    AST::ASTNodeBase* acceptFactor1(state_t &s);
+    AST::ASTNodeBase* acceptFactor2(state_t &s);
+    AST::ASTNodeBase* acceptFactor3(state_t &s);
 
     /** match a token, return true if matched and advance the token index. */
     bool match(state_t &s, uint32_t tokenID);
@@ -130,8 +137,15 @@ protected:
     void error(const state_t &s, const std::string &txt);
     void error(uint32_t dummy, const std::string &txt);
 
-    std::string   m_lastError;
-    Reader::position_info m_lastErrorPos;
+    struct error_t
+    {
+        std::string             m_errstr;   ///< human readable error string
+        Reader::position_info   m_pos;      ///< error position in the source
+    };
+
+    std::list<error_t*>         m_errors;   ///< list of errors
+
+    SymbolTable                 *m_symTable; ///< the symbol table
     const std::vector<token_t>  *m_tokens;
 };
 

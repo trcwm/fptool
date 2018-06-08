@@ -18,84 +18,12 @@ void AST::DumpVisitor::doIndent()
 }
 
 #if 0
-void AST::DumpVisitor::visit(const ASTNode *node)
-{
-    if (node == NULL) return;
-
-    if (node->left != 0)
-    {
-        m_depth++;
-        node->left->accept(this);
-        m_depth--;
-    }
-    if (node->right != 0)
-    {
-        m_depth++;
-        node->right->accept(this);
-        m_depth--;
-    }
-
-    // dump the current node
-    // indent according to level
-    for(uint32_t i=0; i<m_depth; i++)
-        m_os << "  ";
-
-    switch(node->type)
-    {
-    case ASTNode::NodeUnknown:
-        m_os << "Unknown";
-        break;
-    case ASTNode::NodeAssign:
-        //m_os << node->info.txt << " = ";
-        break;
-    case ASTNode::NodeInput:
-        //m_os << "INPUT "<< node->info.txt << " Q(" << node->info.intBits << "," << node->info.fracBits << ")";
-        break;
-    case ASTNode::NodeCSD:
-        //m_os << "CSD " << node->info.txt << " Q(" << node->info.csdFloat << "," << node->info.csdBits << ")";
-        break;
-    case ASTNode::NodeAdd:
-        m_os << "+";
-        break;
-    case ASTNode::NodeSub:
-        m_os << "-";
-        break;
-    case ASTNode::NodeMul:
-        m_os << "*";
-        break;
-    case ASTNode::NodeUnaryMinus:
-        m_os << "U-";
-        break;
-    case ASTNode::NodeIdent:
-        //m_os << node->info.txt;
-        break;
-    case ASTNode::NodeInteger:
-        //m_os << node->info.intVal;
-        break;
-    case ASTNode::NodeFloat:
-        m_os << "FLOATVAL";
-        //stream << floatVal;
-        break;
-    case ASTNode::NodeDiv:
-        m_os << "/";
-        break;
-    case ASTNode::NodeTruncate:
-        //m_os << "Truncate to Q(" << node->info.intBits << "," << node->info.fracBits << ")";
-        break;
-    default:
-        m_os << "???";
-        break;
-    }
-    m_os << "\n";
-}
-#endif
-
-
 void AST::DumpVisitor::visit(const Identifier *node)
 {
     doIndent();
     m_os << node->m_identName.c_str() << "\n";
 }
+#endif
 
 void AST::DumpVisitor::visit(const IntegerConstant *node)
 {
@@ -125,7 +53,7 @@ void AST::DumpVisitor::visit(const CSDDeclaration *node)
 void AST::DumpVisitor::visit(const Statements *node)
 {
     m_os << "Statements";
-    for(ASTNode *stmt : node->m_statements)
+    for(ASTNodeBase *stmt : node->m_statements)
     {
         if (stmt != NULL)
         {
@@ -138,6 +66,12 @@ void AST::DumpVisitor::visit(const InputDeclaration *node)
 {
     doIndent();
     m_os << "Input " << node->m_identName.c_str() << " Q(" << node->m_intBits << "," << node->m_fracBits << ")\n";
+}
+
+void AST::DumpVisitor::visit(const RegDeclaration *node)
+{
+    doIndent();
+    m_os << "Register " << node->m_identName.c_str() << " Q(" << node->m_intBits << "," << node->m_fracBits << ")\n";
 }
 
 void AST::DumpVisitor::visit(const PrecisionModifier *node)
@@ -214,4 +148,28 @@ void AST::DumpVisitor::visit(const Operation2 *node)
 void AST::DumpVisitor::visit(const Operation1 *node)
 {
 
+}
+
+void AST::DumpVisitor::visit(const InputVariable *node)
+{
+    doIndent();
+    m_os << node->m_name.c_str() << "\n";
+}
+
+void AST::DumpVisitor::visit(const OutputVariable *node)
+{
+    doIndent();
+    m_os << node->m_name.c_str() << "\n";
+}
+
+void AST::DumpVisitor::visit(const CSDConstant *node)
+{
+    doIndent();
+    m_os << node->m_name.c_str() << "\n";
+}
+
+void AST::DumpVisitor::visit(const Register *node)
+{
+    doIndent();
+    m_os << node->m_name.c_str() << "\n";
 }

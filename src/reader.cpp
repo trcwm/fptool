@@ -42,13 +42,19 @@ Reader* Reader::open(const char *filename)
     size_t bytes = ftell(f);
     rewind(f);
 
+    if (bytes == 0)
+    {
+        fclose(f);
+        return NULL;
+    }
+
     // read file into memory
     reader->m_source.resize(bytes);
     if (fread(&reader->m_source[0], 1, bytes, f) != bytes)
     {
         fclose(f);
         delete reader;
-        return 0;   // number of bytes read is not equal to requested number..?
+        return NULL;   // number of bytes read is not equal to requested number..?
     }
 
     fclose(f);

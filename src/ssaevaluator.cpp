@@ -303,6 +303,7 @@ void Evaluator::dumpAllValues(std::stringstream &report) const
         const SSA::InputOperand* inOp = dynamic_cast<const SSA::InputOperand*>(op.get());
         const SSA::IntermediateOperand* tmpOp = dynamic_cast<const SSA::IntermediateOperand*>(op.get());
         const SSA::OutputOperand* outOp = dynamic_cast<const SSA::OutputOperand*>(op.get());
+        const SSA::RegOperand* regOp = dynamic_cast<const SSA::RegOperand*>(op.get());
         if (inOp != NULL)
         {
             report << "In   " << inOp->m_identName << " Q(" << inOp->m_intBits << "," << inOp->m_fracBits << ")";
@@ -323,7 +324,7 @@ void Evaluator::dumpAllValues(std::stringstream &report) const
         }
         else
         {
-            report << "     " << outOp->m_identName << "\n";
+            report << "     " << regOp->m_identName << "\n";
         }
     }
 }

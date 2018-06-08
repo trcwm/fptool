@@ -15,30 +15,42 @@
 
 #include <string>
 #include <iostream>
+#include <stdexcept>
+
 #include "astnode.h"
 #include "astvisitor.h"
 #include "ssa.h"
+#include "identdb.h"
 
 namespace SSA
 {
 
-class Creator : public AST::VisitorBase
+class Creator : public AST::ASTVisitorBase
 {
 public:
     Creator();
     virtual ~Creator();
 
-    bool process(AST::Statements &statements, SSA::Program &ssa);
+    /** create a single-static assignment list of statements,
+        based on the abstract syntax tree and the symbol table. */
+    bool process(const AST::Statements &statements,
+                 const SymbolTable &symbols,
+                 SSA::Program &ssa);
 
-    virtual void visit(const AST::Identifier *node) override;
+    //virtual void visit(const AST::Identifier *node) override;
     virtual void visit(const AST::IntegerConstant *node) override;
     virtual void visit(const AST::CSDDeclaration *node) override;
+    virtual void visit(const AST::RegDeclaration *node) override;
     virtual void visit(const AST::Statements *node) override;
     virtual void visit(const AST::InputDeclaration *node) override;
     virtual void visit(const AST::PrecisionModifier *node) override;
     virtual void visit(const AST::Assignment *node) override;
     virtual void visit(const AST::Operation2 *node) override;
     virtual void visit(const AST::Operation1 *node) override;
+    virtual void visit(const AST::InputVariable *node) override;
+    virtual void visit(const AST::OutputVariable *node) override;
+    virtual void visit(const AST::CSDConstant *node) override;
+    virtual void visit(const AST::Register *node) override;
 
     std::string getLastError() const
     {
@@ -53,13 +65,15 @@ protected:
     /** emit an error in human readable form */
     void error(const std::string &errorstr)
     {
-        std::cout << errorstr << std::endl;
+        //std::cout << errorstr << std::endl;
         m_lastError = errorstr;
+        throw std::runtime_error(errorstr);
     }
 
     SSA::Program                *m_ssa;         ///< SSA program statements
     std::string                 m_lastError;    ///< last generated error
     std::list<SharedOpPtr>      m_opStack;      ///< operand stack
+    const SymbolTable               *m_identDB;     ///< identifier database
 };
 
 } // namespace

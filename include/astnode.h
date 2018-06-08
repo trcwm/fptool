@@ -15,47 +15,67 @@
 #include <list>
 #include <stdint.h>
 #include "csd.h"
-#include "astvisitor.h"
-
-/** variable related information */
-struct varInfo
-{
-    varInfo() : fracBits(0),
-        intBits(0),
-        csdBits(0),
-        csdFloat(0.0f),
-        intVal(0)
-    {
-    }
-
-    std::string     txt;        // identifier name, integer or float value.
-    int32_t         fracBits;   // number of factional bits in INPUT definition
-    int32_t         intBits;    // number of integer bits in INPUT defintion
-    int32_t         csdBits;    // number of CSD factors/bits
-    double          csdFloat;   // desired value of CSD coefficient
-    int32_t         intVal;     // integer value
-    csd_t           csd;        // CSD representation.
-};
-
-/** Abstract Syntax Tree Node with visitor pattern support */
-class ASTNode
-{
-public:
-    /** create an AST node */
-    ASTNode() {}
-
-    virtual ~ASTNode() {}
-
-    /** accept an AST visitor for iteration */
-    virtual void accept(AST::VisitorBase *visitor) = 0;
-};
-
+#include "identdb.h"
 
 namespace AST
 {
 
+// pre-declarations
+class Identifier;
+class IntegerConstant;
+class Statements;
+class InputDeclaration;
+class CSDDeclaration;
+class RegDeclaration;
+class PrecisionModifier;
+class Assignment;
+class Operation2;
+class Operation1;
+class InputVariable;
+class OutputVariable;
+class CSDConstant;
+class Register;
+
+
+/** Visitor class for ASTNodes
+    See: "Design Patterns: Elements of Reusable Object-Oriented Software"
+*/
+class ASTVisitorBase
+{
+public:
+    virtual void visit(const IntegerConstant *node) = 0;
+    virtual void visit(const CSDDeclaration *node) = 0;
+    virtual void visit(const RegDeclaration *node) = 0;
+    virtual void visit(const Statements *node) = 0;
+    virtual void visit(const InputDeclaration *node) = 0;
+    virtual void visit(const PrecisionModifier *node) = 0;
+    virtual void visit(const Assignment *node) = 0;
+    virtual void visit(const Operation2 *node) = 0;
+    virtual void visit(const Operation1 *node) = 0;
+
+    virtual void visit(const InputVariable *node) = 0;
+    virtual void visit(const OutputVariable *node) = 0;
+    virtual void visit(const CSDConstant *node) = 0;
+    virtual void visit(const Register *node) = 0;
+};
+
+/** Abstract Syntax Tree Node with visitor pattern support */
+class ASTNodeBase
+{
+public:
+    /** create an AST node */
+    ASTNodeBase() {}
+
+    virtual ~ASTNodeBase() {}
+
+    /** accept an AST visitor for iteration */
+    virtual void accept(ASTVisitorBase *visitor) = 0;
+};
+
+
+
 /** An AST node describing a collection of sequential statements */
-class Statements : public ::ASTNode
+class Statements : public ASTNodeBase
 {
 public:
     Statements()
@@ -65,16 +85,16 @@ public:
     virtual ~Statements() {}
 
     /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
+    virtual void accept(ASTVisitorBase *visitor) override
     {
         visitor->visit(this);
     }
 
-    std::list<ASTNode*> m_statements;   ///< collection of sequential statements
+    std::list<ASTNodeBase*> m_statements;   ///< collection of sequential statements
 };
 
 /** Declaration node base class holding information on an input var or constant name. */
-class Declaration : public ::ASTNode
+class Declaration : public ASTNodeBase
 {
 public:
     Declaration()
@@ -82,22 +102,6 @@ public:
     }
 
     std::string m_identName;    ///< name of the variable or constant
-};
-
-/** Identifier node */
-class Identifier : public Declaration
-{
-public:
-    Identifier()
-    {
-    }
-
-    /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
-    {
-        visitor->visit(this);
-    }
-
 };
 
 
@@ -110,7 +114,7 @@ public:
         m_intBits(0) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
+    virtual void accept(ASTVisitorBase *visitor) override
     {
         visitor->visit(this);
     }
@@ -119,6 +123,23 @@ public:
     int32_t m_intBits;    // number of integer bits in INPUT defintion
 };
 
+/** Register declaration */
+class RegDeclaration : public Declaration
+{
+public:
+    RegDeclaration() :
+        m_fracBits(0),
+        m_intBits(0) {}
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    int32_t m_fracBits;   // number of factional bits in REGISTER definition
+    int32_t m_intBits;    // number of integer bits in REGISTER defintion
+};
 
 /** CSD declaration */
 class CSDDeclaration : public Declaration
@@ -127,7 +148,7 @@ public:
     CSDDeclaration() {}
 
     /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
+    virtual void accept(ASTVisitorBase *visitor) override
     {
         visitor->visit(this);
     }
@@ -136,10 +157,11 @@ public:
 };
 
 
+
 /** Precision modification node: RemoveLSB, ExtendLSB, RemoveMSB, ExtendMSB,
     Truncate, Saturate.
 */
-class PrecisionModifier : public ::ASTNode
+class PrecisionModifier : public ASTNodeBase
 {
 public:
     enum node_t
@@ -155,12 +177,12 @@ public:
         m_intBits(0) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
+    virtual void accept(ASTVisitorBase *visitor) override
     {
         visitor->visit(this);
     }
 
-    ASTNode *m_argNode;         ///< pointer to argument AST.
+    ASTNodeBase *m_argNode;         ///< pointer to argument AST.
 
     node_t  m_nodeType;         ///< type of precision modifier node
     int32_t m_fracBits;         ///< fractional bits parameter for truncate
@@ -169,30 +191,30 @@ public:
 
 
 /** Assignment node */
-class Assignment : public ::ASTNode
+class Assignment : public ASTNodeBase
 {
 public:
     Assignment() : m_expr(NULL) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
+    virtual void accept(ASTVisitorBase *visitor) override
     {
         visitor->visit(this);
     }
 
-    ASTNode *m_expr;            ///< pointer to expression AST.
+    ASTNodeBase *m_expr;        ///< pointer to expression AST.
     std::string m_identName;    ///< name of output identifier
 };
 
 
 /** Integer constant */
-class IntegerConstant : public ::ASTNode
+class IntegerConstant : public ASTNodeBase
 {
 public:
     IntegerConstant() : m_value(0) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
+    virtual void accept(ASTVisitorBase *visitor) override
     {
         visitor->visit(this);
     }
@@ -200,8 +222,73 @@ public:
     int32_t m_value;    ///< constant value
 };
 
+
+/** Input variable node */
+class InputVariable : public ASTNodeBase
+{
+public:
+    InputVariable(const std::string &name) : m_name(name) {};
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_name;     ///< name of variable
+};
+
+
+/** Output variable node */
+class OutputVariable : public ASTNodeBase
+{
+public:
+    OutputVariable(const std::string &name) : m_name(name) {};
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_name;     ///< name of variable
+};
+
+
+/** Register node */
+class Register : public ASTNodeBase
+{
+public:
+    Register(const std::string &name) : m_name(name) {};
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_name;     ///< name of variable
+};
+
+
+/** CSD constant node */
+class CSDConstant : public ASTNodeBase
+{
+public:
+    CSDConstant(const std::string &name) : m_name(name) {};
+
+    /** Accept a visitor by calling visitor->visit(this) */
+    virtual void accept(ASTVisitorBase *visitor) override
+    {
+        visitor->visit(this);
+    }
+
+    std::string m_name;     ///< name of variable
+};
+
+
 /** operation with two operands */
-class Operation2 : public ::ASTNode
+class Operation2 : public ASTNodeBase
 {
 public:
     enum node_t
@@ -219,18 +306,18 @@ public:
         m_nodeType(nodeType) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
+    virtual void accept(ASTVisitorBase *visitor) override
     {
         visitor->visit(this);
     }
 
-    ASTNode *m_left;    ///< pointer to left expression AST.
-    ASTNode *m_right;   ///< pointer to right expression AST.
+    ASTNodeBase *m_left;    ///< pointer to left expression AST.
+    ASTNodeBase *m_right;   ///< pointer to right expression AST.
     node_t m_nodeType;
 };
 
 /** unary functions */
-class Operation1 : public ::ASTNode
+class Operation1 : public ASTNodeBase
 {
 public:
     enum node_t
@@ -244,14 +331,16 @@ public:
         m_nodeType(nodeType) {}
 
     /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(AST::VisitorBase *visitor) override
+    virtual void accept(ASTVisitorBase *visitor) override
     {
         visitor->visit(this);
     }
 
-    ASTNode *m_expr;    ///< pointer to expression AST.
+    ASTNodeBase *m_expr;    ///< pointer to expression AST.
     node_t m_nodeType;
 };
+
+
 
 } // namespace
 

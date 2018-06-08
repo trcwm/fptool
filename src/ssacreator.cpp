@@ -1,6 +1,18 @@
+/*
+
+  FPTOOL - a fixed-point math to VHDL generation tool
+
+  Description:  Create a single-static assignment data structure
+                from tha abstract syntax tree.
+
+  Author: Niels A. Moseley
+
+*/
+
+#include <sstream>
+#include <memory>
 
 #include "ssacreator.h"
-#include <memory>
 
 using namespace SSA;
 
@@ -26,229 +38,28 @@ void Creator::PushOperand(SharedOpPtr operand)
     m_opStack.push_back(operand);
 }
 
-bool Creator::process(AST::Statements &statements, SSA::Program &ssa)
+bool Creator::process(const AST::Statements &statements, const SymbolTable &symbols, SSA::Program &ssa)
 {
     m_ssa = &ssa;
+    m_identDB = &symbols;
 
-    for(ASTNode *node : statements.m_statements)
+    try
     {
-        if (node != NULL)
+        for(AST::ASTNodeBase *node : statements.m_statements)
         {
-            node->accept(this);
+            if (node != NULL)
+            {
+                node->accept(this);
+            }
         }
+        return true;
     }
-    return true;
-}
-
-
-#if 0
-if (node->left != 0)
-{
-    executeASTNode(node->left, ssa);
-}
-
-if (node->right != 0)
-    executeASTNode(node->right, ssa);
-
-operandIndex index;
-switch(node->type)
-{
-default:
-case ASTNode::NodeUnknown:
-    return false;
-
-// ************************************************
-//  operations that only push things on the stack
-// ************************************************
-case ASTNode::NodeCSD:
-    // CSD definition, no need to add to the stack
-    // it's referenced by name
-    ssa.addOperand(operand_t::TypeCSD, node->info);
-    return true;
-case ASTNode::NodeFloat:
-    error("SSACreator - found an unsupported float literal!");
-    return false;
-case ASTNode::NodeInteger:
-    // Literal integer, create an integer on the stack
-    //
-    index = ssa.addOperand(operand_t::TypeInteger, node->info);
-    m_opStack.push_back(index);
-    return true;
-case ASTNode::NodeInput:
-    // INPUT definition, no need to add to the stack
-    // it's referenced by name
-    ssa.addOperand(operand_t::TypeInput, node->info);
-    return true;
-case ASTNode::NodeIdent:
-    // resolve the identifier by name
-    if (!ssa.getOperandIndexByName(node->info.txt, index))
+    catch(std::runtime_error &e)
     {
-        error("ASTNode::NodeIdent - identifier not found");
+        std::cout << e.what() << "\n";
         return false;
     }
-    m_opStack.push_back(index);
-    return true;
-
-// *************************************************
-//  operations that pop and push stuff on the stack
-// *************************************************
-case ASTNode::NodeAssign:
-{
-    // assign to an output/register
-    // sanity checking
-    if (m_opStack.size() < 1)
-    {
-        error("ASTNode::NodeAssign - not enough operands on the stack");
-        return false;
-    }
-
-    // one item at top of stack:
-    //
-    uint32_t arg1_idx = m_opStack.back();
-    m_opStack.pop_back();
-
-    // create an output variable
-    operand_t rhs = ssa.getOperand(arg1_idx);
-    node->info.intBits = rhs.info.intBits;
-    node->info.fracBits = rhs.info.fracBits;
-    index = ssa.addOperand(operand_t::TypeOutput, node->info);
-
-    ssa.createAssignNode(ssa.end(), index, arg1_idx);
-    return true;
 }
-case ASTNode::NodeAdd:
-{
-    // sanity checking
-    if (m_opStack.size() < 2)
-    {
-        error("ASTNode::NodeAdd - not enough operands on the stack");
-        // not enough operands!
-        return false;
-    }
-
-    // two items at top of stack:
-    //
-    uint32_t arg2_idx = m_opStack.back();
-    m_opStack.pop_back();
-    uint32_t arg1_idx = m_opStack.back();
-    m_opStack.pop_back();
-
-    index = ssa.createAddNode(ssa.end(), arg1_idx, arg2_idx);
-    m_opStack.push_back(index);
-    return true;
-}
-case ASTNode::NodeSub:
-{
-    // sanity checking
-    if (m_opStack.size() < 2)
-    {
-        error("ASTNode::NodeSub - not enough operands on the stack");
-        // not enough operands!
-        return false;
-    }
-
-    // two items at top of stack:
-    //
-    uint32_t arg2_idx = m_opStack.back();
-    m_opStack.pop_back();
-    uint32_t arg1_idx = m_opStack.back();
-    m_opStack.pop_back();
-
-    index = ssa.createSubNode(ssa.end(), arg1_idx, arg2_idx);
-    m_opStack.push_back(index);
-    return true;
-}
-case ASTNode::NodeMul:
-{
-    // sanity checking
-    if (m_opStack.size() < 2)
-    {
-        error("NodeMul - not enough operands on the stack");
-        // not enough operands!
-        return false;
-    }
-
-    // two items at top of stack:
-    //
-    uint32_t arg2_idx = m_opStack.back();
-    m_opStack.pop_back();
-    uint32_t arg1_idx = m_opStack.back();
-    m_opStack.pop_back();
-
-    index = ssa.createMulNode(ssa.end(), arg1_idx, arg2_idx);
-    m_opStack.push_back(index);
-
-    return true;
-}
-case ASTNode::NodeDiv:
-{
-    // sanity checking
-    if (m_opStack.size() < 2)
-    {
-        error("NodeDiv - not enough operands on the stack");
-        // not enough operands!
-        return false;
-    }
-
-    // two items at top of stack:
-    //
-    uint32_t arg2_idx = m_opStack.back();
-    m_opStack.pop_back();
-    uint32_t arg1_idx = m_opStack.back();
-    m_opStack.pop_back();
-
-    index = ssa.createDivNode(ssa.end(), arg1_idx, arg2_idx);
-    m_opStack.push_back(index);
-
-    return true;
-}
-case ASTNode::NodeUnaryMinus:
-{
-    // sanity checking
-    if (m_opStack.size() < 1)
-    {
-        error("NodeUnaryMinus - not enough operands on the stack");
-        // not enough operands!
-        return false;
-    }
-
-    // one item at top of stack:
-    //
-    uint32_t arg1_idx = m_opStack.back();
-    m_opStack.pop_back();
-
-    operand_t rhs = ssa.getOperand(arg1_idx);
-    node->info.intBits = rhs.info.intBits;
-    node->info.fracBits = rhs.info.fracBits;
-
-    index = ssa.createNegateNode(ssa.end(), arg1_idx);
-    m_opStack.push_back(index);
-
-    return true;
-}
-case ASTNode::NodeTruncate:
-{
-    // sanity checking
-    if (m_opStack.size() < 1)
-    {
-        error("NodeTruncate - not enough operands on the stack");
-        // not enough operands!
-        return false;
-    }
-
-    // one item at top of stack:
-    uint32_t arg1_idx = m_opStack.back();
-    m_opStack.pop_back();
-
-    index = ssa.createTruncateNode(ssa.end(), arg1_idx, node->info.intBits, node->info.fracBits);
-    m_opStack.push_back(index);
-
-    return true;
-}
-} // end switch
-return true;
-}
-#endif
 
 void Creator::visit(const AST::Assignment *node)
 {
@@ -269,19 +80,77 @@ void Creator::visit(const AST::Assignment *node)
     // pop expression argument item at top of stack:
     SharedOpPtr arg1 = PopOperand();
 
-    SSA::SharedOpPtr result = std::make_shared<OutputOperand>();
-    result->m_identName = node->m_identName;
-    result->m_intBits   = arg1->m_intBits;
-    result->m_fracBits  = arg1->m_fracBits;
+    SSA::SharedOpPtr result;
+    bool lockPrecision = false;
+    std::stringstream ss;   // for error handling..
 
-    SSA::OpAssign *assign = new SSA::OpAssign(arg1, result);
+    switch(m_identDB->getType(node->m_identName))
+    {
+    case SymbolInfo::T_NOTFOUND:
+        ss << "Identifier "<< node->m_identName << " not found";
+        error(ss.str());
+        break;
+    case SymbolInfo::T_REG:
+        // registers have a user defined precision, so
+        // copy that.
+        lockPrecision = true;
+        result = std::make_shared<RegOperand>();
+        result->m_identName = node->m_identName;
+        result->m_intBits   = m_identDB->m_identifiers.at(node->m_identName).m_intBits;
+        result->m_fracBits  = m_identDB->m_identifiers.at(node->m_identName).m_fracBits;
+        break;
+    case SymbolInfo::T_OUTPUT:
+        // the precision of the output operands are
+        // determined by the expression
+        // so we need to set it here..
+        result = std::make_shared<OutputOperand>();
+        result->m_identName = node->m_identName;
+        result->m_intBits   = arg1->m_intBits;
+        result->m_fracBits  = arg1->m_fracBits;
+
+        // Note: we must add the result to the operand list
+        //       because there is no define for outputs
+        // TODO: check if the operand already exists in
+        //       case of multiple assignments.
+        //       this is an error as you can only
+        //       assign to an output var _once_.
+        m_ssa->addOperand(result);
+        break;
+    case SymbolInfo::T_INPUT:
+        // we cannot assign to inputs!
+        ss << "Cannot assign to INPUT identifier " << node->m_identName;
+        error(ss.str());
+        break;
+    case SymbolInfo::T_TMP:
+        // temporaries should not exist yet..
+        ss << "Cannot assign to TMP identifier " << node->m_identName << ". This is probably an internal error.";
+        error(ss.str());
+        break;
+    case SymbolInfo::T_CSD:
+        // we cannot assign to CSDs!
+        ss << "Cannot assign to CSD identifier " << node->m_identName;
+        error(ss.str());
+        break;
+    default:
+        error("Internal error");
+        break;
+    };
+
+    SSA::OpAssign *assign = new SSA::OpAssign(arg1, result, lockPrecision);
     m_ssa->addStatement(assign);
-    m_ssa->addOperand(result);
 }
 
 void Creator::visit(const AST::CSDDeclaration *node)
 {
-    // create an input variable
+    // CSD should already exist.. check this
+    std::stringstream ss;
+    if (!m_identDB->hasIdentifier(node->m_identName))
+    {
+        ss << "CSD identifier "<< node->m_identName << " not found, but should have been.";
+        error(ss.str());
+    }
+
+    // create a CSD constant
     std::shared_ptr<CSDOperand> csdop = std::make_shared<CSDOperand>();
     csdop->m_csd = node->m_csd;
     csdop->m_identName = node->m_identName;
@@ -291,6 +160,7 @@ void Creator::visit(const AST::CSDDeclaration *node)
     m_ssa->addOperand(csdop);
 }
 
+#if 0
 void Creator::visit(const AST::Identifier *node)
 {
     // lookup the identifier and store it in
@@ -307,10 +177,78 @@ void Creator::visit(const AST::Identifier *node)
     // if we end up here, the identifier was not found
     // FIXME: return an error / throw exception
 }
+#endif
 
+void Creator::visit(const AST::InputVariable *node)
+{
+    // lookup the identifier and store it in
+    // the available variable list
+
+    for(auto ptr : m_ssa->m_operands)
+    {
+        if (ptr->m_identName == node->m_name)
+        {
+            PushOperand(ptr);
+            return;
+        }
+    }
+}
+
+void Creator::visit(const AST::OutputVariable *node)
+{
+    // lookup the identifier and store it in
+    // the available variable list
+
+    for(auto ptr : m_ssa->m_operands)
+    {
+        if (ptr->m_identName == node->m_name)
+        {
+            PushOperand(ptr);
+            return;
+        }
+    }
+}
+
+void Creator::visit(const AST::CSDConstant *node)
+{
+    // lookup the identifier and store it in
+    // the available variable list
+
+    for(auto ptr : m_ssa->m_operands)
+    {
+        if (ptr->m_identName == node->m_name)
+        {
+            PushOperand(ptr);
+            return;
+        }
+    }
+}
+
+void Creator::visit(const AST::Register *node)
+{
+    // lookup the identifier and store it in
+    // the available variable list
+
+    for(auto ptr : m_ssa->m_operands)
+    {
+        if (ptr->m_identName == node->m_name)
+        {
+            PushOperand(ptr);
+            return;
+        }
+    }
+}
 
 void Creator::visit(const AST::InputDeclaration *node)
 {
+    // INPUT should already exist.. check this
+    std::stringstream ss;
+    if (!m_identDB->hasIdentifier(node->m_identName))
+    {
+        ss << "INPUT identifier "<< node->m_identName << " not found, but should have been.";
+        error(ss.str());
+    }
+
     // create an input variable
     SSA::SharedOpPtr result = std::make_shared<InputOperand>();
     result->m_intBits   = node->m_intBits;
@@ -319,6 +257,24 @@ void Creator::visit(const AST::InputDeclaration *node)
     m_ssa->addOperand(result);
 }
 
+
+void Creator::visit(const AST::RegDeclaration *node)
+{
+    // REG should already exist.. check this
+    std::stringstream ss;
+    if (!m_identDB->hasIdentifier(node->m_identName))
+    {
+        ss << "REG identifier "<< node->m_identName << " not found, but should have been.";
+        error(ss.str());
+    }
+
+    // create a register variable
+    SSA::SharedOpPtr result = std::make_shared<RegOperand>();
+    result->m_intBits   = node->m_intBits;
+    result->m_fracBits  = node->m_fracBits;
+    result->m_identName = node->m_identName;
+    m_ssa->addOperand(result);
+}
 
 void Creator::visit(const AST::IntegerConstant *node)
 {

@@ -2,32 +2,36 @@
 
   FPTOOL - a fixed-point math to VHDL generation tool
 
-  Description:  Visitor base class
+  Description:  CSD multiplication expander SSA pass
+
+  Set the Q(n,m) precisions of each node based on
+  min/max numbers and lock the precision of the
+  output variables.
 
   Author: Niels A. Moseley
 
-
-
 */
 
-#ifndef astvisitor_h
-#define astvisitor_h
+#ifndef passprecision_h
+#define passprecision_h
 
 #include <ostream>
 #include <stdint.h>
+#include <list>
 #include "astnode.h"
+#include "identdb.h"
 
 namespace AST
 {
 
-class DumpVisitor : public ASTVisitorBase
+class PassPrecision : public ASTVisitorBase
 {
 public:
     /** create an object to dump the AST to a stream */
-    explicit DumpVisitor(std::ostream &os)
-        : m_depth(0),
-          m_os(os)
-    {}
+    explicit PassPrecision(SymbolTable &symTable);
+
+    /** process the AST tree */
+    bool processAST(AST::ASTNodeBase *head);
 
     /** dump a specific node */
     virtual void visit(const IntegerConstant *node) override;
@@ -46,16 +50,19 @@ public:
     virtual void visit(const Register *node) override;
 
 protected:
-    void doIndent();
+    struct precision_t
+    {
+        int32_t m_intBits;
+        int32_t m_fracBits;
+        fplib::SFix m_min;
+        fplib::SFix m_max;
+    };
 
-    uint32_t     m_depth;
-    std::ostream &m_os;
+    std::list<precision_t>  m_precisionStack;
+    SymbolTable *m_symTable;
 };
 
-
-} // AST namespace
-
-
-
+} // namespace AST
 
 #endif
+

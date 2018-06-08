@@ -22,10 +22,12 @@
 #include "ssaevaluator.h"
 #include "csd.h"
 #include "pass_addsub.h"
+#include "pass_regtrunc.h"
 #include "pass_truncate.h"
 #include "pass_csdmul.h"
 #include "pass_clean.h"
 #include "pass_removeoperands.h"
+#include "pass_precision.h"
 #include "vhdlcodegen.h"
 #include "vhdlrealgen.h"
 #include "astgraphviz.h"
@@ -107,7 +109,8 @@ int main(int argc, char *argv[])
 
         Parser parse;
         AST::Statements statements;
-        if (parse.process(tokens, statements))
+        SymbolTable     symbolTable;
+        if (parse.process(tokens, statements, symbolTable))
         {
             doLog(LOG_INFO, "Parse OK!\n");
 
@@ -115,7 +118,7 @@ int main(int argc, char *argv[])
             {
                 // dump the AST
                 AST::DumpVisitor ASTdumper(std::cout);
-                for(ASTNode *node : statements.m_statements)
+                for(AST::ASTNodeBase *node : statements.m_statements)
                 {
                     if (node != NULL)
                     {
@@ -124,12 +127,19 @@ int main(int argc, char *argv[])
                 }
             }
 
+            // calculate all precisions
+            AST::PassPrecision precisionPass(symbolTable);
+            precisionPass.processAST(&statements);
+
+            // dump the symbol table
+            symbolTable.dump(std::cout);
+
             // dump the AST using graphviz
             if (graphvizStream.is_open())
             {
                 AST2Graphviz graphviz(graphvizStream, true);
                 graphviz.writeProlog();
-                for(ASTNode *node : statements.m_statements)
+                for(AST::ASTNodeBase *node : statements.m_statements)
                 {
                     graphviz.addStatement(node);
                 }
@@ -139,9 +149,11 @@ int main(int argc, char *argv[])
 
             SSA::Creator ssaCreator;
             SSA::Program ssa;
-            if (!ssaCreator.process(statements, ssa))
+
+            if (!ssaCreator.process(statements, symbolTable, ssa))
             {
                 doLog(LOG_ERROR, "Error producing SSA: %s\n", ssaCreator.getLastError().c_str());
+                return 1;
             }
 
             if (verbose)
@@ -175,6 +187,21 @@ int main(int argc, char *argv[])
                 }
                 closeLogFile();
                 return 0; // end program!
+            }
+
+            // ------------------------------------------------------------
+            // -- INSERT TRUNCATE NODES FOR REG ASSIGNMENTS
+            // ------------------------------------------------------------
+            if (!SSA::PassRegTrunc::execute(ssa))
+            {
+                doLog(LOG_ERROR, "REGTRUNC pass failed\n");
+            }
+
+            if (verbose)
+            {
+                std::stringstream ss;
+                SSA::Printer::print(ssa, ss, true);
+                doLog(LOG_DEBUG, "\n%s", ss.str().c_str());
             }
 
             // ------------------------------------------------------------
@@ -358,7 +385,7 @@ int main(int argc, char *argv[])
             }
             else
             {
-                if (!SSA::VHDLCodeGen::generateCode(outstream, ssa, true))
+                if (!SSA::VHDLCodeGen::generateCode(outstream, ssa, false))
                 {
                     doLog(LOG_ERROR, "Error generating VHDL code!\n");
                 }
@@ -367,9 +394,7 @@ int main(int argc, char *argv[])
         else
         {
             doLog(LOG_ERROR, "Parse Failed!\n");
-            doLog(LOG_ERROR, "Line %d pos %d: %s\n", parse.getLastErrorPos().line+1,
-                  parse.getLastErrorPos().pos+1,
-                  parse.getLastError().c_str());
+            doLog(LOG_ERROR, parse.formatErrors().c_str());
         }
     }
 
