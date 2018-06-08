@@ -32,19 +32,6 @@ void AST2Graphviz::addStatement(AST::ASTNodeBase *node)
     }
 }
 
-#if 0
-void AST2Graphviz::visit(const AST::Identifier *node)
-{
-    if (node == 0) return;
-
-    int32_t thisNodeID = m_count;
-
-    m_os << thisNodeID << " [label=\"";
-    m_os << node->m_identName.c_str();
-    m_os << "\"];\n";
-}
-#endif
-
 void AST2Graphviz::visit(const AST::InputVariable *node)
 {
     if (node == 0) return;

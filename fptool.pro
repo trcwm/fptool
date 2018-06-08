@@ -18,6 +18,7 @@ HEADERS += include/cmdline.h \
            include/pass_clean.h \
            include/pass_removeoperands.h \
            include/pass_csdmul.h \
+           include/pass_precision.h \
            include/astgraphviz.h \
            include/reader.h \
            include/ssa.h \
@@ -30,7 +31,7 @@ HEADERS += include/cmdline.h \
            include/ssacreator.h \
            include/ssaprint.h \
            include/ssaevaluator.h \
-           include/identdb.h \
+           include/identdb.h \           
            externals/fplib/src/fplib.h
 
 SOURCES += src/cmdline.cpp \
@@ -46,6 +47,7 @@ SOURCES += src/cmdline.cpp \
            src/pass_clean.cpp \
            src/pass_removeoperands.cpp \
            src/pass_csdmul.cpp \
+           src/pass_precision.cpp \
            src/astgraphviz.cpp \
            src/reader.cpp \
            src/ssa.cpp \
@@ -56,4 +58,5 @@ SOURCES += src/cmdline.cpp \
            src/ssacreator.cpp \
            src/ssaprint.cpp \
            src/ssaevaluator.cpp \
+           src/identdb.cpp \
            externals/fplib/src/fplib.cpp

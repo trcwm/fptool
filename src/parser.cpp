@@ -192,31 +192,37 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
 {
     // productions: defspec1 | defspec2 | defspec3
 
+    int32_t intBits;
+    int32_t fracBits;
+
     AST::Declaration *node = 0;
-    if ((node=acceptDefspec1(s)) != NULL)
+    if ((node=acceptDefspec1(s, intBits, fracBits)) != NULL)
     {
         // INPUT node
-        if (!m_symTable->addIdentifier(identifier, SymbolTable::info_t::T_INPUT))
+        if (!m_symTable->addIdentifier(identifier, SymbolInfo::T_INPUT,
+                                       intBits, fracBits))
         {
             error(s, "Identifier already exists!");
             return NULL;
         }
         return node;
     }
-    else if ((node=acceptDefspec2(s)) != NULL)
+    else if ((node=acceptDefspec2(s, intBits, fracBits)) != NULL)
     {
         // CSD node
-        if (!m_symTable->addIdentifier(identifier, SymbolTable::info_t::T_CSD))
+        if (!m_symTable->addIdentifier(identifier, SymbolInfo::T_CSD,
+                                       intBits, fracBits))
         {
             error(s, "Identifier already exists!");
             return NULL;
         }
         return node;
     }
-    else if ((node=acceptDefspec3(s)) != NULL)
+    else if ((node=acceptDefspec3(s, intBits, fracBits)) != NULL)
     {
         // REG node
-        if (!m_symTable->addIdentifier(identifier, SymbolTable::info_t::T_REG))
+        if (!m_symTable->addIdentifier(identifier, SymbolInfo::T_REG,
+                                       intBits, fracBits))
         {
             error(s, "Identifier already exists!");
             return NULL;
@@ -226,7 +232,7 @@ AST::Declaration* Parser::acceptDefspec(state_t &s, const std::string &identifie
     return NULL;
 }
 
-AST::InputDeclaration* Parser::acceptDefspec1(state_t &s)
+AST::InputDeclaration* Parser::acceptDefspec1(state_t &s, int32_t &intBits, int32_t &fracBits)
 {
     // production: INPUT LPAREN INTEGER COMMA INTEGER RPAREN
 
@@ -241,14 +247,18 @@ AST::InputDeclaration* Parser::acceptDefspec1(state_t &s)
     }
 
     AST::InputDeclaration* newNode = new AST::InputDeclaration();
+
+    //FIXME: move this to the symbol table only..
     newNode->m_intBits  = atoi(getToken(s, -4).txt.c_str()); // first integer
     newNode->m_fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
 
+    intBits  = newNode->m_intBits;
+    fracBits = newNode->m_fracBits;
     return newNode;
 }
 
 
-AST::CSDDeclaration *Parser::acceptDefspec2(state_t &s)
+AST::CSDDeclaration *Parser::acceptDefspec2(state_t &s, int32_t &intBits, int32_t &fracBits)
 {
     // production: CSD LPAREN FLOAT COMMA INTEGER RPAREN
 
@@ -271,6 +281,9 @@ AST::CSDDeclaration *Parser::acceptDefspec2(state_t &s)
         error(s,"acceptDefspec2: cannot convert CSD");
     }
 
+    intBits  = newNode->m_csd.intBits;
+    fracBits = newNode->m_csd.fracBits;
+
     //float msb = ceil(log10(fabs(static_cast<double>(csd.value)))/log10(2.0));
     //newNode->info.intBits = static_cast<int32_t>(msb+1); // add sign bit
     //newNode->info.fracBits = -csd.digits.back().power;
@@ -278,7 +291,7 @@ AST::CSDDeclaration *Parser::acceptDefspec2(state_t &s)
     return newNode;
 }
 
-AST::RegDeclaration* Parser::acceptDefspec3(state_t &s)
+AST::RegDeclaration* Parser::acceptDefspec3(state_t &s, int32_t &intBits, int32_t &fracBits)
 {
     // production: REG LPAREN INTEGER COMMA INTEGER RPAREN
 
@@ -295,6 +308,9 @@ AST::RegDeclaration* Parser::acceptDefspec3(state_t &s)
     AST::RegDeclaration* newNode = new AST::RegDeclaration();
     newNode->m_intBits  = atoi(getToken(s, -4).txt.c_str()); // first integer
     newNode->m_fracBits = atoi(getToken(s, -2).txt.c_str()); // second integer
+
+    intBits  = newNode->m_intBits;
+    fracBits = newNode->m_fracBits;
     return newNode;
 }
 
@@ -419,13 +435,13 @@ AST::ASTNodeBase* Parser::acceptAssignment(state_t &s)
     {
         // no need to specify the precision as this will be
         // determined later on.
-        m_symTable->addIdentifier(identifier, SymbolTable::info_t::T_OUTPUT);
+        m_symTable->addIdentifier(identifier, SymbolInfo::T_OUTPUT);
     }
 
     // do type checking here.
     // we can only accept assignments to an output,
     // register or temporary variable.
-    if (m_symTable->identIsType(identifier, SymbolTable::info_t::T_INPUT))
+    if (m_symTable->identIsType(identifier, SymbolInfo::T_INPUT))
     {
         // cannot assign to type input
         error(s,"Cannot assign to input variables.");
@@ -748,27 +764,27 @@ AST::ASTNodeBase* Parser::acceptFactor(state_t &s)
         auto itype = m_symTable->getType(identName);
         switch(itype)
         {
-        case SymbolTable::info_t::T_NOTFOUND:
+        case SymbolInfo::T_NOTFOUND:
             {
                 std::stringstream ss;
                 ss << "Identifier not found: " << identName;
                 error(s, ss.str());
                 return NULL;
             }
-        case SymbolTable::info_t::T_INPUT:
+        case SymbolInfo::T_INPUT:
             newNode = new AST::InputVariable(identName);
             break;
-        case SymbolTable::info_t::T_OUTPUT:
+        case SymbolInfo::T_OUTPUT:
             newNode = new AST::OutputVariable(identName);
             break;
-        case SymbolTable::info_t::T_REG:
+        case SymbolInfo::T_REG:
             newNode = new AST::Register(identName);
             break;
-        case SymbolTable::info_t::T_CSD:
+        case SymbolInfo::T_CSD:
             newNode = new AST::CSDConstant(identName);
             break;
-        case SymbolTable::info_t::T_TMP:
-        case SymbolTable::info_t::T_UNINIT:
+        case SymbolInfo::T_TMP:
+        case SymbolInfo::T_UNINIT:
             error(s, "Internal error: temporary or uninitialized variables should not exist at this stage!");
             break;
         default:

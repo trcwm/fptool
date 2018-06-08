@@ -27,6 +27,7 @@
 #include "pass_csdmul.h"
 #include "pass_clean.h"
 #include "pass_removeoperands.h"
+#include "pass_precision.h"
 #include "vhdlcodegen.h"
 #include "vhdlrealgen.h"
 #include "astgraphviz.h"
@@ -108,7 +109,7 @@ int main(int argc, char *argv[])
 
         Parser parse;
         AST::Statements statements;
-        SymbolTable         symbolTable;
+        SymbolTable     symbolTable;
         if (parse.process(tokens, statements, symbolTable))
         {
             doLog(LOG_INFO, "Parse OK!\n");
@@ -125,6 +126,13 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+
+            // calculate all precisions
+            AST::PassPrecision precisionPass(symbolTable);
+            precisionPass.processAST(&statements);
+
+            // dump the symbol table
+            symbolTable.dump(std::cout);
 
             // dump the AST using graphviz
             if (graphvizStream.is_open())

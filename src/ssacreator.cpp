@@ -86,11 +86,11 @@ void Creator::visit(const AST::Assignment *node)
 
     switch(m_identDB->getType(node->m_identName))
     {
-    case SymbolTable::info_t::T_NOTFOUND:
+    case SymbolInfo::T_NOTFOUND:
         ss << "Identifier "<< node->m_identName << " not found";
         error(ss.str());
         break;
-    case SymbolTable::info_t::T_REG:
+    case SymbolInfo::T_REG:
         // registers have a user defined precision, so
         // copy that.
         lockPrecision = true;
@@ -99,7 +99,7 @@ void Creator::visit(const AST::Assignment *node)
         result->m_intBits   = m_identDB->m_identifiers.at(node->m_identName).m_intBits;
         result->m_fracBits  = m_identDB->m_identifiers.at(node->m_identName).m_fracBits;
         break;
-    case SymbolTable::info_t::T_OUTPUT:
+    case SymbolInfo::T_OUTPUT:
         // the precision of the output operands are
         // determined by the expression
         // so we need to set it here..
@@ -116,17 +116,17 @@ void Creator::visit(const AST::Assignment *node)
         //       assign to an output var _once_.
         m_ssa->addOperand(result);
         break;
-    case SymbolTable::info_t::T_INPUT:
+    case SymbolInfo::T_INPUT:
         // we cannot assign to inputs!
         ss << "Cannot assign to INPUT identifier " << node->m_identName;
         error(ss.str());
         break;
-    case SymbolTable::info_t::T_TMP:
+    case SymbolInfo::T_TMP:
         // temporaries should not exist yet..
         ss << "Cannot assign to TMP identifier " << node->m_identName << ". This is probably an internal error.";
         error(ss.str());
         break;
-    case SymbolTable::info_t::T_CSD:
+    case SymbolInfo::T_CSD:
         // we cannot assign to CSDs!
         ss << "Cannot assign to CSD identifier " << node->m_identName;
         error(ss.str());

@@ -43,7 +43,6 @@ class Register;
 class ASTVisitorBase
 {
 public:
-    //virtual void visit(const Identifier *node) = 0;
     virtual void visit(const IntegerConstant *node) = 0;
     virtual void visit(const CSDDeclaration *node) = 0;
     virtual void visit(const RegDeclaration *node) = 0;
@@ -104,24 +103,6 @@ public:
 
     std::string m_identName;    ///< name of the variable or constant
 };
-
-#if 0
-/** Identifier node */
-class Identifier : public Declaration
-{
-public:
-    Identifier()
-    {
-    }
-
-    /** Accept a visitor by calling visitor->visit(this) */
-    virtual void accept(ASTVisitorBase *visitor) override
-    {
-        visitor->visit(this);
-    }
-
-};
-#endif
 
 
 /** Input declaration */

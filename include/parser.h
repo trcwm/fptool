@@ -74,9 +74,9 @@ protected:
     AST::ASTNodeBase* acceptDefinition(state_t &s);
 
     AST::Declaration *acceptDefspec(state_t &s, const std::string &identifier);
-    AST::InputDeclaration *acceptDefspec1(state_t &s);      ///< accept an input declaration
-    AST::RegDeclaration   *acceptDefspec3(state_t &s);      ///< accept a register declaration
-    AST::CSDDeclaration   *acceptDefspec2(state_t &s);      ///< accept a CSD declaration
+    AST::InputDeclaration *acceptDefspec1(state_t &s, int32_t &intBits, int32_t &fracBits);      ///< accept an input declaration
+    AST::RegDeclaration   *acceptDefspec3(state_t &s, int32_t &intBits, int32_t &fracBits);      ///< accept a register declaration
+    AST::CSDDeclaration   *acceptDefspec2(state_t &s, int32_t &intBits, int32_t &fracBits);      ///< accept a CSD declaration
 
     // functions
     AST::ASTNodeBase* acceptTruncate(state_t &s);
