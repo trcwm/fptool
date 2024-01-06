@@ -1,0 +1,2 @@
+const char *versionstring = "@VERSIONSTRING@";
+const char *compilerstring = "@COMPILERSTRING@";

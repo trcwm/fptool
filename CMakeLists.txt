@@ -121,12 +121,8 @@ set(VERSIONSTRING "Version ${CMAKE_PROJECT_VERSION}")
 set(COMPILERSTRING "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 configure_file(${PROJECT_SOURCE_DIR}/src/version.cpp.in ${PROJECT_SOURCE_DIR}/src/version.cpp @ONLY)
 
-# compile fplib library
-add_subdirectory(${CMAKE_SOURCE_DIR}/externals/fplib)
-
 # compile fptool
 include_directories("${CMAKE_SOURCE_DIR}/include")
-include_directories("${CMAKE_SOURCE_DIR}/externals/fplib/src")
 file(GLOB_RECURSE sources "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
 add_executable (fptool ${sources})

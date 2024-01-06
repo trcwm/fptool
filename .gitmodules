@@ -1,3 +1,0 @@
-[submodule "externals/fplib"]
-	path = externals/fplib
-	url = https://github.com/trcwm/fplib.git
