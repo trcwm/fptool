@@ -1,4 +1,4 @@
-# FPTOOL README
+# FPTOOL Version 0.1
 ## A compiler for generating fixed-point VHDL code.
 ### Niels A. Moseley
 
@@ -39,7 +39,7 @@ Current project state:
 - Don't use it for production unless you test the output thoroughly!!
 
 ## Building
-Load the project file (.pro) into [QtCreator](https://www.qt.io/ide/), configure the project for your compiler, then select Build->Build All.
+Run `./bootstrap.sh` in the project directory and `ninja` in the created `BUILD` directory.
 
 ## Command line options
 
