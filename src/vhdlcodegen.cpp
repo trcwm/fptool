@@ -8,7 +8,7 @@
 
 #include "logging.h"
 #include <algorithm>
-#include "ssaevaluator.h"
+//#include "ssaevaluator.h"
 #include "vhdlcodegen.h"
 
 using namespace SSA;
@@ -200,6 +200,8 @@ void VHDLCodeGen::genTestbenchFooter()
     m_os << "  proc_stim: process\n";
     m_os << "  begin\n";
 
+    //FIXME:
+#if 0
     SSA::Evaluator eval(*m_ssa);
     eval.randomizeInputValues();
     eval.runProgram();
@@ -246,6 +248,8 @@ void VHDLCodeGen::genTestbenchFooter()
     }
 
     m_os << "    wait;\n";
+#endif
+
     m_os << "  end process proc_stim;\n";
     m_os << "end behavioral;\n";
 }

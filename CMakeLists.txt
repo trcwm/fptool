@@ -121,9 +121,38 @@ set(VERSIONSTRING "Version ${CMAKE_PROJECT_VERSION}")
 set(COMPILERSTRING "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
 configure_file(${PROJECT_SOURCE_DIR}/src/version.cpp.in ${PROJECT_SOURCE_DIR}/src/version.cpp @ONLY)
 
+
+##################################################
+# SET VERSION
+##################################################
+
+set (SRC
+    src/main.cpp
+    src/astvisitor.cpp
+    src/astgraphviz.cpp
+    src/parser.cpp
+    src/csd.cpp
+    src/cmdline.cpp
+    src/logging.cpp
+    src/reader.cpp
+    src/cppcodegen.cpp
+    src/ssa.cpp
+    src/ssacreator.cpp
+    src/ssaprint.cpp
+    src/tokenizer.cpp
+    src/utils.cpp
+    src/vhdlcodegen.cpp
+    src/vhdlrealgen.cpp
+    src/version.cpp
+    src/pass_addsub.cpp
+    src/pass_clean.cpp
+    src/pass_csdmul.cpp
+    src/pass_removeoperands.cpp
+    src/pass_truncate.cpp
+)
+
 # compile fptool
 include_directories("${CMAKE_SOURCE_DIR}/include")
-file(GLOB_RECURSE sources "${CMAKE_SOURCE_DIR}/src/*.cpp")
 
-add_executable (fptool ${sources})
-target_link_libraries (fptool LINK_PUBLIC fplib)
+add_executable (fptool ${SRC})
+#target_link_libraries (fptool LINK_PUBLIC fplib)

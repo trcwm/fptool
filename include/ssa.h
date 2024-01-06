@@ -19,7 +19,6 @@
 
 #include "utils.h"
 #include "csd.h"
-#include "fplib.h"
 
 /** single static assignment namespace */
 namespace SSA
@@ -129,7 +128,7 @@ public:
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const = 0;
+    virtual void updateOutputPrecision() = 0;
 
     /** clone the object */
     virtual OperationBase* clone() const
@@ -149,10 +148,10 @@ public:
     }
 
     /** replace operand op1 with op2 if op1 is present */
-    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
+    void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         throw std::runtime_error("OperationDual::clone() called on abstract base class!");
     }
@@ -173,10 +172,10 @@ public:
     }
 
     /** replace operand op1 with operand op2, if present */
-    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
+    void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         throw std::runtime_error("OperationSingle::clone() called on abstract base class!");
     }
@@ -203,11 +202,11 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         m_lhs->m_intBits  = std::max(m_op1->m_intBits, m_op2->m_intBits);
         if (!m_noExtension)
@@ -218,7 +217,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpAdd(*this);
     }
@@ -244,11 +243,11 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         m_lhs->m_intBits  = std::max(m_op1->m_intBits, m_op2->m_intBits);
         if (!m_noExtension)
@@ -259,7 +258,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpSub(*this);
     }
@@ -279,18 +278,18 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         m_lhs->m_intBits  = m_op1->m_intBits + m_op2->m_intBits - 1;
         m_lhs->m_fracBits = m_op1->m_fracBits + m_op2->m_fracBits;
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpMul(*this);
     }
@@ -308,11 +307,11 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         //FIXME: this is true for signed*signed multiplications
         //  however, CSDs are sign-magnitude and will have
@@ -355,7 +354,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpCSDMul(*this);
     }
@@ -375,11 +374,11 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         // FIXME: this is not correct!
         // -MAX_VAL does not have an equivalent +value
@@ -389,7 +388,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpNegate(*this);
     }
@@ -409,18 +408,18 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         m_lhs->m_intBits  = m_intBits;
         m_lhs->m_fracBits = m_fracBits;
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpTruncate(*this);
     }
@@ -440,18 +439,18 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         m_lhs->m_intBits  = m_op->m_intBits;
         m_lhs->m_fracBits = m_op->m_fracBits;
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpAssign(*this);
     }
@@ -472,18 +471,18 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         m_lhs->m_intBits = m_intBits;
         m_lhs->m_fracBits = m_fracBits;
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpReinterpret(*this);
     }
@@ -504,11 +503,11 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         //FIXME:
         //  check that bits >= 0
@@ -517,7 +516,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpExtendLSBs(*this);
     }
@@ -538,11 +537,11 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         //FIXME:
         //  check that bits >= 0
@@ -551,7 +550,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpRemoveLSBs(*this);
     }
@@ -571,11 +570,11 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         //FIXME:
         //  check that bits >= 0
@@ -584,7 +583,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpExtendMSBs(*this);
     }
@@ -604,11 +603,11 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         //FIXME:
         //  check that bits >= 0
@@ -617,7 +616,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         return new OpRemoveMSBs(*this);
     }
@@ -647,16 +646,16 @@ public:
     }
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** check if this is a patchblock operation/instruction */
-    virtual bool isPatchBlock() const override
+    bool isPatchBlock() const override
     {
         return true;
     }
 
     /** replace operand op1 with operand op2, if present */
-    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
+    void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override;
 
     /** add statement to the instruction list */
     void addStatement(OperationBase *statement)
@@ -666,7 +665,7 @@ public:
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override
+    void updateOutputPrecision() override
     {
         for(auto statement : m_statements)
         {
@@ -675,7 +674,7 @@ public:
     }
 
     /** clone the object */
-    virtual OperationBase* clone() const override
+    OperationBase* clone() const override
     {
         throw std::runtime_error("OpPatchBlock::clone() is not suppoted!");
     }
@@ -695,14 +694,14 @@ public:
     OpNull() {}
 
     /** accept a visitor */
-    virtual bool accept(OperationVisitorBase *visitor) override;
+    bool accept(OperationVisitorBase *visitor) override;
 
     /** replace operand op1 with operand op2, if present */
-    virtual void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override {}
+    void replaceOperand(const SharedOpPtr &op1, SharedOpPtr op2) override {}
 
     /** calculate and set the Q(n,m) precision of the
         LHS / output operand */
-    virtual void updateOutputPrecision() const override {}
+    virtual void updateOutputPrecision() override {}
 
     /** clone the object */
     virtual OperationBase* clone() const override

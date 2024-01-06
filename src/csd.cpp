@@ -8,6 +8,7 @@
 
 */
 
+#include <cmath>
 #include "csd.h"
 #include <iostream>
 
@@ -54,6 +55,7 @@ bool convertToCSD(const double v, uint32_t terms, csd_t &result)
     return true;
 }
 
+#if 0
 fplib::SFix convertCSDToSFix(const csd_t &csd)
 {
     fplib::SFix num(csd.intBits, csd.fracBits);
@@ -65,6 +67,8 @@ fplib::SFix convertCSDToSFix(const csd_t &csd)
     }
     return num;
 }
+#endif
+
 
 /** convert a floating-point value to a CSD representation
     with a determined precision */

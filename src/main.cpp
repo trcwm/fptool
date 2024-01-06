@@ -19,7 +19,7 @@
 #include "ssacreator.h"
 #include "ssaprint.h"
 
-#include "ssaevaluator.h"
+//#include "ssaevaluator.h"
 #include "csd.h"
 #include "pass_addsub.h"
 #include "pass_truncate.h"
@@ -29,16 +29,14 @@
 #include "vhdlcodegen.h"
 #include "vhdlrealgen.h"
 #include "astgraphviz.h"
-
-#define __FPTOOLVERSION__ "0.1a"
-
+#include "version.h"
 
 int main(int argc, char *argv[])
 {
     bool verbose = false;
     CmdLine cmdline("ogL","dVr");
 
-    printf("FPTOOL version " __FPTOOLVERSION__ " compiled on " __DATE__ "\n\n");
+    printf("FPTOOL version %s compiled on " __DATE__ "\n\n", versionstring);
     if (!cmdline.parseOptions(argc, argv))
     {
         printf("\nUsage: fptool <source.fp>\n\n");
@@ -177,6 +175,7 @@ int main(int argc, char *argv[])
                 return 0; // end program!
             }
 
+#if 0
             // ------------------------------------------------------------
             // -- GENERATE A REFERENCE EVALUATOR TO CHECK OUR PASSES
             // ------------------------------------------------------------
@@ -190,6 +189,7 @@ int main(int argc, char *argv[])
                 printf("Error running reference evaluation program!\n");
                 return 1;
             }
+#endif
 
             // ------------------------------------------------------------
             // -- CSD PASS
@@ -287,6 +287,7 @@ int main(int argc, char *argv[])
             }
 #endif
 
+#if 0
             // ------------------------------------------------------------
             // -- GENERATE AN EVALUATOR TO CHECK THE CSD PASS
             // ------------------------------------------------------------
@@ -345,6 +346,7 @@ int main(int argc, char *argv[])
             {
                 doLog(LOG_INFO, "Fuzzing tests passed!\n");
             }
+#endif
 
             // ------------------------------------------------------------
             // -- VHDL code generation

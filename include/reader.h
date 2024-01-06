@@ -27,9 +27,9 @@ public:
 
   struct position_info
   {
-    size_t  offset;     // offset into m_source
-    size_t  line;       // the line number
-    size_t  pos;        // the position within the line
+    size_t  offset{0};     // offset into m_source
+    size_t  line{0};       // the line number
+    size_t  pos{0};        // the position within the line
   };
 
   /** Create a reader object by opening a file.
