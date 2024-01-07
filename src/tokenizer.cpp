@@ -28,42 +28,39 @@ Tokenizer::Tokenizer()
     m_keywords.push_back("saturate");
 }
 
-bool Tokenizer::isDigit(char c) const
+bool Tokenizer::isDigit(char c)
 {
-    if ((c >= '0') && (c <= '9')) return true;
-    return false;
+    return ((c >= '0') && (c <= '9'));
 }
 
-bool Tokenizer::isWhitespace(char c) const
+bool Tokenizer::isWhitespace(char c)
 {
-    if ((c == ' ') || (c == '\t')) return true;
-    return false;
+    return ((c == ' ') || (c == '\t'));
 }
 
-bool Tokenizer::isAlpha(char c) const
+bool Tokenizer::isAlpha(char c)
 {
     if ((c >= 'A') && (c <= 'Z')) return true;
     if ((c >= 'a') && (c <= 'z')) return true;
     return false;
 }
 
-bool Tokenizer::isNumeric(char c) const
+bool Tokenizer::isNumeric(char c)
 {
     if ((c >= '0') && (c <= '9')) return true;
     return false;
 }
 
-bool Tokenizer::isAlphaNumeric(char c) const
+bool Tokenizer::isAlphaNumeric(char c)
 {
     if (isAlpha(c)) return true;
     if (isNumeric(c)) return true;
     return false;
 }
 
-bool Tokenizer::isAlphaNumericExtended(char c) const
+bool Tokenizer::isAlphaNumericExtended(char c)
 {
-    if (isAlpha(c)) return true;
-    if (isNumeric(c)) return true;
+    if (isAlpha(c) || isNumeric(c)) return true;
     if (c == '_') return true;
     return false;
 }
@@ -90,7 +87,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
 
             tok.txt.clear();
             tok.pos = r->getPos();
-            tok.tokID = TOK_EOF;
+            tok.tokID = TokenType::END;
             result.push_back(tok);
 
             continue;
@@ -102,7 +99,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
 
             tok.txt.clear();
             tok.pos = r->getPos();
-            tok.tokID = TOK_UNKNOWN;
+            tok.tokID = TokenType::UNKNOWN;
 
             // remove whitespace
             if (isWhitespace(c))
@@ -128,7 +125,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             else if (c == 10)   // character is newline?
             {
                 // emit a newline
-                tok.tokID = TOK_NEWLINE;
+                tok.tokID = TokenType::NEWLINE;
                 result.push_back(tok);
                 r->accept();
             }
@@ -139,25 +136,25 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             }
             else if (c == ')')
             {
-                tok.tokID = TOK_RPAREN;
+                tok.tokID = TokenType::RPAREN;
                 result.push_back(tok);
                 r->accept();
             }
             else if (c == '(')
             {
-                tok.tokID = TOK_LPAREN;
+                tok.tokID = TokenType::LPAREN;
                 result.push_back(tok);
                 r->accept();
             }
             else if (c == '=')
             {
-                tok.tokID = TOK_EQUAL;
+                tok.tokID = TokenType::EQUAL;
                 result.push_back(tok);
                 r->accept();
             }
             else if (c == '+')
             {
-                tok.tokID = TOK_PLUS;
+                tok.tokID = TokenType::PLUS;
                 result.push_back(tok);
                 r->accept();
             }
@@ -179,13 +176,13 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 else
                 {
                     // it's a single minus!
-                    tok.tokID = TOK_MINUS;  // assume it's a single minus
+                    tok.tokID = TokenType::MINUS;  // assume it's a single minus
                     result.push_back(tok);
                 }
             }
             else if (c == '*')
             {
-                tok.tokID = TOK_STAR;
+                tok.tokID = TokenType::STAR;
                 result.push_back(tok);
                 r->accept();
             }
@@ -207,19 +204,19 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             }
             else if (c == ',')
             {
-                tok.tokID = TOK_COMMA;
+                tok.tokID = TokenType::COMMA;
                 result.push_back(tok);
                 r->accept();
             }
             else if (c == ';')
             {
-                tok.tokID = TOK_SEMICOL;
+                tok.tokID = TokenType::SEMICOL;
                 result.push_back(tok);
                 r->accept();
             }
             else if (c == '/')
             {
-                tok.tokID = TOK_SLASH;
+                tok.tokID = TokenType::SLASH;
                 result.push_back(tok);
                 r->accept();
             }
@@ -254,7 +251,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 }
                 else
                 {
-                    tok.tokID = TOK_SHR;
+                    tok.tokID = TokenType::SHR;
 
                     result.push_back(tok);
                     state = S_BEGIN;
@@ -265,7 +262,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 // we have found a single larger than
                 // and we must not accept the current
                 // character!
-                tok.tokID = TOK_LARGER;
+                tok.tokID = TokenType::LARGER;
                 result.push_back(tok);
                 state = S_BEGIN;
             }
@@ -285,7 +282,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 }
                 else
                 {
-                    tok.tokID = TOK_SHL;
+                    tok.tokID = TokenType::SHL;
 
                     result.push_back(tok);
                     state = S_BEGIN;
@@ -296,7 +293,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 // we have found a single larger than
                 // and we must not accept the current
                 // character!
-                tok.tokID = TOK_SMALLER;
+                tok.tokID = TokenType::SMALLER;
                 result.push_back(tok);
                 state = S_BEGIN;
             }
@@ -305,7 +302,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             if (c == '<')
             {
                 r->accept();
-                tok.tokID = TOK_ROL;
+                tok.tokID = TokenType::ROL;
                 result.push_back(tok);
                 state = S_BEGIN;
             }
@@ -320,7 +317,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             if (c == '>')
             {
                 r->accept();
-                tok.tokID = TOK_ROR;
+                tok.tokID = TokenType::ROR;
                 result.push_back(tok);
                 state = S_BEGIN;
             }
@@ -346,7 +343,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                     if (m_keywords[i] == tok.txt)
                     {
                         // keyword found!
-                        tok.tokID = 100+i;
+                        tok.tokID = static_cast<TokenType>(100+i);
                         result.push_back(tok);
                         found = true;
                     }
@@ -355,7 +352,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
                 {
                     // if we end up here, it must be an
                     // identifier!
-                    tok.tokID = TOK_IDENT;
+                    tok.tokID = TokenType::IDENT;
                     result.push_back(tok);
                 }
                 state = S_BEGIN;
@@ -376,7 +373,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             }
             else
             {
-                tok.tokID = TOK_INTEGER;
+                tok.tokID = TokenType::INTEGER;
                 result.push_back(tok);
                 state = S_BEGIN;
             }
@@ -396,7 +393,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             }
             else
             {
-                tok.tokID = TOK_FLOAT;
+                tok.tokID = TokenType::FLOAT;
                 result.push_back(tok);
                 state = S_BEGIN;
             }
@@ -434,7 +431,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
             else
             {
                 // end of floating point
-                tok.tokID = TOK_FLOAT;
+                tok.tokID = TokenType::FLOAT;
                 result.push_back(tok);
                 state = S_BEGIN;
             }
@@ -453,7 +450,7 @@ bool Tokenizer::process(Reader *r, std::vector<token_t> &result)
         case S_DONE:
             break;
         default:
-            tok.tokID = TOK_UNKNOWN;
+            tok.tokID = TokenType::UNKNOWN;
             return false;
         }
     }
@@ -470,7 +467,7 @@ void Tokenizer::dumpTokens(std::ostream &stream, const std::vector<token_t> &tok
     for(size_t i=0; i<tokens.size(); i++)
     {
         token_t token  = tokens[i];
-        if (token.tokID != TOK_NEWLINE)
+        if (token.tokID != TokenType::NEWLINE)
         {
             newlineCnt = 0;
         }
@@ -478,78 +475,78 @@ void Tokenizer::dumpTokens(std::ostream &stream, const std::vector<token_t> &tok
         switch(token.tokID)
         {
         default:
-        case TOK_UNKNOWN:
+        case TokenType::UNKNOWN:
             stream << "Unknown\n";
             break;
-        case TOK_NEWLINE:   // suppress superfluous newlines
+        case TokenType::NEWLINE:   // suppress superfluous newlines
             if (newlineCnt == 0)
                 stream <<"\n";
             newlineCnt++;
             break;
-        case TOK_IDENT:
+        case TokenType::IDENT:
             stream << "<ident>" << token.txt.c_str();
             break;
-        case TOK_INTEGER:
+        case TokenType::INTEGER:
             stream << "<int>" << token.txt.c_str();
             break;
-        case TOK_FLOAT:
+        case TokenType::FLOAT:
             stream << "<float>" << token.txt.c_str();
             break;
-        case TOK_PLUS:
+        case TokenType::PLUS:
             stream << " + ";
             break;
-        case TOK_MINUS:
+        case TokenType::MINUS:
             stream << " - ";
             break;
-        case TOK_STAR:
+        case TokenType::STAR:
             stream << " * ";
             break;
-        case TOK_SLASH:
+        case TokenType::SLASH:
             stream << " / ";
             break;
-        case TOK_EQUAL:
+        case TokenType::EQUAL:
             stream << " = ";
             break;
-        case TOK_LPAREN:
+        case TokenType::LPAREN:
             stream << " ( ";
             break;
-        case TOK_RPAREN:
+        case TokenType::RPAREN:
             stream << " ) ";
             break;
-        case TOK_COMMA:
+        case TokenType::COMMA:
             stream << " , ";
             break;
-        case TOK_SEMICOL:
+        case TokenType::SEMICOL:
             stream << ";";
             break;
-        case TOK_SHL:
+        case TokenType::SHL:
             stream << " << ";
             break;
-        case TOK_SHR:
+        case TokenType::SHR:
             stream << " >> ";
             break;
-        case TOK_ROL:
+        case TokenType::ROL:
             stream << " <<< ";
             break;
-        case TOK_ROR:
+        case TokenType::ROR:
             stream << " >>> ";
             break;
-        case TOK_EOF:
-            stream << "\nEOF\n";
+        case TokenType::END:
+            stream << "\nEND\n";
             break;
-        case 100:
+        case TokenType::DEFINE:
             stream << "DEFINE";
             break;
-        case 101:
+        case TokenType::INPUT:
             stream << "INPUT";
             break;
-        case 102:
+        case TokenType::CSD:
             stream << "CSD";
             break;
-        case 103:
+        case TokenType::TRUNC:
             stream << "TRUNCATE";
             break;
-        case 104:
+        case TokenType::SAT:
             stream << "SATURATE";
             break;
         }

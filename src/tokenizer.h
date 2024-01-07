@@ -9,8 +9,7 @@
 
 */
 
-#ifndef tokenizer_h
-#define tokenizer_h
+#pragma once
 
 // ************************************
 // define token ID constants
@@ -20,35 +19,37 @@
 // the m_keywords vector in Tokenizer
 // ************************************
 
-#define TOK_UNKNOWN 0
-#define TOK_NEWLINE 1
-#define TOK_LPAREN  2
-#define TOK_RPAREN  3
-#define TOK_SEMICOL 4
-#define TOK_PLUS    5
-#define TOK_MINUS   6
-#define TOK_STAR    7
-#define TOK_LARGER  8
-#define TOK_SMALLER 9
-#define TOK_EQUAL   10
-#define TOK_SHL     11
-#define TOK_SHR     12
-#define TOK_COMMA   13
-#define TOK_ROL     14
-#define TOK_ROR     15
-#define TOK_SLASH   16
+enum class TokenType : int
+{
+    UNKNOWN = 0,
+    NEWLINE,
+    LPAREN, 
+    RPAREN,
+    SEMICOL,
+    PLUS,
+    MINUS,   
+    STAR, 
+    LARGER,
+    SMALLER,
+    EQUAL,
+    SHL,    
+    SHR,  
+    COMMA,
+    ROL,    
+    ROR,  
+    SLASH,  
+    INTEGER,
+    FLOAT,   
+    IDENT,
+    END,
 
-#define TOK_INTEGER 30
-#define TOK_FLOAT   31
-#define TOK_IDENT   32
-
-#define TOK_EOF     99
-
-#define TOK_DEFINE  100
-#define TOK_INPUT   101
-#define TOK_CSD     102
-#define TOK_TRUNC   103
-#define TOK_SAT     104
+    // keywords
+    DEFINE = 100,
+    INPUT,
+    CSD,
+    TRUNC,
+    SAT
+};
 
 #include <vector>
 #include <string>
@@ -60,7 +61,7 @@
 struct token_t
 {
     Reader::position_info pos;      // position withing the source
-    uint32_t              tokID{0}; // token identifier
+    TokenType             tokID{TokenType::UNKNOWN}; // token identifier
     std::string           txt;      // identifier, keyword or number string
 };
 
@@ -83,12 +84,12 @@ public:
   void dumpTokens(std::ostream &stream, const std::vector<token_t> &tokens);
 
 protected:
-  bool isDigit(char c) const;
-  bool isWhitespace(char c) const;
-  bool isAlpha(char c) const;
-  bool isNumeric(char c) const;
-  bool isAlphaNumeric(char c) const;
-  bool isAlphaNumericExtended(char c) const;
+  static bool isDigit(char c);
+  static bool isWhitespace(char c);
+  static bool isAlpha(char c);
+  static bool isNumeric(char c);
+  static bool isAlphaNumeric(char c);
+  static bool isAlphaNumericExtended(char c);
 
   enum tok_state_t {S_BEGIN,
                     S_IDENT,
@@ -107,6 +108,3 @@ protected:
   std::string               m_lastError;
   std::vector<std::string>  m_keywords;
 };
-
-
-#endif

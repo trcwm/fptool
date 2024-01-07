@@ -15,6 +15,7 @@
 
 #include <string>
 #include <vector>
+#include <span>
 #include <memory>
 
 #include "tokenizer.h"
@@ -89,13 +90,11 @@ protected:
     ASTNode* acceptFactor2(state_t &s);
     ASTNode* acceptFactor3(state_t &s);
 
-
-
     /** match a token, return true if matched and advance the token index. */
-    bool match(state_t &s, uint32_t tokenID);
+    bool match(state_t &s, TokenType tokenID);
 
-    /** match a NULL-terminated list of tokens. */
-    bool matchList(state_t &s, const uint32_t *tokenIDlist);
+    /** match a list of tokens. */
+    bool matchList(state_t &s, std::span<const TokenType> tokenList);
 
     /** Advance the token index and get the next token */
     token_t next(state_t &s)
@@ -111,7 +110,7 @@ protected:
     {
         token_t dummy_token;
 
-        dummy_token.tokID = TOK_UNKNOWN;
+        dummy_token.tokID = TokenType::UNKNOWN;
 
         if (m_tokens == 0)
             return dummy_token;

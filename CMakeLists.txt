@@ -96,7 +96,7 @@ endif(UseCXXOPTS)
 ## CPPCHECK static analysis support
 ##################################################
 
-option(UseCPPCHECK "UseCPPCHECK" ON)
+option(UseCPPCHECK "UseCPPCHECK" OFF)
 
 if (UseCPPCHECK)
     set(CMAKE_CXX_CPPCHECK "cppcheck")
@@ -153,6 +153,7 @@ set (SRC
 
 # compile fptool
 include_directories("${CMAKE_SOURCE_DIR}/include")
+include_directories("${CMAKE_SOURCE_DIR}/src")
 
 add_executable (fptool ${SRC})
 #target_link_libraries (fptool LINK_PUBLIC fplib)

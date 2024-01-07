@@ -34,7 +34,7 @@ void Parser::error(uint32_t dummy, const std::string &txt)
     std::cout << txt.c_str() << std::endl;
 }
 
-bool Parser::match(state_t &s, uint32_t tokenID)
+bool Parser::match(state_t &s, TokenType tokenID)
 {
     token_t tok = getToken(s);
     if (tok.tokID != tokenID)
@@ -45,12 +45,11 @@ bool Parser::match(state_t &s, uint32_t tokenID)
     return true;
 }
 
-bool Parser::matchList(state_t &s, const uint32_t *tokenIDlist)
+bool Parser::matchList(state_t &s, std::span<const TokenType> tokenList)
 {
-    while (*tokenIDlist != 0)
+    for(auto const& token : tokenList)
     {
-        if (!match(s, *tokenIDlist++))
-            return false;
+        if (!match(s, token)) return false;
     }
     return true;
 }
@@ -96,12 +95,12 @@ bool Parser::acceptProgram(state_t &s, AST::Statements &statements)
             productionAccepted = true;
             statements.m_statements.push_back(node);
         }
-        else if (match(s, TOK_NEWLINE))
+        else if (match(s, TokenType::NEWLINE))
         {
             productionAccepted = true;
             // do nothing..
         }
-        else if (match(s, TOK_EOF))
+        else if (match(s, TokenType::END))
         {
             return true;
         }
@@ -115,20 +114,20 @@ ASTNode* Parser::acceptDefinition(state_t &s)
     // production: DEFINE IDENT EQUAL declspec SEMICOL
 
     state_t savestate = s;
-    if (!match(s, TOK_DEFINE))
+    if (!match(s, TokenType::DEFINE))
     {
         s = savestate;
         return NULL;
     }
 
-    if (!match(s, TOK_IDENT))
+    if (!match(s, TokenType::IDENT))
     {
         error(s,"Identifier expected after DEFINE");
         s = savestate;
         return NULL;
     }
 
-    if (!match(s, TOK_EQUAL))
+    if (!match(s, TokenType::EQUAL))
     {
         error(s,"'=' expected");
         s = savestate;
@@ -154,7 +153,7 @@ ASTNode* Parser::acceptDefinition(state_t &s)
         return NULL;
     }
 
-    if (!match(s,TOK_SEMICOL))
+    if (!match(s, TokenType::SEMICOL))
     {
         error(s,"Definitions should end with a semicolon.");
         s = savestate;
@@ -187,8 +186,11 @@ AST::InputDeclaration* Parser::acceptDefspec1(state_t &s)
 {
     // production: INPUT LPAREN INTEGER COMMA INTEGER RPAREN
 
-    const uint32_t tokenList[] =
-        {TOK_INPUT, TOK_LPAREN, TOK_INTEGER, TOK_COMMA, TOK_INTEGER, TOK_RPAREN, 0};
+    const std::array<TokenType,6> tokenList =
+    {
+        TokenType::INPUT, TokenType::LPAREN, TokenType::INTEGER, 
+        TokenType::COMMA, TokenType::INTEGER, TokenType::RPAREN
+    };
 
     state_t savestate = s;
     if (!matchList(s, tokenList))
@@ -209,8 +211,11 @@ AST::CSDDeclaration *Parser::acceptDefspec2(state_t &s)
 {
     // production: CSD LPAREN FLOAT COMMA INTEGER RPAREN
 
-    const uint32_t tokenList[] =
-        {TOK_CSD, TOK_LPAREN, TOK_FLOAT, TOK_COMMA, TOK_INTEGER, TOK_RPAREN, 0};
+    const std::array<TokenType, 6> tokenList =
+    {
+        TokenType::CSD, TokenType::LPAREN, TokenType::FLOAT, 
+        TokenType::COMMA, TokenType::INTEGER, TokenType::RPAREN
+    };
 
     state_t savestate = s;
     if (!matchList(s, tokenList))
@@ -241,13 +246,13 @@ ASTNode* Parser::acceptTruncate(state_t &s)
     // production: TRUNCATE LPAREN EXPR COMMA INTEGER COMMA INTEGER RPAREN
     state_t savestate = s;
 
-    if (!match(s, TOK_TRUNC))
+    if (!match(s, TokenType::TRUNC))
     {
         s = savestate;
         return NULL;
     }
 
-    if (!match(s, TOK_LPAREN))
+    if (!match(s, TokenType::LPAREN))
     {
         error(s,"Left parenthesis expected");
         s = savestate;
@@ -262,7 +267,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
         return NULL;
     }
 
-    if (!match(s, TOK_COMMA))
+    if (!match(s, TokenType::COMMA))
     {
         delete exprNode;
         error(s,"Comma expected");
@@ -270,7 +275,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
         return NULL;
     }
 
-    if (!match(s, TOK_INTEGER))
+    if (!match(s, TokenType::INTEGER))
     {
         delete exprNode;
         error(s,"Integer expected");
@@ -280,7 +285,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
 
     int32_t intbits = atoi(getToken(s, -1).txt.c_str());
 
-    if (!match(s, TOK_COMMA))
+    if (!match(s, TokenType::COMMA))
     {
         delete exprNode;
         error(s,"Comma expected");
@@ -288,7 +293,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
         return NULL;
     }
 
-    if (!match(s, TOK_INTEGER))
+    if (!match(s, TokenType::INTEGER))
     {
         delete exprNode;
         error(s,"Integer expected");
@@ -298,7 +303,7 @@ ASTNode* Parser::acceptTruncate(state_t &s)
 
     int32_t fracbits = atoi(getToken(s, -1).txt.c_str());
 
-    if (!match(s, TOK_RPAREN))
+    if (!match(s, TokenType::RPAREN))
     {
         error(s,"Right parenthesis expected");
         s = savestate;
@@ -318,13 +323,13 @@ ASTNode* Parser::acceptAssignment(state_t &s)
     // production: IDENT EQUAL expr SEMICOL
     state_t savestate = s;
 
-    if (!match(s,TOK_IDENT))
+    if (!match(s, TokenType::IDENT))
     {
         s = savestate;
         return NULL;
     }
 
-    if (!match(s,TOK_EQUAL))
+    if (!match(s, TokenType::EQUAL))
     {
         error(s,"Expected '='");
         s = savestate;
@@ -341,7 +346,7 @@ ASTNode* Parser::acceptAssignment(state_t &s)
         return NULL;
     }
 
-    if (!match(s, TOK_SEMICOL))
+    if (!match(s, TokenType::SEMICOL))
     {
         error(s,"Assignments must end with a semicolon.");
         s = savestate;
@@ -423,7 +428,7 @@ ASTNode* Parser::acceptExprAccent1(state_t &s, ASTNode *leftNode)
     // production: - term expr'
     state_t savestate = s;
 
-    if (!match(s, TOK_MINUS))
+    if (!match(s, TokenType::MINUS))
     {
         return NULL;
     }
@@ -457,7 +462,7 @@ ASTNode* Parser::acceptExprAccent2(state_t &s, ASTNode *leftNode)
     // production: + term expr'
     state_t savestate = s;
 
-    if (!match(s, TOK_PLUS))
+    if (!match(s, TokenType::PLUS))
     {
         return NULL;
     }
@@ -549,7 +554,7 @@ ASTNode* Parser::acceptTermAccent1(state_t &s, ASTNode *leftNode)
     // production: * factor term'
     state_t savestate = s;
 
-    if (!match(s, TOK_STAR))
+    if (!match(s, TokenType::STAR))
     {
         return NULL;
     }
@@ -583,7 +588,7 @@ ASTNode* Parser::acceptTermAccent2(state_t &s, ASTNode *leftNode)
     // production: / factor term'
     state_t savestate = s;
 
-    if (!match(s, TOK_SLASH))
+    if (!match(s, TokenType::SLASH))
     {
         return NULL;
     }
@@ -641,7 +646,7 @@ ASTNode* Parser::acceptFactor(state_t &s)
 
     s = savestate;
     // INTEGER
-    if (match(s, TOK_INTEGER))
+    if (match(s, TokenType::INTEGER))
     {
         AST::IntegerConstant* newNode = new AST::IntegerConstant();
         newNode->m_value = atoi(getToken(s, -1).txt.c_str());
@@ -654,7 +659,7 @@ ASTNode* Parser::acceptFactor(state_t &s)
     }
 
     // FLOAT
-    if (match(s, TOK_FLOAT))
+    if (match(s, TokenType::FLOAT))
     {
         error(s, "literal floats are not supported!");
         return NULL;
@@ -664,7 +669,7 @@ ASTNode* Parser::acceptFactor(state_t &s)
     }
 
     // IDENTIFIER
-    if (match(s, TOK_IDENT))
+    if (match(s, TokenType::IDENT))
     {
         AST::Identifier *newNode = new AST::Identifier();
         newNode->m_identName = getToken(s, -1).txt;
@@ -713,7 +718,7 @@ ASTNode* Parser::acceptFactor2(state_t &s)
     // ( expr )
 
     state_t savestate = s;
-    if (!match(s, TOK_LPAREN))
+    if (!match(s, TokenType::LPAREN))
     {
         s = savestate;
         return NULL;
@@ -724,7 +729,7 @@ ASTNode* Parser::acceptFactor2(state_t &s)
         s = savestate;
         return NULL;
     }
-    if (!match(s, TOK_RPAREN))
+    if (!match(s, TokenType::RPAREN))
     {
         delete exprNode;
         s = savestate;
@@ -737,7 +742,7 @@ ASTNode* Parser::acceptFactor3(state_t &s)
 {
     // production: - factor
     state_t savestate = s;
-    if (!match(s, TOK_MINUS))
+    if (!match(s, TokenType::MINUS))
     {
         s = savestate;
         return NULL;
